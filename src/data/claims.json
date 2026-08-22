@@ -1,0 +1,186 @@
+{
+  "version": "v2.2",
+  "statement": "方法論不是文件,是一組可測試的主張。L1=文獻收斂,L2=沙盒實驗(validation/),L3=實戰(真比賽)。十條核心主張全數達 L1+L2;驗證過程推翻並修訂四處(C1 門檻、C3 前提、C7a 教條、C8 條件),修訂史全保留。",
+  "levels": {
+    "L1": "文獻收斂",
+    "L2": "沙盒實驗",
+    "L3": "實戰驗證"
+  },
+  "claims": [
+    {
+      "id": "C1a",
+      "statement": "時間資料隨機切比時間切虛高 ≥1.3×",
+      "L1": true,
+      "L2": true,
+      "L3": "pending",
+      "evidence": "隨機切高估 +0.1527 vs 時間切 +0.0978",
+      "scripts": [
+        "claims_v2.py",
+        "claims_test.py"
+      ],
+      "revision": "門檻由絕對值改為相對比較(≥1.3×)"
+    },
+    {
+      "id": "C1b",
+      "statement": "持續概念漂移下,連時間切分 CV 仍樂觀,須預期上線衰減",
+      "L1": true,
+      "L2": true,
+      "L3": "pending",
+      "evidence": "時間切仍高估 +0.0978",
+      "scripts": [
+        "claims_v2.py"
+      ],
+      "revision": "驗證中新發現的副主張"
+    },
+    {
+      "id": "C2",
+      "statement": "Target encoding 不在 fold 內計算 = 洩漏,CV 虛高、實戰崩",
+      "L1": true,
+      "L2": true,
+      "L3": "pending",
+      "evidence": "洩漏版差 +0.0298 vs 正確版 +0.0052",
+      "scripts": [
+        "claims_test.py"
+      ],
+      "revision": null
+    },
+    {
+      "id": "C3",
+      "statement": "「實力相近 + 誤差多樣」的集成 > 最佳單模",
+      "L1": true,
+      "L2": true,
+      "L3": "pending",
+      "evidence": "+0.0024,三成員全被採用;反例:實力懸殊時 -0.0005",
+      "scripts": [
+        "claims_v2.py",
+        "claims_test.py"
+      ],
+      "revision": "補上『實力相近』前提;原版無前提時為官方反例"
+    },
+    {
+      "id": "C4",
+      "statement": "CV 較差的模型仍可能因誤差方向不同而被集成採用",
+      "L1": true,
+      "L2": true,
+      "L3": "pending",
+      "evidence": "弱成員被納入最終集成",
+      "scripts": [
+        "claims_test.py"
+      ],
+      "revision": null
+    },
+    {
+      "id": "C5",
+      "statement": "消融盤點能正確排序組件的投資價值",
+      "L1": true,
+      "L2": true,
+      "L3": "pending",
+      "evidence": "掉分排序 A(強) > B(中) > C(噪音)",
+      "scripts": [
+        "claims_test.py"
+      ],
+      "revision": null
+    },
+    {
+      "id": "C6",
+      "statement": "Stacking 第二層必用 OOF;用 in-sample 預測 = 洩漏",
+      "L1": true,
+      "L2": true,
+      "L3": "pending",
+      "evidence": "in-sample 表面 1.0000 → 私榜 0.7760",
+      "scripts": [
+        "claims_v3.py"
+      ],
+      "revision": null
+    },
+    {
+      "id": "C7a",
+      "statement": "小 public LB 的危險在適應性反覆使用的累積過擬合;單次判讀屬合法訊號",
+      "L1": true,
+      "L2": true,
+      "L3": "pending",
+      "evidence": "public 引導採 3 次改動→私榜 0.7341;CV 引導採 1 次→0.7386",
+      "scripts": [
+        "claims_v4.py",
+        "claims_v5.py"
+      ],
+      "revision": "教條級修訂:『只信 CV』過度簡化,見 §13 四條"
+    },
+    {
+      "id": "C7b",
+      "statement": "CV 與私榜方向脫鉤可偵測 CV 切法錯誤",
+      "L1": true,
+      "L2": true,
+      "L3": "pending",
+      "evidence": "5 seeds:隨機切 ΔCV +0.013~+0.057、私榜 Δ -0.028~+0.005;GroupKF 更接近私榜",
+      "scripts": [
+        "claims_v5.py"
+      ],
+      "revision": "判準由絕對門檻改為 5 seeds 相對(換函式庫版本即翻盤)"
+    },
+    {
+      "id": "C8",
+      "statement": "代理實驗判定:ρ² > 成本比 是充分條件(保守下界)",
+      "L1": true,
+      "L2": true,
+      "L3": "pending",
+      "evidence": "ρ²=0.44 代理贏;實測交叉點更低 ρ≈0.2~0.3",
+      "scripts": [
+        "claims_v3.py",
+        "claims_v4.py"
+      ],
+      "revision": "由等價條件降為充分條件"
+    },
+    {
+      "id": "C9",
+      "statement": "小樣本決策:配對比較 + 平滑指標,解析度決定可見訊號,多切分決定可信度",
+      "L1": true,
+      "L2": true,
+      "L3": "pending",
+      "evidence": "配對差 std ≈ 分數 std 的 1/4;票團有害 0/20、Title/family 僅 1/20",
+      "scripts": [
+        "small_n_paired.py"
+      ],
+      "revision": "由單次切分改為 20 切分分布陳述"
+    },
+    {
+      "id": "C10",
+      "statement": "填補洩漏分級:不碰目標=二階小量;碰目標=一階大量",
+      "L1": true,
+      "L2": true,
+      "L3": "pending",
+      "evidence": "中位數填補 |Δ|≈0.0001 vs 目標編碼 +0.030",
+      "scripts": [
+        "small_n_paired.py",
+        "claims_test.py"
+      ],
+      "revision": null
+    },
+    {
+      "id": "demo",
+      "statement": "鐵達尼端到端示範:六階段全流程 + 真實 Kaggle 提交",
+      "L1": null,
+      "L2": true,
+      "L3": "done",
+      "evidence": "CV 0.8373 → public LB 單模 0.7488 / 集成 0.7727;內部驗證高估 0.06~0.09,雙提交保險兌現",
+      "scripts": [
+        "case_titanic_v2.py",
+        "submit_titanic.py"
+      ],
+      "revision": "v1 單次切分『集成降級 -0.043』被證為評估假象"
+    },
+    {
+      "id": "multi",
+      "statement": "同一套 harness 方法論可完成不同任務型別(二分類/迴歸/多分類)",
+      "L1": null,
+      "L2": true,
+      "L3": "pending",
+      "evidence": "breast_cancer/diabetes/digits 皆完成;乾淨資料 CV−holdout ≈ 0(對比 Titanic 分布差)",
+      "scripts": [
+        "multi_case_real.py",
+        "harness.py"
+      ],
+      "revision": null
+    }
+  ]
+}

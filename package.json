@@ -1,0 +1,16 @@
+{
+  "name": "sealhack",
+  "type": "module",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "npm run copy-validation && astro build",
+    "preview": "astro preview",
+    "copy-validation": "node scripts/copy-validation.mjs"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.34.0",
+    "astro": "^5.13.0",
+    "sharp": "^0.34.0"
+  }
+}

@@ -1,0 +1,42 @@
+---
+import data from '../data/claims.json';
+const badge = (v) => (v === true || v === 'done') ? '✅' : v === 'pending' ? '⏳' : '—';
+const rows = data.claims;
+---
+<div class="sh-table">
+  <table>
+    <thead>
+      <tr><th>#</th><th>主張</th><th>L1</th><th>L2</th><th>L3</th><th>證據 · 驗證腳本</th></tr>
+    </thead>
+    <tbody>
+      {rows.map((c) => (
+        <tr>
+          <td><code>{c.id}</code></td>
+          <td>
+            {c.statement}
+            {c.revision && <div class="sh-rev">修訂:{c.revision}</div>}
+          </td>
+          <td class="sh-c">{badge(c.L1)}</td>
+          <td class="sh-c">{badge(c.L2)}</td>
+          <td class="sh-c">{badge(c.L3)}</td>
+          <td>
+            <div>{c.evidence}</div>
+            <div class="sh-scripts">
+              {c.scripts.map((s) => (
+                <a href={`/validation/${s}`}>{s}</a>
+              ))}
+            </div>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+<style>
+  .sh-table { overflow-x: auto; }
+  .sh-table table { width: 100%; font-size: 0.9rem; }
+  .sh-c { text-align: center; white-space: nowrap; }
+  .sh-rev { font-size: 0.8rem; color: var(--sl-color-gray-3); margin-top: 0.25rem; }
+  .sh-scripts { margin-top: 0.35rem; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .sh-scripts a { font-size: 0.8rem; font-family: var(--sl-font-mono); }
+</style>

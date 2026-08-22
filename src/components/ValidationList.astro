@@ -1,0 +1,25 @@
+---
+import data from '../data/validation.json';
+const kindLabel = { claim: '主張', case: '案例', template: '模板', infra: '基礎' };
+---
+<p>重跑全套:<code>{data.rerun}</code></p>
+<div class="sh-table">
+  <table>
+    <thead><tr><th>腳本</th><th>類型</th><th>驗證什麼</th><th>秒</th></tr></thead>
+    <tbody>
+      {data.scripts.map((s) => (
+        <tr>
+          <td><a href={`/validation/${s.file}`}>{s.file}</a></td>
+          <td>{kindLabel[s.kind] ?? s.kind}</td>
+          <td>{s.validates}</td>
+          <td style="text-align:right">{s.runtime_sec ?? '—'}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+<style>
+  .sh-table { overflow-x: auto; }
+  .sh-table table { width: 100%; font-size: 0.9rem; }
+  .sh-table td a { font-family: var(--sl-font-mono); font-size: 0.85rem; }
+</style>

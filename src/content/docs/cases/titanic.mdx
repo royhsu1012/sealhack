@@ -1,0 +1,60 @@
+---
+title: 示範案例:用方法論完整打一場鐵達尼
+description: 六階段端到端示範。基調不是「拿高分」,是方法論如何得到誠實的 0.828,並且預測到自己的 CV−LB 差距。
+---
+
+import CasesTable from '../../../components/CasesTable.astro';
+import { Aside } from '@astrojs/starlight/components';
+
+鐵達尼(訓練池 n=623)是小樣本題,重點不在分數高,在**方法論如何得到一個誠實的數字**——而且它預測到了自己在真實排行榜上的衰減。全程只看 CV,最後才由 holdout 與真實 Kaggle LB 揭曉。腳本:[`case_titanic_v2.py`](/validation/case_titanic_v2.py)、[`submit_titanic.py`](/validation/submit_titanic.py)。
+
+## 階段 0|讀題與五問診斷
+
+模態=表格、任務=二分類、指標=Accuracy(需在 OOF 上搜最佳閾值)、test 切法=隨機、賽制=prediction。**小資料警報**:n=623 → CV 噪音大 → 用 `RepeatedStratifiedKFold(10 折 × 5 重複)`。真實鐵達尼 LB > 0.85 多為查史料作弊,誠實天花板約 0.83。
+
+## 階段 1|鎖死 CV + 基線
+
+在同一組折上鎖死驗證,所有實驗共用 fold/seed,OOF 才可比較、可整合。性別規則基準 CV≈0.79。
+
+## 階段 3|特徵迭代——配對 AUC 檢定,不是均值門檻
+
+小樣本一次一組特徵,在同一組折上算配對差、做配對 t 檢定(t>2 才保留)。跨 20 次切分:
+
+- **Title、family、cabin 都只在 1/20 切分達 t>2** ——單看一次切分(如著名的 seed 42:Title t=2.22、family t=2.83)會把噪音當訊號。
+- **票團目標編碼有害是鐵板結論**:配對 t 中位數 **−9.98**、0/20 被保留。
+
+<Aside type="caution" title="解析度 ≠ 穩健">
+平滑指標(AUC 的配對差)讓你**看得見**弱訊號,但看得見不等於穩健。多次切分才決定你**信不信**——弱訊號本來就該在分布裡顯得弱。
+</Aside>
+
+## 階段 2+4|多樣化模型 → OOF 池 → 防過擬合爬山集成
+
+鋪開 lgbm / logreg / extratrees / knn 四個家族,用 Caruana 爬山(前 2 名初始化 + 可重複選取)組集成。**關鍵**:單模與集成用**同一種量**評估(折模型平均 OOF + 同一套閾值),否則差距裡混的是評估不對等,不是真實差異。
+
+## 階段 5|兩份提交 → 揭曉
+
+<CasesTable />
+
+<Aside type="tip" title="小樣本集成沒有紅利,雙提交是保險">
+20 次切分:單模私榜 0.8280±0.020、集成 0.8287±0.018,**配對差只有 +0.0007(t=0.26,集成贏 9 / 平 3 / 輸 8)——沒有差異**。小樣本湊不出「實力相近」的成員,集成紅利消失,所以選簡單的:單模 + 折模型平均。雙提交規則仍是保險——單一切分可差到 ±0.02,兩份各留一個把方差變成選擇權。
+</Aside>
+
+真的送上 Kaggle 官方 test 後:CV 0.8373 → **public LB 單模 0.7488 / 集成 0.7727**。內部驗證對真實 LB **系統性樂觀 0.06~0.09**——這不是 bug,是方法論一直警告的事:真實 test 是全新的 418 人、與你從 train 切出來的 holdout 不同分布。把 holdout 當上限、預期上線衰減。而穩健集成在真實 LB 反而高於 CV 最佳單模,雙提交的保險當場兌現。
+
+<Aside type="caution" title="為什麼一定要多次切分">
+本案 v1 用單次切分(seed 42)得到「集成 CV 0.8379 → 私榜 0.7948、單模 0.8241 → 0.8134」,差 −0.043,一度被寫成「小樣本集成降級」的鐵律。複驗發現那 −0.043 是**評估不對等 + 268 人 holdout 的單次噪音**(SE≈0.024,兩份提交只差 5 個乘客)。改用同一種量、報 20 次分布後,結論反轉為「無差異」。**單次切分的數字不能當結論。**
+</Aside>
+
+改用 §3.3 的折模型平均後,單模與集成的 **CV−私榜差都落在 +0.005~+0.008**——CV 是誠實的,是評估不對等在說謊。
+
+## 自己動手
+
+不要照抄這頁的數字——[`case_titanic_v2.py`](/validation/case_titanic_v2.py) 可下載,自己跑一次看 20 次切分的分布;[`submit_titanic.py`](/validation/submit_titanic.py) 產出兩份提交。
+
+```bash
+pip install -r validation/requirements.txt
+python validation/fetch_data.py          # 下載 Titanic 資料(sha256 校驗)
+python validation/case_titanic_v2.py     # 20 次切分,親眼看單模≈集成
+```
+
+換一場你自己的比賽,把這六階段重走一遍——這才是學會。

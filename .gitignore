@@ -1,0 +1,13 @@
+# 相依與建置產物
+node_modules/
+dist/
+.astro/
+__pycache__/
+# build 時由 validation/ 複製(研究內嵌網站)
+public/validation/
+# 研究資料檔(fetch_data.py 下載,sha256 校驗)
+validation/titanic.csv
+validation/results/
+
+# runtime
+.claude/scheduled_tasks.lock

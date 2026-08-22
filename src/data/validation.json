@@ -1,0 +1,95 @@
+{
+  "rerun": "pip install -r validation/requirements.txt && python validation/fetch_data.py && python validation/run_all.py",
+  "scripts": [
+    {
+      "file": "claims_test.py",
+      "kind": "claim",
+      "validates": "C1/C2/C3/C4/C5(第一批;含被修訂的原始結論)",
+      "runtime_sec": 82.9
+    },
+    {
+      "file": "claims_v2.py",
+      "kind": "claim",
+      "validates": "C1 修訂 + C3 修訂(實力相近前提)",
+      "runtime_sec": 147.9
+    },
+    {
+      "file": "claims_v3.py",
+      "kind": "claim",
+      "validates": "C6/C7/C8(第二批;含被修訂的原始結論)",
+      "runtime_sec": 235.2
+    },
+    {
+      "file": "claims_v4.py",
+      "kind": "claim",
+      "validates": "C7a/C7b/C8 修訂(後悔值/洩漏特徵/充分條件)",
+      "runtime_sec": 68.4
+    },
+    {
+      "file": "claims_v5.py",
+      "kind": "claim",
+      "validates": "C7a 終版(適應性過擬合)+ C7b 終版(5 seeds)",
+      "runtime_sec": 192.0
+    },
+    {
+      "file": "small_n_paired.py",
+      "kind": "claim",
+      "validates": "C9/C10(20 切分,配對比較 + 填補洩漏分級)",
+      "runtime_sec": 251.9
+    },
+    {
+      "file": "case_titanic_v2.py",
+      "kind": "case",
+      "validates": "鐵達尼六階段示範(20 切分分布)",
+      "runtime_sec": 492.0
+    },
+    {
+      "file": "submit_titanic.py",
+      "kind": "case",
+      "validates": "鐵達尼真提交(產兩份 submission)",
+      "runtime_sec": null
+    },
+    {
+      "file": "multi_case_real.py",
+      "kind": "case",
+      "validates": "多案例真實資料(二分類/迴歸/多分類)",
+      "runtime_sec": 13.0
+    },
+    {
+      "file": "hill_climb_weights.py",
+      "kind": "template",
+      "validates": "§6.1 hill_climb 權重記帳正確性",
+      "runtime_sec": 2.4
+    },
+    {
+      "file": "run_experiment_demo.py",
+      "kind": "template",
+      "validates": "§3.3 run_experiment 協議可執行",
+      "runtime_sec": 4.3
+    },
+    {
+      "file": "harness_selftest.py",
+      "kind": "infra",
+      "validates": "harness 三任務路徑(二分類/迴歸/多分類)",
+      "runtime_sec": 34.3
+    },
+    {
+      "file": "harness.py",
+      "kind": "infra",
+      "validates": "通用實驗管線(被 import)",
+      "runtime_sec": null
+    },
+    {
+      "file": "fetch_data.py",
+      "kind": "infra",
+      "validates": "取得 Titanic 資料(sha256 校驗)",
+      "runtime_sec": null
+    },
+    {
+      "file": "run_all.py",
+      "kind": "infra",
+      "validates": "一鍵重跑全套 + 判決彙整",
+      "runtime_sec": null
+    }
+  ]
+}

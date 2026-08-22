@@ -1,0 +1,29 @@
+---
+import data from '../data/cases.json';
+const t = data.titanic;
+---
+<div class="sh-table">
+  <table>
+    <caption>鐵達尼真提交(n_train={t.n_train} / holdout={t.n_holdout})</caption>
+    <thead><tr><th>提交</th><th>CV</th><th>holdout</th><th>public LB</th></tr></thead>
+    <tbody>
+      {t.submissions.map((s) => (
+        <tr><td>{s.name}</td><td>{s.cv}</td><td>{s.holdout}</td><td><strong>{s.public_lb}</strong></td></tr>
+      ))}
+    </tbody>
+  </table>
+  <table>
+    <caption>多案例真實資料(同一套 harness)</caption>
+    <thead><tr><th>案例</th><th>任務</th><th>CV</th><th>holdout</th><th>CV−holdout</th></tr></thead>
+    <tbody>
+      {data.multi_case_real.map((c) => (
+        <tr><td>{c.name}</td><td>{c.task}</td><td>{c.cv}</td><td>{c.holdout}</td><td>{c.gap}</td></tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+<style>
+  .sh-table { overflow-x: auto; }
+  .sh-table table { width: 100%; margin-bottom: 1rem; font-size: 0.9rem; }
+  .sh-table caption { text-align: left; font-weight: 600; padding-bottom: 0.4rem; }
+</style>

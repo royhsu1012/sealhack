@@ -1,0 +1,11 @@
+/* SealHack accent #E8481F(僅允許的視覺客製,見 CLAUDE.md)*/
+:root {
+  --sl-color-accent-low: #3a1206;
+  --sl-color-accent: #e8481f;
+  --sl-color-accent-high: #f5b5a5;
+}
+:root[data-theme='light'] {
+  --sl-color-accent-low: #ffd9cc;
+  --sl-color-accent: #cc3a15;
+  --sl-color-accent-high: #5a1a0a;
+}

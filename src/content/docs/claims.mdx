@@ -1,0 +1,46 @@
+---
+title: 主張登錄表與 LB 教條
+description: 方法論的每條主張都附可重跑的驗證實驗。12 條核心主張全數通過文獻+沙盒雙驗證,含 1 個官方反例;修訂史全保留。
+---
+
+import ClaimsTable from '../../components/ClaimsTable.astro';
+import ValidationList from '../../components/ValidationList.astro';
+import { Aside } from '@astrojs/starlight/components';
+
+方法論不是文件,是一組可測試的主張。每條主張標註驗證等級:**L1** = 文獻收斂(SOTA 系統獨立採用同設計)、**L2** = 沙盒實驗證實(可執行,見下方腳本)、**L3** = 實戰驗證(真比賽)。
+
+## 主張登錄表(v2.2）
+
+下表由 `data/claims.json` 渲染;每條主張連到它的驗證腳本(可直接下載重跑)。
+
+<ClaimsTable />
+
+<Aside type="tip">
+表格裡的 ❌ 若出現在腳本輸出,通常是**資料**而非失敗——被推翻後修訂的原始結論(如 C1 舊門檻、C3 舊前提)依規矩保留為修訂史。這正是這個站最有說服力的地方:方法論被實驗打過臉,而且誠實改了。
+</Aside>
+
+## LB 使用教條(v2.1 修訂——被 L2 實驗打臉後的誠實版)
+
+原教條「只信 CV」在 L2 驗證中被證明**過度簡化**。修訂為四條:
+
+1. **迭代決策(幾十次適應性選擇)一律用 CV。** 實驗:連續 30 次特徵開關,public(n=800) 引導接受 3 次噪音改動、私榜 0.7341;CV 引導只接受 1 次、私榜 0.7386。小樣本 LB 的危險在「反覆使用」的累積過擬合。
+2. **單次提交選擇、且 public 與 private 同分布時,public 是合法訊號。** 實驗:一次性從 12 個候選中選擇,public 後悔值 0.00098 < CV 的 0.00184。此時 public 評的是「同一份預測、同一分布」,可與 CV 併用。
+3. **懷疑分布漂移時(adversarial AUC 高、時間切分、public 佔比極小)→ 回到只用 CV。**
+4. **CV 與 LB 方向脫鉤 = 切法錯誤警訊,立即回頭檢查。** 實驗(5 seeds):group 資料加 group_id 特徵,隨機切 ΔCV +0.013~+0.057、私榜 Δ 卻是 -0.028~+0.005(脫鉤);GroupKFold 的 ΔCV 在 5/5 seeds 都比隨機切更接近私榜。
+
+## 收斂聲明
+
+十條核心主張全部達到 L1 + L2。驗證過程共推翻並修訂了四處原始表述(C1 門檻、C3 前提、C7a 教條、C8 條件強度),修訂史全數保留於登錄表。首個 L3 端到端數據點已由[鐵達尼真提交](/cases/titanic/)取得(內部 CV 高估真實 LB 0.06~0.09)。方法論層面就此收斂,後續修改須引新文獻或新增 L2 實驗,否則不動。
+
+## 驗證腳本索引
+
+任何人可重跑。安裝依賴後,`python validation/fetch_data.py` 取得資料,再跑任一腳本(腳本已強制 UTF-8 輸出,Windows 也可)。
+
+<ValidationList />
+
+## 參考來源
+
+- NVIDIA / Kaggle Grandmasters,《The Kaggle Grandmasters Playbook: 7 Battle-Tested Modeling Techniques for Tabular Data》(2025-09)
+- Chris Deotte,《Winning a Kaggle Competition with Generative AI–Assisted Coding》(2026-04)
+- Prior Labs,《TabPFN-2.5: Advancing the State of the Art in Tabular Foundation Models》(arXiv:2511.08667)
+- Nadeau & Bengio,《Inference for the Generalization Error》(2003)——重複 k 折配對 t 值膨脹的依據

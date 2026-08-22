@@ -1,0 +1,51 @@
+{
+  "titanic": {
+    "task": "表格二分類 / Accuracy",
+    "n_train": 623,
+    "n_holdout": 268,
+    "submissions": [
+      {
+        "name": "CV 最佳單模 (lgbm)",
+        "cv": 0.8373,
+        "holdout": 0.828,
+        "public_lb": 0.7488
+      },
+      {
+        "name": "穩健集成 (lgbm+knn)",
+        "cv": 0.8373,
+        "holdout": 0.829,
+        "public_lb": 0.7727
+      }
+    ],
+    "lesson": "內部 CV 對真實 LB 系統性樂觀 0.06~0.09(§2.2 漂移警告的印證);雙提交保險兌現。gender 基準 LB 0.7655。"
+  },
+  "multi_case_real": [
+    {
+      "name": "breast_cancer",
+      "task": "二分類",
+      "n_train": 426,
+      "n_holdout": 143,
+      "cv": "Acc 0.986",
+      "holdout": "0.986",
+      "gap": 0.0001
+    },
+    {
+      "name": "diabetes",
+      "task": "迴歸",
+      "n_train": 331,
+      "n_holdout": 111,
+      "cv": "RMSE 56.2",
+      "holdout": "53.1",
+      "gap": 3.1
+    },
+    {
+      "name": "digits",
+      "task": "多分類(10)",
+      "n_train": 1347,
+      "n_holdout": 450,
+      "cv": "Acc 0.970",
+      "holdout": "0.969",
+      "gap": 0.0007
+    }
+  ]
+}
