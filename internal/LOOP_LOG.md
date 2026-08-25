@@ -6,9 +6,8 @@
 
 ## 目前狀態
 
-**★ 狀態:前端已重練(2026-08-24/25)+ 文件校準完成(2026-08-25)。** Astro + Tailwind 自訂設計,16 頁 build 零錯誤,計分板全綠(25/25 腳本、0 簡體、0 斷連結)。內容/研究全保留。
-**2026-08-25 文件校準**:清掉所有 Starlight 殘留——刪死檔 `src/content/i18n/zh-TW.json`;CLAUDE.md / README / STANDARDS / MASTER_PLAN / PROMPTS 全部改寫為 Astro+Tailwind 現況;主張數三處不一致(10/12/13)統一為**「登錄 13 條 C1a–C11,12 條 L1+L2、C11 僅 L2、含 1 官方反例 C3」**(landing/claims/README/憲法一致);驗收標準去掉已移除的「站內搜尋」宣稱。
-**2026-08-25 站內搜尋加回(使用者核准,待辦 10)**:Pagefind 靜態索引(build 尾段 `pagefind --site dist`)+ Nav 🔍/Ctrl⌘K modal;16 頁索引、實測「集成」→12 結果、Esc 關閉。CLAUDE.md/README 已同步(搜尋只在 build 後可用)。
+**★ 狀態(2026-08-25):已上線 https://sealhack.com,收斂完成 12 頁。** Astro + Tailwind 自訂設計、深色預設;build 12 頁 + 4 redirect 零錯誤、pagefind Indexed 12;計分板全綠(25/25 腳本、0 簡體、0 斷連結);導覽 2 群組(方法論 8 項帶階段序號 / 證據與參考 3 項)、landing 3 段;六階段模型不變。
+**2026-08-25 里程碑(細節見底部各輪紀錄)**:文件校準(主張數統一 13 條 C1a–C11、清 Starlight 殘留)→ Pagefind 搜尋加回(🔍/Ctrl⌘K)→ 部署上線(Workers 靜態資產 + sealhack.com + www 301;push 自動建置部署)→ 收斂 16→14→12 頁(maps/learning→quickstart、resources→claims、0-clean→0-diagnose、5-submit→4-ensemble,皆 301)+ glossary 字典化(302→158 行)。
 
 **審計輪(每小時,現行)** — 目的是**抓不一致、不修錯**。固定六查,只修「不會有第二種正確答案」的錯,其餘寫進待辦標「待使用者判斷」:
 1. `npm run build` 零錯誤零警告(12 頁 + 4 redirect;pagefind Indexed 12)。
