@@ -90,7 +90,7 @@ Q5. 是 code 競賽嗎?        → 決定算力預算與推論限制
 | 專案 | 建議 |
 |---|---|
 | CV | StratifiedKFold(5)。若有實體重複 → StratifiedGroupKFold |
-| 指標 | AUC → rank 平均整合,不需校準<br>LogLoss → 需要校準,clip 極端值 |
+| 指標 | AUC → 不需校準;整合預設機率平均,尺度差異大才轉 rank<br>LogLoss → 需要校準,clip 極端值 |
 | 起手模型 | LightGBM(`objective='binary'`) |
 | 多樣化 | XGBoost / CatBoost / Logistic / MLP / TabPFN(≤5 萬列) |
 | 特徵重點 | 群組聚合、frequency encoding、類別兩兩互動、target encoding(fold 內) |

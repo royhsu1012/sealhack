@@ -1,5 +1,7 @@
 # Claude Code 執行 Prompts v5(最終版)
 
+> ⚠️ 已過時(歷史存檔)。這是原始 Starlight 版的逐階段建置 prompts;前端已於 2026-08 打掉重練為 Astro + Tailwind 自訂設計。保留供追溯,勿照此重建。
+
 前置:解壓 sealhack_kit.zip,在該目錄開 Claude Code。
 逐階段貼,驗收通過才進下一階段。CLAUDE.md 會被自動讀取,是最高準則。
 

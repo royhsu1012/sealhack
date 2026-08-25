@@ -1,11 +1,11 @@
 ---
 title: 主張登錄表與 LB 教條
-description: 方法論的每條主張都附可重跑的驗證實驗。12 條核心主張全數通過文獻+沙盒雙驗證,含 1 個官方反例;修訂史全保留。
+description: 方法論的每條主張都附可重跑的驗證實驗。登錄 13 條主張(C1a–C11),12 條文獻+沙盒雙驗證、C11 僅沙盒待補文獻,含 1 個官方反例;修訂史全保留。
 ---
 
 import ClaimsTable from '../../components/ClaimsTable.astro';
 import ValidationList from '../../components/ValidationList.astro';
-import { Aside } from '@astrojs/starlight/components';
+import Aside from '../../components/Aside.astro';
 
 方法論不是文件,是一組可測試的主張。每條主張標註驗證等級:**L1** = 文獻收斂(SOTA 系統獨立採用同設計)、**L2** = 沙盒實驗證實(可執行,見下方腳本)、**L3** = 實戰驗證(真比賽)。
 
@@ -30,7 +30,30 @@ import { Aside } from '@astrojs/starlight/components';
 
 ## 收斂聲明
 
-十條核心主張全部達到 L1 + L2。驗證過程共推翻並修訂了四處原始表述(C1 門檻、C3 前提、C7a 教條、C8 條件強度),修訂史全數保留於登錄表。首個 L3 端到端數據點已由[鐵達尼真提交](/cases/titanic/)取得(內部 CV 高估真實 LB 0.06~0.09)。方法論層面就此收斂,後續修改須引新文獻或新增 L2 實驗,否則不動。
+登錄 13 條主張(C1a–C11):12 條達 L1 + L2 雙驗證,C11 目前僅 L2(rank 平均校準,文獻待補)。驗證過程共推翻並修訂了四處原始表述(C1 門檻、C3 前提、C7a 教條、C8 條件強度),修訂史全數保留於登錄表;其中 C3 保留 1 個官方反例(集成無「實力相近」前提時反而有害)。首個 L3 端到端數據點已由[鐵達尼真提交](/cases/titanic/)取得(內部 CV 高估真實 LB 0.06~0.09)。方法論層面就此收斂,後續修改須引新文獻或新增 L2 實驗,否則不動。
+
+## 框架校準:我們測過的民間智慧
+
+方法論不只收錄「大家都這麼說」的技巧——我們逐一**實測**了常見斷言。沒有一條校準是一開始就知道的,都是跑完實驗才修正措辭。結果分三類(全部可重跑,見下方腳本索引):
+
+### 一、現代 GBDT 比民間智慧穩健(別過度操心)
+
+- **rank 平均不是普遍較優**:成員同為 [0,1] 機率、尺度相近時沒優勢甚至略差,只在尺度差異大時才有益(`rank_vs_prob_auc.py`)。
+- **「gain 高估高基數」是隨機森林 MDI 的毛病,LightGBM 相當穩健**:histogram binning 抵消了「分裂點多」的優勢(`importance_gain_vs_perm.py`;原始偏誤出處 Strobl et al. 2007)。
+- **群組聚合的大頭是「加聚合本身」(+0.16)**:差值/比值相對原始聚合的額外增益很小(不到 0.004),模型多半能自行組合(`group_aggregation_features.py`)。
+- **多 seed 平均是保險**:永遠不虧,但增益隨模型 seed 方差而定——穩定的 LightGBM 上很小(`seed_averaging.py`)。
+- **frequency encoding 對樹的邊際小**:給 LightGBM 已有的類別欄再加頻率,幾乎不加分(+0.0001;樹已學到每類別效果),對線性模型才明顯(`frequency_encoding.py`)。
+
+### 二、根本限制:手動特徵真的補得上
+
+- **比值/除法**:軸對齊的樹學不好,手動給 `x/z` 有效(線性 +0.007、樹 +0.003;`ratio_feature.py`)。
+- **log1p 只在偏斜時有益**:近對稱反而略差,target 的 skew 越重效益越大(`log1p_regression.py`)。
+
+### 三、診斷工具:偵測強,行動需判斷
+
+- **對抗驗證**:偵測分布漂移(adversarial AUC 0.5↔1.0)、定位漂移源特徵(8/8)是強項;但「丟棄」是條件式——純 ID/洩漏才丟,同時帶真訊號的別急著丟(`adversarial_validation_test.py`)。
+
+> 一句話:很多表格建議源自舊模型(隨機森林、線性),現代 GBDT 常已內建防護;真正該手動補的,是模型結構上學不好的形狀(比值、偏斜)與小樣本的統計工具(配對比較)。
 
 ## 驗證腳本索引
 
@@ -38,9 +61,27 @@ import { Aside } from '@astrojs/starlight/components';
 
 <ValidationList />
 
-## 參考來源
+## 學術來源與延伸閱讀
 
-- NVIDIA / Kaggle Grandmasters,《The Kaggle Grandmasters Playbook: 7 Battle-Tested Modeling Techniques for Tabular Data》(2025-09)
-- Chris Deotte,《Winning a Kaggle Competition with Generative AI–Assisted Coding》(2026-04)
-- Prior Labs,《TabPFN-2.5: Advancing the State of the Art in Tabular Foundation Models》(arXiv:2511.08667)
-- Nadeau & Bengio,《Inference for the Generalization Error》(2003)——重複 k 折配對 t 值膨脹的依據
+本站的流程不是憑空主張——每個核心技術都對得上原始論文或業界公認的實務指南。以下引用皆經查證(附可驗證連結)。
+
+### 核心技術的原始論文
+
+| 技術(對應章節) | 來源 | 連結 |
+|---|---|---|
+| Stacking 堆疊(集成) | Wolpert, *Stacked Generalization*, Neural Networks 5(2), 1992 | [doi:10.1016/S0893-6080(05)80023-1](https://doi.org/10.1016/S0893-6080(05)80023-1) |
+| 集成選擇 / 爬山(集成) | Caruana, Niculescu-Mizil, Crew & Ksikes, *Ensemble Selection from Libraries of Models*, ICML 2004 | [doi:10.1145/1015330.1015432](https://doi.org/10.1145/1015330.1015432) |
+| 目標編碼(特徵迭代) | Micci-Barreca, *A Preprocessing Scheme for High-Cardinality Categorical Attributes*, SIGKDD Explorations 3(1), 2001 | [doi:10.1145/507533.507538](https://doi.org/10.1145/507533.507538) |
+| 配對比較 / CV 推論(特徵迭代、小樣本) | Nadeau & Bengio, *Inference for the Generalization Error*, Machine Learning 52, 2003 —— 重複 k 折配對 t 值膨脹、corrected resampled t-test 的依據 | [doi:10.1023/A:1024068626366](https://doi.org/10.1023/A:1024068626366) |
+| 知識蒸餾(集成) | Hinton, Vinyals & Dean, *Distilling the Knowledge in a Neural Network*, NIPS 2014 Workshop | [arXiv:1503.02531](https://arxiv.org/abs/1503.02531) |
+| 偽標籤(集成) | Lee, *Pseudo-Label: The Simple and Efficient Semi-Supervised Learning Method for Deep Neural Networks*, ICML 2013 Workshop | ICML 2013 WREPL |
+| TabPFN(多樣化基線) | Prior Labs & Univ. Freiburg, *TabPFN-2.5: Advancing the State of the Art in Tabular Foundation Models*, 2025 | [arXiv:2511.08667](https://arxiv.org/abs/2511.08667) |
+| 消融驅動選題(特徵迭代) | Google, *MLE-STAR: Machine Learning Engineering Agent via Search and Targeted Refinement*, 2025 | [arXiv:2506.15692](https://arxiv.org/abs/2506.15692) |
+
+### 實務指南與知名專案
+
+- NVIDIA / Kaggle Grandmasters(Titericz、Deotte),[*The Kaggle Grandmasters Playbook: 7 Battle-Tested Modeling Techniques for Tabular Data*](https://developer.nvidia.com/blog/the-kaggle-grandmasters-playbook-7-battle-tested-modeling-techniques-for-tabular-data)(2025)—— 本框架六階段流程的主要藍本。
+- MLWave,[*Kaggle Ensembling Guide*](https://mlwave.com/kaggle-ensembling-guide/)([程式碼](https://github.com/MLWave/Kaggle-Ensemble-Guide))—— 集成實務的經典入門。
+- Abhishek Thakur,[*Approaching (Almost) Any Machine Learning Problem*](https://github.com/abhishekkrthakur/approachingalmost)—— 端到端解題流程的免費書(含 PDF)。
+- Chris Deotte,《Winning a Kaggle Competition with Generative AI–Assisted Coding》(2026)——「先診斷再讓 AI 動手」的實戰印證。
+- Carlens, H.,《State of Machine Learning Competitions in 2025》,[ML Contests](https://mlcontests.com/state-of-machine-learning-competitions-2025/)—— 解題地圖三軸與軌道分類的實證基礎。

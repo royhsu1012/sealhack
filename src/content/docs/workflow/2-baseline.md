@@ -39,3 +39,9 @@ TabPFN-2.5 支援到 5 萬筆資料、2000 個特徵,在 TabArena 上已超越�
 - 它與 GBDT 的誤差結構差異大,即使單獨分數略低,**在 stack 裡價值很高**。
 
 ---
+
+
+## 延伸閱讀
+
+- **TabPFN(§4.2)**:Prior Labs & Univ. Freiburg, *TabPFN-2.5*, 2025 — [arXiv:2511.08667](https://arxiv.org/abs/2511.08667)
+- **六階段流程的藍本**:NVIDIA / Kaggle Grandmasters, [*The Kaggle Grandmasters Playbook*](https://developer.nvidia.com/blog/the-kaggle-grandmasters-playbook-7-battle-tested-modeling-techniques-for-tabular-data)(2025)

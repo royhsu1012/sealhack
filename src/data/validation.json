@@ -90,6 +90,60 @@
       "kind": "infra",
       "validates": "一鍵重跑全套 + 判決彙整",
       "runtime_sec": null
+    },
+    {
+      "file": "rank_vs_prob_auc.py",
+      "kind": "claim",
+      "validates": "C11 AUC rank 平均 vs 機率平均(尺度相近 vs 尺度差異大)",
+      "runtime_sec": null
+    },
+    {
+      "file": "group_aggregation_features.py",
+      "kind": "claim",
+      "validates": "群組聚合:加聚合本身是大頭(+0.16),差值/比值額外增益小(<0.004)",
+      "runtime_sec": null
+    },
+    {
+      "file": "seed_averaging.py",
+      "kind": "claim",
+      "validates": "多 seed 平均:更穩、不低於單 seed;增益隨模型方差而定(穩定模型小)",
+      "runtime_sec": null
+    },
+    {
+      "file": "log1p_regression.py",
+      "kind": "claim",
+      "validates": "log1p(target):效益隨 target 偏斜度而定(近對稱略差、重偏斜大益)",
+      "runtime_sec": null
+    },
+    {
+      "file": "adversarial_validation_test.py",
+      "kind": "claim",
+      "validates": "對抗驗證:偵測漂移 AUC 0.5↔1.0、定位源特徵 8/8;丟棄是條件式(純洩漏才丟)",
+      "runtime_sec": null
+    },
+    {
+      "file": "importance_gain_vs_perm.py",
+      "kind": "claim",
+      "validates": "gain vs permutation 重要度:LightGBM gain 對高基數噪音穩健(9% 排 6/7);permutation 正確≈0",
+      "runtime_sec": null
+    },
+    {
+      "file": "ratio_feature.py",
+      "kind": "claim",
+      "validates": "§5.2F 手動比值:x/z 訊號下,加比值特徵線性 +0.007、樹 +0.003(確認樹難自學除法)",
+      "runtime_sec": null
+    },
+    {
+      "file": "frequency_encoding.py",
+      "kind": "claim",
+      "validates": "frequency encoding:對已有類別欄的 LightGBM 邊際小(+0.0001);對線性/類別難用時才有效",
+      "runtime_sec": null
+    },
+    {
+      "file": "pseudo_labeling.py",
+      "kind": "claim",
+      "validates": "§6.3 偽標籤:標籤稀少 +0.0042(勝 6/8)、充足 −0.0026(勝 0/8)——資料不多時才值得",
+      "runtime_sec": null
     }
   ]
 }

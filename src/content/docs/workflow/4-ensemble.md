@@ -64,7 +64,8 @@ def blend(preds, weights):                # 用同一組權重混合 OOF / test 
 > 重建誤差 1.13;正解和=1.0、誤差 ~0;test AUC 0.7232 vs 0.7171)。混合 OOF 與 test **必用同一組 weights**。
 
 **加速技巧**:用 CuPy 向量化,一次並行評估上千組權重組合。
-**AUC 專用**:合併前先把每個 OOF 轉成 rank(`scipy.stats.rankdata` 後除以 n),再加權平均,通常比直接平均機率好。
+**AUC 專用(2026-08 修訂)**:rank 平均(`scipy.stats.rankdata` 後除以 n 再平均)**不是普遍較優**——L2 實驗(rank_vs_prob_auc.py,20 seeds)顯示成員同為 [0,1] 機率、尺度相近時 rank 平均沒有優勢、甚至略差(勝 4/20、均值 −0.0005);**只在成員分數尺度差異大時才有益**(把一個成員 ×50 模擬未正規化輸出後,rank 平均 10/10 勝、+0.0077)。
+> 修訂史:原措辭「rank 平均通常比直接平均機率好」被此實驗推翻,改為條件式。實務:預設用(加權)機率平均;成員尺度明顯不同(如混入未校準的 margin/decision\_function)時才轉 rank。
 
 ### 6.2 Stacking(第二層模型)
 
@@ -78,7 +79,9 @@ def blend(preds, weights):                # 用同一組權重混合 OOF / test 
 
 ### 6.3 Pseudo-Labeling(資料不多時值得)
 
-用最強的模型給 test(或外部無標資料)打軟標籤,混回訓練集重訓。
+用最強的模型給 test(或外部無標資料)打軟標籤,混回訓練集重訓。冠軍方案常用的半監督招式。
+
+**實測證實(pseudo_labeling.py,8 seeds)**:「資料不多時值得」有明確**交叉點**——標籤稀少(n=300)時 base 0.8831 → pseudo 0.8872(+0.0042,勝 6/8);標籤充足(n=3000)時反而 base 0.9331 → pseudo 0.9305(−0.0026,勝 0/8)。**標籤已充足就別做**,只會引入偽標籤噪音。
 
 **注意事項**:
 - 用**軟標籤**(機率)而非硬 0/1,資訊更多、噪聲更低,還可以過濾低信心樣本。
@@ -90,3 +93,11 @@ def blend(preds, weights):                # 用同一組權重混合 OOF / test 
 把所有 OOF / test 預測當作蒸餾目標,訓練**一個**新的強單模型。好處是又產出一個高質量、且與原模型高度不同的整合成員。
 
 ---
+
+
+## 延伸閱讀
+
+- **Stacking 原始論文**:Wolpert, *Stacked Generalization*, Neural Networks 1992 — [doi:10.1016/S0893-6080(05)80023-1](https://doi.org/10.1016/S0893-6080(05)80023-1)
+- **爬山集成(§6.1 的來源)**:Caruana et al., *Ensemble Selection from Libraries of Models*, ICML 2004 — [doi:10.1145/1015330.1015432](https://doi.org/10.1145/1015330.1015432)
+- **知識蒸餾 / 偽標籤**:Hinton, Vinyals & Dean (2015) [arXiv:1503.02531](https://arxiv.org/abs/1503.02531) / Lee, *Pseudo-Label*, ICML 2013 Workshop
+- **實務入門**:MLWave, [*Kaggle Ensembling Guide*](https://mlwave.com/kaggle-ensembling-guide/)

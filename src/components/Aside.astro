@@ -1,0 +1,16 @@
+---
+// 取代 Starlight 的 <Aside>。用法:<Aside type="caution" title="...">內容</Aside>
+interface Props { type?: 'note' | 'tip' | 'caution'; title?: string; }
+const { type = 'note', title } = Astro.props;
+const styles = {
+  note:    { c: '#3b82f6', icon: 'ℹ', label: '注意' },
+  tip:     { c: '#22c55e', icon: '✓', label: '訣竅' },
+  caution: { c: '#f59e0b', icon: '⚠', label: '當心' },
+}[type];
+---
+<aside class="my-5 rounded-lg border-l-4 p-4" style={`border-color:${styles.c};background:var(--bg-soft)`}>
+  <div class="font-semibold flex items-center gap-2 mb-1" style={`color:${styles.c}`}>
+    <span>{styles.icon}</span><span>{title ?? styles.label}</span>
+  </div>
+  <div class="prose"><slot /></div>
+</aside>

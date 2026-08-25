@@ -2,14 +2,17 @@
 
 機器學習競賽方法論教學網站 —— **先學會診斷,再讓 AI 動手**。
 
-AI vibecoding 之前的方法論層:教你怎麼問對、怎麼驗證。差異化資產是**每一條方法論主張都附一支可重跑的驗證實驗**;12 條核心主張全數通過文獻 + 沙盒雙驗證(含 1 個官方反例),並用鐵達尼真提交拿到第一個真實 Kaggle 排行榜數據點。
+AI vibecoding 之前的方法論層:教你怎麼問對、怎麼驗證。差異化資產是**每一條方法論主張都附一支可重跑的驗證實驗**;登錄 13 條主張(C1a–C11),12 條通過文獻 + 沙盒雙驗證、C11 僅沙盒待補文獻,含 1 個官方反例,並用鐵達尼真提交拿到第一個真實 Kaggle 排行榜數據點。
 
 ## 這個 repo 長怎樣(研究與前端不分離)
 
 ```text
-src/                前端(Astro Starlight 網站)
-  content/docs/     頁面:index / workflow(八頁)/ claims / cases/titanic / maps / glossary
-  components/       ClaimsTable · ValidationList · CasesTable(靜態渲染 src/data/*.json)
+src/                前端(Astro + Tailwind v4 自訂設計,深色預設)
+  pages/            index.astro(自訂 landing)· [...slug].astro(渲染 content/docs 每頁)
+  content/docs/     頁面內容:workflow(快速版 + 八頁)/ claims / cases/titanic / resources / maps / glossary
+  layouts/          Base(shell + Nav + Footer)· Doc(側欄 + 內文 + TOC + 上/下頁)
+  components/       Nav · Sidebar · Footer · Aside · ClaimsTable · ValidationList · CasesTable
+  nav.ts            導覽結構      styles/global.css   Tailwind + 設計 tokens
   data/*.json       主張 / 案例 / 驗證索引(手維護原始檔)
 validation/         研究(Python 腳本,數字的唯一事實來源);build 時複製進 public/validation/ 供下載
 scripts/            copy-validation.mjs(唯一 build 前置,把研究內嵌網站)
@@ -24,7 +27,7 @@ CLAUDE.md STANDARDS.md   專案憲法與品質標準
 ```bash
 npm install
 npm run dev      # 預覽 http://localhost:4321
-npm run build    # = copy-validation + astro build,純 Node
+npm run build    # = copy-validation → astro build → pagefind 索引 dist(站內搜尋;dev 無索引)
 ```
 
 ## 重跑研究(驗證方法論的每條主張)

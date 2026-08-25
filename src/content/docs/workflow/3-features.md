@@ -37,6 +37,8 @@ for key in ["user_id", "category", "region"]:
         df[f"{col}_sub_{key}_mean"] = df[col] - df[f"{key}_{col}_mean"]
 ```
 > 差值 / 比值往往比原始聚合值更有訊號。
+>
+> **實測校準(group_aggregation_features.py,8 seeds)**:最大的收益是**加入群組聚合本身**——在一份「x 被群組基線混淆」的資料上,加聚合特徵讓 AUC +0.16(樹與線性皆然)。但**差值/比值相對原始聚合值的額外增益很小**(樹 +0.003、線性 +0.0004),因為只要 x 與聚合值都在,模型多半能自行組合。務實結論:**一定要加群組聚合;差值/比值是錦上添花(對樹略有幫助),不是主力。**
 
 **B. 類別兩兩組合**(實測有效,曾靠這招拿過第一)
 ```python
@@ -46,7 +48,7 @@ for i, c1 in enumerate(CATS[:-1]):
 ```
 8 個類別列 → 28 個新互動特徵。
 
-**C. Frequency Encoding**:`df[c].map(df[c].value_counts())` — 便宜且常有效。
+**C. Frequency Encoding**:`df[c].map(df[c].value_counts())` — 便宜(一行)。**實測校準(frequency_encoding.py,8 seeds)**:對**已有該類別欄的 LightGBM**,再加 frequency 幾乎不加分(頻率帶訊號時 +0.0001、無關時 −0.0008)——樹已能學到每類別效果。對**線性模型**或類別本身難用(被丟棄)時才明顯。
 
 **D. Target Encoding**:⚠️ **必須在 fold 內計算**,加平滑,否則直接洩漏。
 ```python
@@ -59,14 +61,14 @@ def target_encode(tr, va, col, y, smooth=20):
 
 **E. 時間特徵**:小時/星期/月、週期編碼 `sin/cos`、距上次事件的時間差、滾動視窗統計(注意只用過去)。
 
-**F. 數值互動**:比值、差值、乘積、多項式。GBDT 學不好除法,手動給它。
+**F. 數值互動**:比值、差值、乘積、多項式。GBDT 學不好除法,手動給它。**實測證實(ratio_feature.py,8 seeds)**:訊號是 x/z 時,手動加 x/z 一欄,線性 +0.007、樹 +0.003——樹只能用軸對齊分裂近似比值、線性根本算不出,所以這招確實有效(增益雖不大但方向一致)。
 
 **G. 降維產物**:PCA / UMAP / SVD 的前幾個主成分當作額外特徵。
 
 ### 5.3 特徵篩選
 
 - 用 **permutation importance** 或 **null importance**(把 target 打亂當基準),不要只看 `gain`。
-- `gain` 會系統性高估高基數特徵。
+- **`gain` 對高基數的高估要看模型(校準)**:這是不純度(MDI)重要度的經典偏誤,原始出處是隨機森林([Strobl et al. 2007](https://pmc.ncbi.nlm.nih.gov/articles/PMC1796903/))。但實測(importance_gain_vs_perm.py,8 seeds)顯示 **LightGBM 的 gain 相當穩健**——一個高基數純噪音欄只佔 9% gain、排名 6/7,正則與否皆然(histogram binning 抵消了「分裂點多」的優勢)。permutation 則在所有情況都正確壓到 ≈0。**特徵篩選仍以 permutation / null importance 最保險。**
 - 篩選後重跑,確認 CV 沒掉。
 
 ---
@@ -86,3 +88,11 @@ def target_encode(tr, va, col, y, smooth=20):
 另一條重要紀律:**不要照抄別人的獲獎方案**。任何從論壇或過往方案借來的技巧,都必須在你自己的切分與算力預算下重新驗證一次。
 
 ---
+
+
+## 延伸閱讀
+
+- **目標編碼(§5.2D)**:Micci-Barreca, *A Preprocessing Scheme for High-Cardinality Categorical Attributes*, SIGKDD 2001 — [doi:10.1145/507533.507538](https://doi.org/10.1145/507533.507538)
+- **消融驅動選題(§5.0)**:Google, *MLE-STAR*, 2025 — [arXiv:2506.15692](https://arxiv.org/abs/2506.15692)
+- **配對比較的統計基礎(§5.1)**:Nadeau & Bengio, *Inference for the Generalization Error*, 2003 — [doi:10.1023/A:1024068626366](https://doi.org/10.1023/A:1024068626366)
+- **特徵重要度偏誤(§5.3)**:Strobl et al., *Bias in Random Forest Variable Importance Measures*, BMC Bioinformatics 2007 — [PMC1796903](https://pmc.ncbi.nlm.nih.gov/articles/PMC1796903/)

@@ -1,0 +1,57 @@
+---
+import Base from './Base.astro';
+import Sidebar from '../components/Sidebar.astro';
+import { FLAT, href } from '../nav';
+
+interface Props { title: string; description?: string; headings?: { depth: number; slug: string; text: string }[]; }
+const { title, description, headings = [] } = Astro.props;
+const path = Astro.url.pathname;
+const idx = FLAT.findIndex((i) => href(i.slug) === path);
+const prev = idx > 0 ? FLAT[idx - 1] : null;
+const next = idx >= 0 && idx < FLAT.length - 1 ? FLAT[idx + 1] : null;
+const toc = headings.filter((h) => h.depth === 2);
+---
+<Base title={title} description={description}>
+  <div class="mx-auto max-w-7xl px-4 grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)_200px] gap-8 py-8">
+    <!-- 側欄 -->
+    <div class="hidden lg:block" data-pagefind-ignore>
+      <div class="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pr-2">
+        <Sidebar />
+      </div>
+    </div>
+    <!-- 內文 -->
+    <article class="min-w-0">
+      <h1 class="text-3xl font-extrabold mb-2">{title}</h1>
+      {description && <p class="text-lg mb-6" style="color:var(--fg-muted)">{description}</p>}
+      <div class="prose">
+        <slot />
+      </div>
+      <!-- 上/下頁 -->
+      <div class="mt-14 pt-6 border-t grid grid-cols-2 gap-4" style="border-color:var(--border)" data-pagefind-ignore>
+        <div>{prev && (
+          <a href={href(prev.slug)} class="block p-3 rounded-lg border hover:opacity-80" style="border-color:var(--border)">
+            <div class="text-xs" style="color:var(--fg-muted)">上一頁</div>
+            <div class="font-semibold mt-0.5">{prev.label}</div>
+          </a>)}</div>
+        <div>{next && (
+          <a href={href(next.slug)} class="block p-3 rounded-lg border hover:opacity-80 text-right" style="border-color:var(--border)">
+            <div class="text-xs" style="color:var(--fg-muted)">下一頁</div>
+            <div class="font-semibold mt-0.5">{next.label}</div>
+          </a>)}</div>
+      </div>
+    </article>
+    <!-- TOC -->
+    <div class="hidden lg:block" data-pagefind-ignore>
+      {toc.length > 0 && (
+        <div class="sticky top-20 text-sm">
+          <div class="text-xs font-semibold uppercase tracking-wide mb-2" style="color:var(--fg-muted)">本頁內容</div>
+          <ul class="space-y-1.5">
+            {toc.map((h) => (
+              <li><a href={`#${h.slug}`} class="block hover:opacity-100" style="color:var(--fg-muted)">{h.text}</a></li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  </div>
+</Base>

@@ -1,0 +1,23 @@
+---
+import { NAV, href } from '../nav';
+const path = Astro.url.pathname;
+---
+<nav class="text-sm">
+  {NAV.map((g) => (
+    <div class="mb-5">
+      {g.group && <div class="text-xs font-semibold uppercase tracking-wide mb-2" style="color:var(--fg-muted)">{g.group}</div>}
+      <ul class="space-y-0.5">
+        {g.items.map((it) => {
+          const active = path === href(it.slug);
+          return (
+            <li>
+              <a href={href(it.slug)} class="block px-3 py-1.5 rounded-md transition"
+                 style={active ? 'background:color-mix(in srgb, var(--brand) 15%, transparent);color:var(--brand);font-weight:600'
+                               : 'color:var(--fg-muted)'}>{it.label}</a>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  ))}
+</nav>

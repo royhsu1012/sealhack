@@ -4,7 +4,7 @@ description: 六階段端到端示範。基調不是「拿高分」,是方法論
 ---
 
 import CasesTable from '../../../components/CasesTable.astro';
-import { Aside } from '@astrojs/starlight/components';
+import Aside from '../../../components/Aside.astro';
 
 鐵達尼(訓練池 n=623)是小樣本題,重點不在分數高,在**方法論如何得到一個誠實的數字**——而且它預測到了自己在真實排行榜上的衰減。全程只看 CV,最後才由 holdout 與真實 Kaggle LB 揭曉。腳本:[`case_titanic_v2.py`](/validation/case_titanic_v2.py)、[`submit_titanic.py`](/validation/submit_titanic.py)。
 

@@ -77,6 +77,26 @@ def check_scripts():
         rows.append((f.name, ok, utf8, doc))
     return rows
 
+def scan_links():
+    """內部連結稽核:content 的 /... 連結要指向存在的頁面路由或 validation 檔(從原始檔推,不依賴 build)。"""
+    docs = ROOT / "src" / "content" / "docs"
+    routes = {"/"}
+    for f in list(docs.rglob("*.md")) + list(docs.rglob("*.mdx")):
+        rel = f.relative_to(docs).as_posix().rsplit(".", 1)[0]
+        routes.add("/" if rel == "index" else "/" + rel + "/")
+    valfiles = {"/validation/" + p.name for p in (ROOT / "validation").glob("*.py")}
+    valfiles.add("/validation/requirements.txt")
+    bad = []
+    for f in list(docs.rglob("*.md")) + list(docs.rglob("*.mdx")):
+        for m in re.finditer(r"\]\((/[^)\s#]+)", read(f)):
+            url = m.group(1)
+            if url.startswith("/validation/"):
+                if url not in valfiles: bad.append((f.name, url))
+            else:
+                norm = url if url.endswith("/") else url + "/"
+                if norm not in routes: bad.append((f.name, url))
+    return bad
+
 def check_requirements():
     p = ROOT / "validation" / "requirements.txt"
     if not p.exists(): return False, "缺檔"
@@ -91,7 +111,7 @@ def check_log():
     has_status = "## 目前狀態" in s; rounds = len(re.findall(r"^## 第 \d+ 輪", s, re.M))
     return has_status and rounds > 0, f"目前狀態 {'✓' if has_status else '✗'},輪次 {rounds}"
 
-simp = scan_simplified(); opencc = scan_opencc(); fences = scan_bare_fences()
+simp = scan_simplified(); opencc = scan_opencc(); fences = scan_bare_fences(); links = scan_links()
 scripts = check_scripts(); req_ok, req_msg = check_requirements(); log_ok, log_msg = check_log()
 fetch_ok = (ROOT / "validation" / "fetch_data.py").exists()
 n_code = sum(1 for _, _, c in simp if c); n_prose = len(simp) - n_code
@@ -106,12 +126,14 @@ print(f"  [S4] UTF-8 防呆 / docstring     {n_utf8}/{len(scripts)} / {n_doc}/{l
 print(f"  [S4] requirements 全 pin        {'✓' if req_ok else '✗'}   {req_msg}")
 print(f"  [S4] fetch_data.py 存在          {'✓' if fetch_ok else '✗'}")
 print(f"  [S6] 無語言標籤的 code fence    {len(fences):>4}   目標 0")
+print(f"  [S6] 內部斷連結                 {len(links):>4}   目標 0")
 print(f"  [日誌] LOOP_LOG 結構             {'✓' if log_ok else '✗'}   {log_msg}")
 
 if "-v" in sys.argv:
     print("\n簡體字行:"); [print(f"  {f}:{i} [{'code' if c else 'prose'}]") for f, i, c in simp]
     print("OpenCC:"); [print(f"  {f}: {w} ×{n}") for f, w, n in opencc]
     print("裸 fence:"); [print(f"  {f}:{i}") for f, i in fences]
+    print("斷連結:"); [print(f"  {f}: {u}") for f, u in links]
     print("腳本:"); [print(f"  {n}: compile={ok} utf8={u} doc={d}") for n, ok, u, d in scripts]
 
 hard = [n for n, ok, _, _ in scripts if not ok] + ([] if req_ok else ["requirements"]) \

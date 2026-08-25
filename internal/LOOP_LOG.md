@@ -1,9 +1,25 @@
 # SealHack 持續優化迴圈日誌
 
-> 每 30 分鐘一輪,流程見 `.claude/skills/sealhack-loop/SKILL.md`,標準見 `STANDARDS.md`。
+> 兩種輪:①**方法論研究輪**(暫停,要續研究 `/loop`)②**專案審計輪(每小時,現行)**,見下方「審計輪」。
+> 流程見 `.claude/skills/sealhack-loop/SKILL.md`,標準見 `STANDARDS.md`。
 > 頂部「目前狀態」每輪改寫;「規則變更」與輪次紀錄只追加。舊輪次壓成一行(整理輪處理)。
 
 ## 目前狀態
+
+**★ 狀態:前端已重練(2026-08-24/25)+ 文件校準完成(2026-08-25)。** Astro + Tailwind 自訂設計,16 頁 build 零錯誤,計分板全綠(25/25 腳本、0 簡體、0 斷連結)。內容/研究全保留。
+**2026-08-25 文件校準**:清掉所有 Starlight 殘留——刪死檔 `src/content/i18n/zh-TW.json`;CLAUDE.md / README / STANDARDS / MASTER_PLAN / PROMPTS 全部改寫為 Astro+Tailwind 現況;主張數三處不一致(10/12/13)統一為**「登錄 13 條 C1a–C11,12 條 L1+L2、C11 僅 L2、含 1 官方反例 C3」**(landing/claims/README/憲法一致);驗收標準去掉已移除的「站內搜尋」宣稱。
+**2026-08-25 站內搜尋加回(使用者核准,待辦 10)**:Pagefind 靜態索引(build 尾段 `pagefind --site dist`)+ Nav 🔍/Ctrl⌘K modal;16 頁索引、實測「集成」→12 結果、Esc 關閉。CLAUDE.md/README 已同步(搜尋只在 build 後可用)。
+
+**審計輪(每小時,現行)** — 目的是**抓不一致、不修錯**。固定六查,只修「不會有第二種正確答案」的錯,其餘寫進待辦標「待使用者判斷」:
+1. `npm run build` 零錯誤零警告(16 頁)。
+2. `python .claude/skills/sealhack-loop/scripts/check.py` 硬錯誤 0、計分板不得變差。
+3. **文件對現況**:grep 有無新的 Starlight/舊路徑/已刪檔殘留;CLAUDE.md 結構、驗收標準、頁數是否仍真。
+4. **數字對資料**:散文裡的主張數、LB、統計量對得上 src/data/*.json 與 validation/ 腳本輸出(S1)。
+5. **內部連結**:check.py 斷連結 = 0;nav.ts 每個 slug 都有對應頁。
+6. **無回歸**:landing 的 nClaims/nScripts/bestLB 動態值與敘述一致;Aside 每頁 ≤3。
+只發現、不亂改:方法論結論、文案、定位句、刪整節 → 一律寫待辦等使用者,不自行改(§停下來等使用者)。
+
+**使用者一次性動作(loop 不能代勞)**:① `git push origin astro-site:main --force`(新站設 main;舊原型在 legacy-prototype)② Kaggle 競賽頁按 Join 解鎖真提交(待辦 3)③ Cloudflare Pages 部署(build `npm run build`、output `dist`)。
 
 **環境**:`validation/requirements.txt` 已 pin(lightgbm 4.7.0 / sklearn 1.9.0 / pandas 3.0.5 / scipy 1.18.0 / numpy 2.5.2,Python 3.12)。
 本機 venv:`…/scratchpad/.venv`(session 專屬;新 session 用 `uv venv --python 3.12 && uv pip install -r validation/requirements.txt` 重建)。
@@ -13,17 +29,17 @@
 **憑證**:Kaggle token 有效(第 3 輪 venv 唯讀 `kaggle competitions list` 認證通過);Titanic 規則已接受(userHasEntered=True)。
 其他目標競賽需使用者在網站按 Join 接受規則,API 才能下載/提交。**迴圈不得寫入 token,只用唯讀 list 驗證、不 peek 檔案內容。**
 
-**覆現狀態(2026-08-22,本機)**:12 條主張全部與文件一致;C7b 改 5 seeds 相對判準(5/5 ✅);
+**覆現狀態(2026-08-22,本機)**:13 條主張(C1a–C11)全部與文件一致;C7b 改 5 seeds 相對判準(5/5 ✅);
 案例 case_titanic_v2(20 切分:單模 0.8280±0.020、集成 0.8287±0.018、配對差 +0.0007 t=0.26);
 C9/C10 small_n_paired v2(配對差 std ≈ 分數 std 的 1/4;票團有害 0/20、Title/family 1/20;C10 |Δ|≈0.0001)。
 **L3 實戰**:Titanic 真提交 CV 0.8373 → public LB 單模 0.7488 / 集成 0.7727;內部驗證高估 0.06~0.09(§16.8)。
 **多案例(§16.9,multi_case_real.py)**:同一套 harness 在 breast_cancer/diabetes/digits(二分類/迴歸/多分類)皆完成;乾淨資料 CV−holdout ≈ 0,對比 Titanic 0.06~0.09 = 分布差非方法論。
 
-**計分板(第 15 輪終點)**:
+**計分板(2026-08-25 文件校準後)**:
 ```text
   [S5] content/ 簡體字行數           0   (code 0 / prose 0)   目標 0   ✅
   [S5] OpenCC 誤轉次數               0   目標 0                        ✅
-  [S4] validation 腳本可編譯 / UTF-8 / doc   12/12 全數
+  [S4] validation 腳本可編譯 / UTF-8 / doc   25/25 全數
   [S4] requirements 全 pin ✓   fetch_data.py ✓
   [S6] 無語言標籤的 code fence       0   目標 0                        ✅
   [日誌] LOOP_LOG 結構             ✓
@@ -45,7 +61,23 @@ C9/C10 small_n_paired v2(配對差 std ≈ 分數 std 的 1/4;票團有害 0/20�
 5. [x] **修模板與措辭(全部完成)**:§6.1 hill_climb 權重(第 6 輪)、§1.3 shuffle + 標題(第 6 輪)、§3.3 可執行 + AutoML/只信CV 對齊(第 7 輪)、決策統計兩套合一(第 8 輪)
 6. [x] 語言清理:簡體 code block、OpenCC 誤轉、sealhacl.com、CLAUDE.md §2.0 指向、裸 fence 全部歸零(opencc s2t 權威轉換)—— 第 9 輪
 
+## 第二階段任務(2026-08-23,使用者新指示:研究強化框架 + 實際驗證 + 做好引用)
+7. [x] **文章與專案引用(使用者強調)—— 完成(第 16、24 輪)**:claims 頁「學術來源與延伸閱讀」11 個來源全查證真實 URL/DOI;per-workflow 頁 延伸閱讀連結為選配(避免太複雜,先集中一處)。原文續寫如下
+   原:**文章與專案引用**:為每個流程階段找**真實**的學術論文 / 文章 / 知名網站專案來源,
+   用 WebSearch 查證(**不得捏造 URL 或作者**),放進對應 workflow 頁的「延伸閱讀」+ claims 參考來源。
+   核心技術與其經典來源(待查證後填):Stacking(Wolpert 1992)、Ensemble selection/爬山(Caruana 2004)、
+   目標編碼(Micci-Barreca 2001)、配對 t/CV 推論(Nadeau–Bengio 2003、Dietterich 1998)、
+   偽標籤(Lee 2013)、蒸餾(Hinton 2015)、Adversarial validation、MLWave Ensembling Guide、
+   Abhishek Thakur《Approaching (Almost) Any ML Problem》、Kaggle Grandmasters Playbook(NVIDIA)、Chris Deotte。
+8. [x] **快速版 vs 完整版(避免太複雜)—— 第 17 輪**:六階段拆成兩層——「最短完賽路(快速版)」= 每階段只留必要動作;
+   「完整版」= 現有全部深度。對應學習地圖路徑 A / B。可在 workflow 頁用 Aside 或首頁分流。
+9. [ ] **繼續研究強化框架 + L2 驗證**:找框架缺口,新增/修改可執行實驗(維持 STANDARDS S1–S8;數字可追溯)。
+10. [x] **站內搜尋(Pagefind)—— 2026-08-25 使用者核准後加回**:`pagefind@1.5.2` devDep;build 尾段 `pagefind --site dist`;Nav 加 🔍/Ctrl⌘K modal(懶載入 /pagefind/、自訂中文 translations、主題色跟隨 tokens);`data-pagefind-body`(main)+ `data-pagefind-ignore`(側欄/TOC/上下頁)。實測:16 頁索引、「集成」→12 結果連到 /workflow/4-ensemble/、Esc 關閉還原捲動。dev 模式無索引(onerror 顯示提示),與原 Starlight 行為一致。
+
 ## 規則變更(只追加)
+- 2026-08-23|check.py 加「內部斷連結」計分項(S6),從原始檔推路由、不依賴 build|第 29 輪:網站要上線,斷連結是真缺陷,該常設檢查
+- 2026-08-23|S2 加「判準必須測主張本身,不是更嚴格替身」|第 21 輪 seed std 閘門給假 ❌(第二次:第 14 輪 run_all ❌ 啟發式同類)
+- 2026-08-23|新增 S9:所有外部引用(論文/文章/專案)必須 WebSearch 查證存在,附可驗證 URL/DOI;寧缺勿捏造|使用者新指示要求做好引用
 - 2026-08-22|建立 STANDARDS.md(S1–S8)、sealhack-loop skill、check.py 計分板|第 1 輪:C7b 絕對門檻翻盤、案例單次切分當結論、覆現三度被環境問題擋住
 - 2026-08-22|SKILL「停下來」放寬:結論反轉達 S2 就直接改+留修訂史(僅首頁文案/定位句要等)|第 2 輪使用者「你執行」授權
 - 2026-08-22|STANDARDS S4 加「同一案例特徵只定義一次」|第 2 輪:small_n_paired 與 case_titanic base 特徵不同,§16.3 t 值無法與案例互證
@@ -57,7 +89,7 @@ C9/C10 small_n_paired v2(配對差 std ≈ 分數 std 的 1/4;票團有害 0/20�
 ---
 
 ## 輪次摘要(1–3,整理輪壓縮;數字的真正來源在 content/ 與 validation/)
-- **第 1 輪|可重跑性止血**:fetch_data.py(sha256)、7 腳本 UTF-8 防呆、requirements pin、C7b 判準改 5 seeds 相對(5/5 ✅,原絕對門檻在 seed 2 失敗)。覆現 12 條主張全部與文件一致。
+- **第 1 輪|可重跑性止血**:fetch_data.py(sha256)、7 腳本 UTF-8 防呆、requirements pin、C7b 判準改 5 seeds 相對(5/5 ✅,原絕對門檻在 seed 2 失敗)。覆現 13 條主張(C1a–C11)全部與文件一致。
 - **第 2 輪|鐵達尼案例重做 case_titanic_v2.py(20 切分)**:推翻「集成降級 -0.043」為評估不對等 + 268 人單次噪音的假象;同一種量下集成≈單模(+0.0007,t=0.26),CV−私榜 <0.01。改寫 §16.6/16.7、§12.2、CLAUDE.md;舊 case_titanic.py 標為修訂史。
 - **第 3 輪|C9/C10 升級 small_n_paired v2**:共用 case_titanic_v2 特徵(消 S4 分歧);配對差 std≈分數 std 的 1/4;票團有害 0/20、Title/family 僅 1/20(單次的 2.22/2.83 留修訂史);C10 |Δ|≈0.0001。改寫 §16.2/16.3/§15/§12.2。憑證確認有效。
 
@@ -77,98 +109,189 @@ C9/C10 small_n_paired v2(配對差 std ≈ 分數 std 的 1/4;票團有害 0/20�
 - **第 10 輪|抽出 harness.py**(整理輪):通用管線,submit_titanic 改用之並位元重現 round-4;壓縮第 4–6 輪。
 - **第 11 輪|harness 通用性**:harness_selftest.py 驗證二分類+迴歸;metric_fn 約定「越高越好」。
 
-## 第 12 輪|2026-08-22 09:15|harness 多分類 head(阻塞下最後前置)
+## 輪次摘要(12–16,整理輪壓縮)
+- **第 12 輪|harness 多分類 head**:run_cv 改形狀無關((n,) 與 (n,k)),Titanic 位元重現不變;二分類/迴歸/多分類三路徑全測(harness_selftest)。
+- **第 13 輪|多案例真實資料**(multi_case_real.py):breast_cancer/diabetes/digits 皆端到端完成;乾淨資料 CV−holdout≈0,對比 Titanic 分布差(§16.9)。
+- **第 14 輪|run_all.py 一鍵重跑**:11 支全乾淨跑完、零回歸;修 run_all 判準(輸出的 ❌ 是資料/修訂史,非失敗,改用退出碼)。
+- **第 15 輪|整理輪 + 停點**:壓縮 7–11;確認方法論階段達停點(待辦 3 競賽掃描阻塞於使用者接受規則)。
+- **第 16 輪|文章與專案引用(第二階段開工)**:claims 頁「學術來源與延伸閱讀」11 個來源全 WebSearch 查證真實 URL/DOI;立 STANDARDS S9(引用寧缺勿捏造)。
+
+## 輪次摘要(17–22,整理輪壓縮;數字在 validation/ 各腳本 + content/)
+- **第 17 輪|快速版**:workflow/quickstart.md(七步最短完賽路)+ sidebar 首項 + 首頁分流。對應學習地圖路徑 A。
+- **第 18 輪|AUC rank 平均【推翻】**(rank_vs_prob_auc.py):尺度相近時無優勢(勝 4/20)、尺度差異大才有益(10/10,+0.0077);新增 C11 + 修訂史。
+- **第 19 輪|群組聚合差值/比值【校準】**(group_aggregation_features.py):加聚合本身是大頭(+0.16),差值/比值額外增益小(<0.004);克制不加弱主張。
+- **第 20 輪|整理輪**:壓縮 12–16、複查規則。
+- **第 21 輪|多 seed 平均【校準】**(seed_averaging.py):不虧、增益小且隨模型方差而定;S2 加「判準必須測主張本身」。
+- **第 22 輪|log1p【條件化】**(log1p_regression.py):近對稱略差、偏斜越重效益越大;校準 §1.2/§0.5。
+
+## 輪次摘要(23–27,整理輪壓縮;數字在 validation/ 各腳本)
+- **第 23 輪|對抗驗證**(adversarial_validation_test.py):偵測漂移 AUC 0.5↔1.0、定位源特徵 8/8 是強項;「丟棄」條件式(純洩漏才丟)。
+- **第 24 輪|per-page 延伸閱讀(待辦 7 完成)**:集成/特徵/基線頁連到已查證來源(Wolpert/Caruana/Micci-Barreca/TabPFN…)。
+- **第 25 輪|整理輪**:壓縮 17–22。
+- **第 26 輪|gain vs permutation【推翻+校準】**(importance_gain_vs_perm.py):LightGBM gain 對高基數穩健(9% 排 6/7);permutation 保險;Strobl 2007 是 RF MDI 出處(WebSearch 查證)。
+- **第 27 輪|§5.2F 手動比值【確認】**(ratio_feature.py):x/z 訊號下線性 +0.007、樹 +0.003,確認樹難自學除法。
+
+## 第 28 輪|2026-08-23|綜合:框架校準記錄(第二階段收束)
 
 ### 做了什麼
-- 競賽仍全阻塞(6/6)。補齊 harness 最後一個可測路徑:多分類。
-- `run_cv` 改成形狀無關(predict_fn 回 (n,) 或 (n,k),oof/te 自動配合);**Titanic 1-D 路徑位元重現不變**(三檔 sha256 與 round-4 相同)。
-- harness_selftest.py 加多分類任務(4 類,proba 矩陣 + -logloss),斷言 OOF 形狀 (n,k)、每列機率和=1、Acc > 亂猜。
-- harness 文件更新:三路徑已測,T4 時間序列傳 TimeSeriesSplit folds 即可(harness 不假設折來源)。
+- 把第二階段 7 個實測發現綜合成 claims 頁新區「框架校準:我們測過的民間智慧」,分三類:
+  一、現代 GBDT 比民間智慧穩健(rank 平均、gain 高基數、群組差值、seed 平均)——內建防護,別過度操心。
+  二、根本限制、手動補有效(比值/除法、log1p 偏斜)。
+  三、診斷工具(對抗驗證:偵測強、丟棄條件式)。
+- 一句話洞察:很多表格建議源自舊模型(RF/線性),現代 GBDT 常已內建防護;該手動補的是模型結構學不好的形狀 + 小樣本統計工具。
 
-### 數字(harness_selftest.py)
-- 二分類 集成 AUC 0.7852 ≥ 單模 0.7798 ✅|迴歸 集成 RMSE 0.6625 ≪ y std 2.68 ✅|多分類 OOF (3000,4) 機率和=1、Acc 0.4283 > 0.25 ✅。
-- Titanic 位元重現:sub_single/sub_ensemble/cv_report 三檔 sha256 不變。計分板 14/14、0 硬錯誤。
+### 數字/驗證
+- build 16 頁零錯誤;校準區渲染;計分板全綠(腳本 23/23、0 硬錯誤)。
 
 ### 自省
-(a) 順利。改動 run_cv(載重於 Titanic 提交)有風險,續用位元比對驗收——1-D 路徑數值零變化。
+(a) 差點沒發現:MDX 把 `<0.004` 當 JSX 標籤開頭,build 直接失敗——改「不到 0.004」修好。首次遇到,先記著;若再犯就在 check.py 加「.mdx 內 `<數字`」掃描(現在 build 已會抓,不重複加)。
 (b) 新增規則:無。
 
 ### 下一步
-harness 涵蓋 T1/T2/T3/T4 全部規劃軌道且有回歸測試。**內容、模板、語言、工具全部就緒且已驗證。**
-**唯一未完成 = 待辦 3,100% 阻塞於使用者接受競賽規則。** 解鎖前已無可驗證的實作項——
-後續輪次僅確認解鎖狀態;解鎖後第一個競賽即可用 harness 直接開跑。
+第二階段核心產出完成(引用、快速版、7 斷言驗證 + 綜合)。第 29 輪:續個別斷言(收益漸小)或等 Kaggle 解鎖真提交。Kaggle 真提交仍等使用者。
 
 ---
 
-## 第 13 輪|2026-08-22 09:45|多案例真實資料驗證(阻塞下推進根本目標)
+## 第 29 輪|2026-08-23|完整性 QA:內部連結稽核(常設化)
 
 ### 做了什麼
-- 競賽仍全阻塞(6/6)。判斷:使用者根本目標是「不同案例驗證同一方法論能否完成」;Kaggle 卡規則,但可用真實公開資料(sklearn)做端到端驗證推進此目標(非 Kaggle 提交的替代,是補充)。
-- 新增 `validation/multi_case_real.py`:同一套 harness 跑 breast_cancer(二分類)/diabetes(迴歸)/digits(多分類 10 類),各留 25% holdout,報 CV vs holdout。
-- 三案例皆端到端完成;新增 §16.9 + §12.2「多案例」列。
+- 換角度做上線前 QA:掃全站內部連結。結果 ✅ 全部有效(15 路由 + 24 validation 檔,零斷連結)。
+- 把連結稽核**常設進 check.py**(scan_links,從 src/content/docs 原始檔推路由,不依賴 dist/build);計分板新增「[S6] 內部斷連結」;STANDARDS S6 加條款。
 
-### 數字(multi_case_real.py,真實資料 holdout)
-| 案例 | CV | holdout | CV−holdout |
-|---|---|---|---|
-| breast_cancer(二分類)| Acc 0.986 | 0.986 | 0.0001 |
-| diabetes(迴歸)| RMSE 56.2 | 53.1 | 3.1 |
-| digits(多分類)| Acc 0.970 | 0.969 | 0.0007 |
-洞見:乾淨資料 CV−holdout ≈ 0,對比 Titanic CV−LB 0.06~0.09——**差距來源是分布不是方法論**(§2.2 印證)。
+### 數字/驗證
+- 內部斷連結 0/目標 0;計分板全綠(腳本 23/23、簡體/OpenCC/fence/斷連結全 0、0 硬錯誤)。
 
 ### 自省
-(a) 判斷題:第 12 輪說「阻塞下不做假工作」,這輪做了 multi_case——但這不是假工作,是用真實資料推進使用者的根本目標(可完成性 + CV 誠實),且完全可重跑。界線:合成資料堆功能=假工作;真實資料驗證方法論=真進展。
-(b) 新增規則:無。
+(a) 有價值的變化:前 7 輪都在測方法論斷言,這輪轉做網站完整性 QA——同樣是「讓專案更完整」,但抓的是上線缺陷而非民間智慧。連結檢查 build-independent,未來改內容自動守住。
+(b) 新增規則:S6 加「內部連結不得斷」(見規則變更)。
 
 ### 下一步
-harness 已在合成(自我測試)+ 真實(multi_case_real)資料上驗證三種任務。**Kaggle 真提交仍等使用者接受規則。**
-可延伸:多案例再加更大/更髒的真實資料(需下載)或更多任務;但核心已證。優先仍是等使用者解鎖 Kaggle 拿真實 LB。
+第 30 輪為整理輪(每 5 輪)。第二階段主線(引用、快速版、7 斷言驗證+綜合、連結 QA)已紮實;Kaggle 真提交仍等使用者。
 
 ---
 
-## 第 14 輪|2026-08-22 10:15|run_all.py 一鍵重跑(重跑性收尾)
+## 第 30 輪|2026-08-23|整理輪
 
 ### 做了什麼
-- 競賽仍全阻塞(6/6)。補第 0 輪就點名、一直沒做的缺口:整個驗證套件的一鍵重跑器。
-- 新增 `validation/run_all.py`:依序跑 11 支自足腳本,擷取各自判決行,印狀態表;任一非 0 或判決含 ❌ 則退出碼 1。`--fast` 只跑數秒級 4 支。
-- `--fast` 實測:hill_climb_weights / run_experiment_demo / harness_selftest / multi_case_real 全 ok,判決行正確擷取。全套在背景跑(~40 分,含 claims_* 與 case_titanic_v2)。
-
-### 數字(run_all.py --fast)
-- 4 支數秒級腳本狀態全 ok、失敗 0;各判決行(§6.1 bug ✅、§3.3 可執行 ✅、harness 三路徑 ✅、多案例完成 ✅)正確顯示。
-- 全套結果:背景任務,完成後補記。計分板腳本 16/16、0 硬錯誤。
-
-### 自省
-(a) run_all 是「12/12 可重跑」這個差異化資產的機器化收尾——之前靠人肉一支支跑,現在一個指令。屬待辦 1 的正當收尾,非新功能。
-(b) 新增規則:無。
-
-### 全套結果補記(背景完成)
-- 11 支全部乾淨跑完(輸出零 traceback);claims_test.py 單獨確認 exit 0。→ **14 輪修改零回歸**。
-- run_all.py 初版誤報 4 個「FAIL」:判準 `"❌" in stdout` 太粗。那些 ❌ 是腳本的**資料**——
-  claims_test/v3 的原始版依 S3 保留當修訂史(C1/C3/C8 舊結論本就 ❌)、case_titanic_v2 的「集成降級❌不成立」是期望的反轉。
-  **已修 run_all.py:判準改退出碼**(腳本乾淨跑完 = 通過);❌ 數量改為在判決行標註「修訂史/反例」供參。
-
-### 自省(補)
-(a) 好事:全套跑一次就抓到 run_all 判準本身的 bug——驗證器也要被驗證。修訂史含 ❌ 是 S3 的直接後果,判準不能把資料當失敗。
-(b) 新增規則:無(S3 已涵蓋;修正寫進 run_all.py 註解)。
-
-### 下一步
-整套 16 腳本一鍵可重跑且零回歸。**Kaggle 真提交仍等使用者接受規則**——唯一未完成項。
-
----
-
-## 第 15 輪|2026-08-22 10:45|整理輪 + 停點確認
-
-### 做了什麼
-- 競賽仍全阻塞(6/6,連續第 7 輪)。整理輪:壓縮第 7–11 輪為摘要(日誌 255→154 行);複查 STANDARDS S1–S8 與 SKILL 規則,全部可追溯到真實事件,無死規則。
-- 確認已達自然停點:待辦 1/2/4/5/6 全完成,待辦 3 唯一未完成且 100% 阻塞於使用者接受競賽規則。
-- 註記:本迴圈由 cron(每 30 分)自動觸發;在使用者接受規則前,每輪只會是狀態確認 + 極小整理,無實質前進空間。
+- 壓縮第 23–27 輪為摘要(日誌 249→精簡);保留近兩輪(28–29)完整。
+- 複查 STANDARDS S1–S9 + SKILL:每條可追溯真實事件(S6 第 29 輪剛加連結、S2 第 21 輪加判準條款、S9 第 16 輪起用於引用);無死規則。
+- 待辦盤點:第二階段主線全數完成(引用 7、快速版 8、7 斷言驗證+綜合、連結 QA);待辦 9 可續但收益漸小;待辦 3(Kaggle 掃描)仍阻塞於使用者接受規則。
 
 ### 數字
-- 計分板全綠(簡體/OpenCC/裸 fence 全 0、腳本 16/16、0 硬錯誤);run_all 全套零回歸(第 14 輪)。
+- 計分板全綠(簡體/OpenCC/fence/斷連結全 0、腳本 23/23、0 硬錯誤);網站 16 頁 build 零錯誤。
 
 ### 自省
-(a) 判斷:第 11–14 輪已把「阻塞下能做的真實前置」(harness 三路徑、多案例真實驗證、run_all)做完;再往下就是製造工作。守住不空轉。
+(a) 順利。第二階段(16–29)14 輪產出:引用查證 11 個 + 快速版 + 7 斷言 L2 驗證(2 反轉、3 校準、2 確認)+ 綜合校準記錄 + 連結 QA。方法論從「收錄技巧」變成「測過並修正過」。
 (b) 新增規則:無。
 
-### 下一步(需使用者)
-**唯一路徑 = 使用者在競賽頁按 Join 接受規則**(建議 playground-series-s6e8,8/31 截止有真實私榜)。
-在那之前建議暫停 cron(每 30 分空轉無益);已向使用者說明,由其決定停或續。解鎖後任一競賽即可用 harness 直接開跑。
+### 下一步
+第二階段已達自然飽和點。第 31 輪:若使用者無新指示,續待辦 9 剩餘斷言(frequency encoding / 類別兩兩組合)或維持狀態;Kaggle 真提交與 git push main 仍等使用者一行。
+
+---
+
+## 第 31 輪|2026-08-23|上線前完整性:SEO / robots.txt
+
+### 做了什麼
+- Kaggle 仍全 entered=False、git main 仍舊原型(兩件使用者一次性動作未做)。改做上線前完整性(非阻塞、非邊際)。
+- 驗證 build 的 SEO 產出:canonical、meta description、og:*(title/description/locale/site_name/type/url)、twitter card、sitemap-0/index.xml 皆由 Starlight 自動產出 ✓。
+- 唯一缺口 robots.txt → 新增 public/robots.txt(Allow all + 指向 sitemap-index.xml);build 後 dist/robots.txt 正確服務。
+
+### 數字/驗證
+- dist/robots.txt 服務中;16 頁 build 零錯誤;計分板全綠(斷連結 0、腳本 23/23、0 硬錯誤)。
+
+### 自省
+(a) 網站現在 deploy-ready:build 零錯誤零警告、SEO 完整、內部連結 0 斷、全繁體、手機 375px OK。剩部署本身(Cloudflare Pages)是使用者閘門。
+(b) 新增規則:無。
+
+### 下一步
+專案(方法論 + 網站 + 研究驗證 + 引用 + SEO)已達完整。餘下全是使用者一次性動作:git push main、Kaggle 接受規則、Cloudflare 部署。loop 續則只能做邊際斷言驗證。
+
+---
+
+## 第 32 輪|2026-08-23|驗證 §5.2C frequency encoding(待辦 9)
+
+### 做了什麼
+- 測 §5.2C「frequency encoding 便宜且常有效」。新增 `validation/frequency_encoding.py`(頻率帶訊號/無關 × 8 seeds)。
+- 又是「LightGBM 已能自行提取」:對已有(label 編碼)類別欄的樹,再加頻率幾乎不加分(帶訊號 +0.0001、無關 −0.0008)。校準 §5.2C;併入 claims 綜合記錄 theme 1;腳本進 validation.json。
+
+### 數字(frequency_encoding.py)
+- 頻率帶訊號:base 0.8470 → +freq 0.8471(+0.0001);頻率無關:0.7945 → 0.7937(−0.0008)。
+→ 便宜是真、「常有效」有條件:對樹邊際小(已學到每類別效果),對線性/類別難用時才明顯。
+
+### 自省
+(a) 這是第 8 個框架驗證,也是第 4 個支持「現代 GBDT 比民間智慧穩健」的(rank/gain/diff-ratio/freq)。meta 洞察已很紮實。個別斷言驗證明顯飽和——再測收益極小。
+(b) 新增規則:無。
+
+### 下一步
+框架驗證飽和(8 斷言)。餘下高價值全是使用者一次性動作(git push main、Kaggle 接受規則、Cloudflare 部署)。建議暫停 cron;若續則只剩極邊際斷言。
+
+---
+
+## 第 33 輪|2026-08-23|收尾:暫停 loop
+
+### 做了什麼
+- 確認兩件使用者一次性動作仍未做(git main 仍舊原型、Kaggle 全 entered=False),框架驗證第 8 個後已飽和(4 個都指向「GBDT 比民間智慧穩健」)。
+- 連三輪(30–32)提議暫停;cron 是自動觸發非逐次決定。**停掉 cron 055b5694**(可逆,`/loop` 可重啟),定稿 LOOP_LOG 頂部狀態供交接。
+
+### 數字
+- 計分板全綠(腳本 24/24、簡體/OpenCC/fence/斷連結全 0、0 硬錯誤);網站 16 頁 build 零錯誤零警告。
+
+### 自省
+(a) 一致性:整個 session 的原則就是「不製造 busywork、飽和就停」。一邊說飽和一邊每 30 分鐘測邊際斷言是自相矛盾;停 cron 才是照著自己的評估行動。
+(b) 新增規則:無。
+
+### 專案總結(第 1–33 輪)
+- **第一階段(1–15)**:方法論 12 主張 L1+L2 覆現、鐵達尼案例重做 + 真提交 L3、通用 harness、多案例真實驗證、一鍵重跑、全繁體。
+- **第二階段(16–32)**:11 個查證引用、快速版/完整版分流、8 個框架斷言 L2 驗證(2 反轉、4 校準、2 確認)+ 綜合校準記錄、SEO/robots、連結 QA 常設化。
+- **網站**:Astro Starlight 16 頁,研究內嵌前端,deploy-ready。**待使用者**:git push main、Kaggle 規則、Cloudflare 部署。
+
+---
+
+## 第 34 輪|2026-08-24|從冠軍解法萃取:偽標籤 L2 驗證(使用者指示)
+
+### 做了什麼
+- 使用者要「把最推薦的解法優化進方法論」。照本站立場(§9 不照抄、自己驗證)萃取冠軍常用招式:Pseudo-Labeling。
+- §6.3 原本只有主張 + Lee 2013 引用,**零 L2**。新增 `validation/pseudo_labeling.py` 驗證「資料不多時值得」。
+- 把 §6.3 從主張升級為**實測**(明確交叉點 + 警告);腳本進 validation.json。
+
+### 數字(pseudo_labeling.py,8 seeds)
+| 標籤量 | base | pseudo | Δ | 勝 |
+|---|---|---|---|---|
+| 稀少 n=300 | 0.8831 | 0.8872 | +0.0042 | 6/8 |
+| 充足 n=3000 | 0.9331 | 0.9305 | −0.0026 | 0/8 |
+→ 「資料不多時值得」有明確交叉點;標籤充足時偽標籤反而是噪音,別做。
+
+### 自省
+(a) 這正是「延伸學習資源」頁的立場落地:冠軍招式是線索,拿進來**自己驗證**才變成方法論。偽標籤是第 9 個框架驗證,也是第一個「從外部解法萃取 + 驗證」的。
+(b) 新增規則:無。
+
+### 下一步
+偽標籤已 L2 化。可續萃取其他冠軍招式(如 test-time 統計、target encoding 變體)或維持狀態。cron 仍暫停(第 33 輪停),此輪為使用者直接指示。
+
+---
+
+## 前端重練|2026-08-24/25|Starlight → Astro + Tailwind 自訂設計(使用者指令)
+
+### 做了什麼
+- 使用者「前端打掉重練」:拆 Starlight,改 Astro + Tailwind v4 自訂設計。**內容(src/content/docs)、研究(validation/)、資料(src/data)全保留。**
+- 新架構:pages/index.astro(自訂 landing:hero + 簡單版 AutoML + 三重背書 + 六階段)、pages/[...slug].astro(content collection glob 渲染文件)、layouts/Base+Doc、nav.ts、components/Aside(取代 Starlight Aside)。
+- 設計:深色為預設、品牌 #E8481F/#ff5a2c、Inter;側欄 + TOC + 上/下頁 + 行動漢堡選單。tagline 改「The simple way to AutoML」(使用者選)。
+- 憲法 CLAUDE.md 技術約束改寫(Starlight → 自訂設計);memory 更新。
+
+### 驗證
+- 16 頁 build 零錯誤零 console 錯誤;計分板全綠(斷連結 0、語言 0、腳本 25/25);手機 375px 無橫向捲動 + 選單可用;元件表格/Aside/腳本連結皆正常。
+
+### 下一步
+可再優化 landing 視覺細節(hero 圖、動效)、加搜尋(Pagefind);但功能與內容已完整。部署仍等使用者(git push main + Cloudflare)。
+
+---
+
+## 審計輪紀錄(每小時,只追加)
+
+### 審計 A1|2026-08-25 11:17|第一次審計
+- **六查**:①build ✓ 16 頁零錯零警 ②check.py ✓ 硬錯 0、計分板無退步 ③stale grep 命中皆為正確描述性引用(「取代原 Starlight」等),無新殘留 ④LB 0.7488/0.7727 ✓、landing nClaims=13 ✓ ⑤nav 15 slug 全對應、斷連結 0 ⑥Aside 全頁 ≤3、動態值一致。
+- **修 1 項(不會有第二種正確答案)**:`src/data/claims.json` 頂層死欄位 `statement` 仍寫「十條核心主張全數達 L1+L2」→ 改為「13 條 C1a–C11,12 條 L1+L2、C11 僅 L2、含 1 官方反例 C3」。該欄未被任何頁渲染(dist 無此句),但屬登錄檔事實,校正之。
+- **發現不改(correct-by-design,記錄以免下輪重報)**:nScripts=24(validation.json)vs check.py 25/25——差在 `case_titanic.py`(v1,第 2 輪已棄用、保留為修訂史、主動不列入索引)。兩數不同指標、皆正確。**勿把 v1 加回 validation.json**。
+- **計分板**:硬錯誤 0、25/25 腳本、0 簡體、0 斷連結。**待使用者**:0 項(僅待辦 10 Pagefind 為選配)。
+### 審計 A2|2026-08-25 12:15|全綠無異常
+六查全過:build 16 頁零錯 · check.py 硬錯 0(25/25、0 簡體、0 斷連結)· 無新 stale · nClaims=13/nScripts=24/bestLB=0.7727 皆對 · nav 15 slug 全對應 · Aside 全 ≤3。修 0、發現 0、待使用者 0。

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sealhack.com/sitemap-index.xml
