@@ -20,7 +20,7 @@
 只發現、不亂改:方法論結論、文案、定位句、刪整節 → 一律寫待辦等使用者,不自行改(§停下來等使用者)。
 
 **Git**:同步到 `origin/astro-site`(tracking;之後同步 = commit + `git push`)。遠端只有 astro-site 一支。
-**★ 已上線(2026-08-25)**:https://sealhack.com = Cloudflare **Workers 靜態資產**(Worker 名 `sealhack`,連 GitHub astro-site 分支;非 Pages)。www 301 → apex(proxied CNAME + Redirect Rule 模板)。舊 GitHub Pages 站的 4 筆 A 記錄已刪(使用者拍板,舊「AI 數位分身」站自此網域下線)。**重新部署**:使用者在 Dashboard 手動 Deploy(目前 3 個版本皆 Manually deployed;push 是否自動觸發 build 待實測——下次 push 後看 build history)。
+**★ 已上線(2026-08-25)**:https://sealhack.com = Cloudflare **Workers 靜態資產**(Worker 名 `sealhack`,連 GitHub astro-site 分支;非 Pages)。www 301 → apex(proxied CNAME + Redirect Rule 模板)。舊 GitHub Pages 站的 4 筆 A 記錄已刪(使用者拍板,舊「AI 數位分身」站自此網域下線)。**重新部署(已實測 2026-08-25)**:push astro-site → Cloudflare Workers Builds **自動建置並部署**(commit 3dc59b6 → deployment 474facc0,~2 分鐘上線;不吃 GitHub Actions 額度)。
 **使用者一次性動作(loop 不能代勞)**:① (可選)預設分支改名 main ② Kaggle 競賽頁按 Join 解鎖真提交(待辦 3)。
 
 **環境**:`validation/requirements.txt` 已 pin(lightgbm 4.7.0 / sklearn 1.9.0 / pandas 3.0.5 / scipy 1.18.0 / numpy 2.5.2,Python 3.12)。

@@ -32,7 +32,7 @@ internal/                   MASTER_PLAN.md / LOOP_LOG.md(規劃與歷史,不建�
 
 ## 技術約束(不可違反)
 - **Astro + Tailwind 自訂設計**(2026-08 使用者核准前端打掉重練,取代原 Starlight)。靜態輸出、zh-TW、深色為預設。
-- 部署:**已上線 https://sealhack.com**(2026-08-25)。Cloudflare Workers 靜態資產(Worker 名 `sealhack`,連 GitHub royhsu1012/sealhack 的 astro-site 分支);www 301 轉向 apex(DNS CNAME + Redirect Rule)。舊 GitHub Pages A 記錄已移除。
+- 部署:**已上線 https://sealhack.com**(2026-08-25)。Cloudflare Workers 靜態資產(Worker 名 `sealhack`);**CI/CD 已實測:push astro-site → Workers Builds 自動建置部署**(不吃 GitHub Actions 額度)。www 301 轉向 apex;舊 GitHub Pages A 記錄已移除。更新網站 = commit + push,即自動上線。
 - 視覺:自訂設計系統,tokens 在 `src/styles/global.css`(品牌色 #E8481F / 深色 #ff5a2c);字體 Inter。
 - 版面:`src/layouts/Base.astro`(shell + Nav + Footer)、`Doc.astro`(側欄 + 內文 + TOC + 上/下頁);導覽結構在 `src/nav.ts`。
 - 首頁是**自訂 landing**(`src/pages/index.astro`);文件頁由 `src/pages/[...slug].astro` 渲染 `src/content/docs` 的 MD/MDX。
