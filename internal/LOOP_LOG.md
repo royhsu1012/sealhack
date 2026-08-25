@@ -19,7 +19,8 @@
 6. **無回歸**:landing 的 nClaims/nScripts/bestLB 動態值與敘述一致;Aside 每頁 ≤3。
 只發現、不亂改:方法論結論、文案、定位句、刪整節 → 一律寫待辦等使用者,不自行改(§停下來等使用者)。
 
-**使用者一次性動作(loop 不能代勞)**:① `git push origin astro-site:main --force`(新站設 main;舊原型在 legacy-prototype)② Kaggle 競賽頁按 Join 解鎖真提交(待辦 3)③ Cloudflare Pages 部署(build `npm run build`、output `dist`)。
+**Git**:2026-08-25 已提交並推送到 `origin/astro-site`(c2651d1,含重練+文件校準+Pagefind);遠端目前只有 astro-site 一支(含舊 Starlight 提交 bc0a4d0 的歷史)。之後同步 = commit + `git push`(已 tracking)。
+**使用者一次性動作(loop 不能代勞)**:① (可選)若要預設分支叫 `main`:GitHub 設定改預設分支,或 `git push origin astro-site:main` 後於 GitHub 設為預設 ② Kaggle 競賽頁按 Join 解鎖真提交(待辦 3)③ Cloudflare Pages 部署(接 astro-site 分支、build `npm run build`、output `dist`)。
 
 **環境**:`validation/requirements.txt` 已 pin(lightgbm 4.7.0 / sklearn 1.9.0 / pandas 3.0.5 / scipy 1.18.0 / numpy 2.5.2,Python 3.12)。
 本機 venv:`…/scratchpad/.venv`(session 專屬;新 session 用 `uv venv --python 3.12 && uv pip install -r validation/requirements.txt` 重建)。
