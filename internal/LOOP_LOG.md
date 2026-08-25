@@ -313,3 +313,6 @@ C9/C10 small_n_paired v2(配對差 std ≈ 分數 std 的 1/4;票團有害 0/20�
 - **導覽**:群組 4→3(方法論 10 項含解題地圖、證據 2、參考=詞彙表);頂列 5→4(去「資源」);Footer 資源→解題地圖。
 - **Landing**:6 段 → 3 段(hero+數據條 / 金句+AutoML+背書+差異化合一 / 六階段)。hero、金句、tagline 一字未動(憲法保護)。
 - 驗證:build 14 頁 + Indexed 14、斷連結 0、redirect стуб 有 meta-refresh、錨點 #學習地圖 存在、claims Aside=2(≤3)。技術內容零改寫,僅移位與去重。
+- 補:Astro meta-refresh стуб 未進 Workers 資產,改用原生 `public/_redirects`(真 301,f46b970);線上終驗 resources→claims、learning→quickstart 皆 301→200 ✓。
+### 收斂輪補|2026-08-25 15:20|glossary 瘦身(使用者核准)
+302 行/13.1k → 158 行/10.3k(−48% 行數)。刀法:散文詞條(55 個 ### 標題 ≈110 行結構開銷)改**字典表格**(詞|白話,2–3 欄),內容語意逐條保留;既有查閱表(切分策略/指標/編碼/GBDT 實作/工具)原樣;§九學習路徑建議刪除(與 quickstart 學習地圖重複)改指路連結;§八 GPU 段壓成表格導語一行。無錨點連結指向 glossary,無斷鏈。
