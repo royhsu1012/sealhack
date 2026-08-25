@@ -1,6 +1,6 @@
 # SealHack
 
-機器學習競賽方法論教學網站 —— **先學會診斷,再讓 AI 動手**。
+機器學習競賽方法論教學網站 —— **先學會診斷,再讓 AI 動手**。**線上版:https://sealhack.com**
 
 AI vibecoding 之前的方法論層:教你怎麼問對、怎麼驗證。差異化資產是**每一條方法論主張都附一支可重跑的驗證實驗**;登錄 13 條主張(C1a–C11),12 條通過文獻 + 沙盒雙驗證、C11 僅沙盒待補文獻,含 1 個官方反例,並用鐵達尼真提交拿到第一個真實 Kaggle 排行榜數據點。
 
@@ -16,7 +16,7 @@ src/                前端(Astro + Tailwind v4 自訂設計,深色預設)
   data/*.json       主張 / 案例 / 驗證索引(手維護原始檔)
 validation/         研究(Python 腳本,數字的唯一事實來源);build 時複製進 public/validation/ 供下載
 scripts/            copy-validation.mjs(唯一 build 前置,把研究內嵌網站)
-internal/           MASTER_PLAN / LOOP_LOG / PROMPTS(規劃與歷史)
+internal/           MASTER_PLAN / LOOP_LOG(規劃與歷史)
 CLAUDE.md STANDARDS.md   專案憲法與品質標準
 ```
 

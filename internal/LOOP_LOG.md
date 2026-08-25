@@ -19,8 +19,9 @@
 6. **無回歸**:landing 的 nClaims/nScripts/bestLB 動態值與敘述一致;Aside 每頁 ≤3。
 只發現、不亂改:方法論結論、文案、定位句、刪整節 → 一律寫待辦等使用者,不自行改(§停下來等使用者)。
 
-**Git**:2026-08-25 已提交並推送到 `origin/astro-site`(c2651d1,含重練+文件校準+Pagefind);遠端目前只有 astro-site 一支(含舊 Starlight 提交 bc0a4d0 的歷史)。之後同步 = commit + `git push`(已 tracking)。
-**使用者一次性動作(loop 不能代勞)**:① (可選)若要預設分支叫 `main`:GitHub 設定改預設分支,或 `git push origin astro-site:main` 後於 GitHub 設為預設 ② Kaggle 競賽頁按 Join 解鎖真提交(待辦 3)③ Cloudflare Pages 部署(接 astro-site 分支、build `npm run build`、output `dist`)。
+**Git**:同步到 `origin/astro-site`(tracking;之後同步 = commit + `git push`)。遠端只有 astro-site 一支。
+**★ 已上線(2026-08-25)**:https://sealhack.com = Cloudflare **Workers 靜態資產**(Worker 名 `sealhack`,連 GitHub astro-site 分支;非 Pages)。www 301 → apex(proxied CNAME + Redirect Rule 模板)。舊 GitHub Pages 站的 4 筆 A 記錄已刪(使用者拍板,舊「AI 數位分身」站自此網域下線)。**重新部署**:使用者在 Dashboard 手動 Deploy(目前 3 個版本皆 Manually deployed;push 是否自動觸發 build 待實測——下次 push 後看 build history)。
+**使用者一次性動作(loop 不能代勞)**:① (可選)預設分支改名 main ② Kaggle 競賽頁按 Join 解鎖真提交(待辦 3)。
 
 **環境**:`validation/requirements.txt` 已 pin(lightgbm 4.7.0 / sklearn 1.9.0 / pandas 3.0.5 / scipy 1.18.0 / numpy 2.5.2,Python 3.12)。
 本機 venv:`…/scratchpad/.venv`(session 專屬;新 session 用 `uv venv --python 3.12 && uv pip install -r validation/requirements.txt` 重建)。
@@ -296,3 +297,10 @@ C9/C10 small_n_paired v2(配對差 std ≈ 分數 std 的 1/4;票團有害 0/20�
 - **計分板**:硬錯誤 0、25/25 腳本、0 簡體、0 斷連結。**待使用者**:0 項(僅待辦 10 Pagefind 為選配)。
 ### 審計 A2|2026-08-25 12:15|全綠無異常
 六查全過:build 16 頁零錯 · check.py 硬錯 0(25/25、0 簡體、0 斷連結)· 無新 stale · nClaims=13/nScripts=24/bestLB=0.7727 皆對 · nav 15 slug 全對應 · Aside 全 ≤3。修 0、發現 0、待使用者 0。
+### 審計 A3|2026-08-25 13:27|全綠無異常(Pagefind/git 後首檢)
+六查全過:build 16 頁零錯 + pagefind Indexed 16 · check.py 硬錯 0(25/25、0 簡體、0 斷連結)· stale 只剩正確描述性引用 · nClaims=13/nScripts=24/bestLB=0.7727 皆對、claims 頁「登錄 13 條主張」×3 一致 · nav 15 slug 全對應 · Aside 全 ≤3、搜尋 UI(search-open/search-modal)在 dist。修 0、發現 0、待使用者 0。git:已同步 origin/astro-site(e3a9710);部署待使用者手機設定方式 A。
+
+### 部署上線|2026-08-25 15:00|sealhack.com(使用者授權,Chrome 代操作)
+- 使用者先手動 deploy Worker(astro-site 內容,最新版含 Pagefind)→ 我在其已登入 Chrome 完成:刪 sealhack.com 4 筆舊 GitHub Pages A 記錄(使用者確認舊站下線)→ Worker 綁 sealhack.com 自訂網域 → 加 www proxied CNAME → 部署「Redirect from WWW to Root」規則。
+- 驗證:apex/claims/pagefind/腳本下載/sitemap 全 200;www 301 → apex(路徑保留);真瀏覽器實測 hero/搜尋(「集成」12 結果)正常。DNS 已全網收斂(1.1.1.1/8.8.8.8/系統);唯操作機 Chrome 短暫殘留空窗期負面快取,自然過期。
+- 文件同步:CLAUDE.md 部署行改 Workers 現況、README 加線上版連結、MASTER_PLAN 部署項標done;**刪 internal/PROMPTS.md**(Starlight 建置腳本,無用)並清引用。

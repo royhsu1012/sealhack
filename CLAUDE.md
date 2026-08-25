@@ -19,7 +19,7 @@ src/styles/global.css       Tailwind v4 + 設計 tokens(品牌 #E8481F/#ff5a2c�
 src/data/*.json             主張/案例/驗證索引(手維護原始檔,committed;元件直接 import)
 validation/*.py             研究腳本(數字的唯一事實來源);build 時 copy 到 public/validation/ 供下載
 scripts/copy-validation.mjs 唯一 build 前置:把 validation/ 複製進 public/(研究內嵌網站)
-internal/                   MASTER_PLAN.md / LOOP_LOG.md / PROMPTS.md(規劃與歷史,不建頁面)
+internal/                   MASTER_PLAN.md / LOOP_LOG.md(規劃與歷史,不建頁面)
 ```
 - 指令:`npm run dev`(預覽 localhost:4321)、`npm run build`(= copy-validation + astro build + pagefind 索引 dist,不需 Python)。搜尋索引只在 build 後產出,dev 模式無搜尋。
 - 改內容 = 編 src/content/docs 的 MD/MDX;改主張/案例數字 = 編 src/data/*.json(對應 validation/ 腳本重跑後,手動同步);改導覽 = src/nav.ts。
@@ -32,7 +32,7 @@ internal/                   MASTER_PLAN.md / LOOP_LOG.md / PROMPTS.md(規劃與�
 
 ## 技術約束(不可違反)
 - **Astro + Tailwind 自訂設計**(2026-08 使用者核准前端打掉重練,取代原 Starlight)。靜態輸出、zh-TW、深色為預設。
-- 部署:Cloudflare Pages,網域 sealhack.com
+- 部署:**已上線 https://sealhack.com**(2026-08-25)。Cloudflare Workers 靜態資產(Worker 名 `sealhack`,連 GitHub royhsu1012/sealhack 的 astro-site 分支);www 301 轉向 apex(DNS CNAME + Redirect Rule)。舊 GitHub Pages A 記錄已移除。
 - 視覺:自訂設計系統,tokens 在 `src/styles/global.css`(品牌色 #E8481F / 深色 #ff5a2c);字體 Inter。
 - 版面:`src/layouts/Base.astro`(shell + Nav + Footer)、`Doc.astro`(側欄 + 內文 + TOC + 上/下頁);導覽結構在 `src/nav.ts`。
 - 首頁是**自訂 landing**(`src/pages/index.astro`);文件頁由 `src/pages/[...slug].astro` 渲染 `src/content/docs` 的 MD/MDX。

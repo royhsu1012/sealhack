@@ -74,10 +74,10 @@
 
 ## 五、執行計畫
 
-### Phase -0.5|方法論網站(★網站已建置 2026-08-23,待部署)
+### Phase -0.5|方法論網站(★已上線 sealhack.com,2026-08-25)
 - Astro + Tailwind,16 頁,`npm run build` 零錯誤零警告;研究(validation/)內嵌前端(public/validation + 主張表連結)
 - 內容 = 拆分後的方法論 + 主張登錄表(元件讀 src/data/claims.json)+ 鐵達尼六階段案例 + 真提交 L3 數據
-- 剩:部署 Cloudflare Pages + sealhack.com 綁定(見下方 PROMPTS.md 階段 2);教學層強化(見「七、教學設計」)
+- ✅ 已部署:Cloudflare Workers 靜態資產 + sealhack.com(www 301 轉向);剩教學層強化(見「七、教學設計」)
 - 用途:Phase 0 招募門面 + 教材 + 教練資歷證明
 
 ### Phase 0|Concierge MVP(網站上線後 3 週)
@@ -120,7 +120,7 @@
 ## 七、下一步(本週)
 
 1. ~~網站骨架~~ ✅ 已建置(Astro + Tailwind,16 頁,零錯誤零警告)
-2. 部署 Cloudflare Pages + sealhack.com 綁定(PROMPTS.md 階段 2)
+2. ~~部署~~ ✅ 已上線 sealhack.com(2026-08-25,Cloudflare Workers)
 3. 教學層強化(見八);確認當月 Playground 題目,準備第二個真實案例
 
 ## 八、教學設計(讓網站從「參考」變「會教」)
