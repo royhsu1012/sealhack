@@ -11,7 +11,7 @@
 **2026-08-25 站內搜尋加回(使用者核准,待辦 10)**:Pagefind 靜態索引(build 尾段 `pagefind --site dist`)+ Nav 🔍/Ctrl⌘K modal;16 頁索引、實測「集成」→12 結果、Esc 關閉。CLAUDE.md/README 已同步(搜尋只在 build 後可用)。
 
 **審計輪(每小時,現行)** — 目的是**抓不一致、不修錯**。固定六查,只修「不會有第二種正確答案」的錯,其餘寫進待辦標「待使用者判斷」:
-1. `npm run build` 零錯誤零警告(16 頁)。
+1. `npm run build` 零錯誤零警告(14 頁 + 2 redirect;pagefind Indexed 14)。
 2. `python .claude/skills/sealhack-loop/scripts/check.py` 硬錯誤 0、計分板不得變差。
 3. **文件對現況**:grep 有無新的 Starlight/舊路徑/已刪檔殘留;CLAUDE.md 結構、驗收標準、頁數是否仍真。
 4. **數字對資料**:散文裡的主張數、LB、統計量對得上 src/data/*.json 與 validation/ 腳本輸出(S1)。
@@ -304,3 +304,12 @@ C9/C10 small_n_paired v2(配對差 std ≈ 分數 std 的 1/4;票團有害 0/20�
 - 使用者先手動 deploy Worker(astro-site 內容,最新版含 Pagefind)→ 我在其已登入 Chrome 完成:刪 sealhack.com 4 筆舊 GitHub Pages A 記錄(使用者確認舊站下線)→ Worker 綁 sealhack.com 自訂網域 → 加 www proxied CNAME → 部署「Redirect from WWW to Root」規則。
 - 驗證:apex/claims/pagefind/腳本下載/sitemap 全 200;www 301 → apex(路徑保留);真瀏覽器實測 hero/搜尋(「集成」12 結果)正常。DNS 已全網收斂(1.1.1.1/8.8.8.8/系統);唯操作機 Chrome 短暫殘留空窗期負面快取,自然過期。
 - 文件同步:CLAUDE.md 部署行改 Workers 現況、README 加線上版連結、MASTER_PLAN 部署項標done;**刪 internal/PROMPTS.md**(Starlight 建置腳本,無用)並清引用。
+### 審計 A4|2026-08-25 14:42|全綠(部署後首輪,加驗線上站)
+六查全過:build 16 頁 + Indexed 16 · check.py 硬錯 0(25/25、0 簡體、0 斷連結)· 無 stale(PROMPTS 引用已清乾淨)· nClaims=13/nScripts=24/bestLB=0.7727 ✓ · nav 15 slug ✓ · Aside ≤3、搜尋 UI 在。**線上站:apex 200 / www 301 / pagefind 200 ✓**。git HEAD=remote=3b490d3。修 0、發現 0、待使用者 0。
+註:審計紀錄自本輪起**不單獨 commit/push**(push 會觸發正式站自動重建,純日誌不值得);隨下次實質變更一起帶上。工作區暫留 LOOP_LOG 一檔未提交屬正常。
+
+### 收斂輪|2026-08-25 15:00|網站精煉(使用者指令「開始收斂 更精煉」)
+- **16 頁 → 14 頁**:maps/learning 併入 quickstart(標題降級掛「## 學習地圖」,刪內部產品備註 blockquote);resources 併入 claims(去重:approachingalmost/MLWave 已在實務指南,刪重複與 anuj0456 彙整,4 冠軍解法源留 3+lmassaron)。舊網址 astro redirects 301(/maps/learning/→quickstart、/resources/→claims)。
+- **導覽**:群組 4→3(方法論 10 項含解題地圖、證據 2、參考=詞彙表);頂列 5→4(去「資源」);Footer 資源→解題地圖。
+- **Landing**:6 段 → 3 段(hero+數據條 / 金句+AutoML+背書+差異化合一 / 六階段)。hero、金句、tagline 一字未動(憲法保護)。
+- 驗證:build 14 頁 + Indexed 14、斷連結 0、redirect стуб 有 meta-refresh、錨點 #學習地圖 存在、claims Aside=2(≤3)。技術內容零改寫,僅移位與去重。

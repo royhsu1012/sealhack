@@ -9,7 +9,7 @@ AI vibecoding 之前的方法論層:教你怎麼問對、怎麼驗證。差異�
 ```text
 src/                前端(Astro + Tailwind v4 自訂設計,深色預設)
   pages/            index.astro(自訂 landing)· [...slug].astro(渲染 content/docs 每頁)
-  content/docs/     頁面內容:workflow(快速版 + 八頁)/ claims / cases/titanic / resources / maps / glossary
+  content/docs/     頁面內容:workflow(快速版含學習地圖 + 八頁)/ claims(含來源與延伸資源)/ cases/titanic / maps/solution / glossary
   layouts/          Base(shell + Nav + Footer)· Doc(側欄 + 內文 + TOC + 上/下頁)
   components/       Nav · Sidebar · Footer · Aside · ClaimsTable · ValidationList · CasesTable
   nav.ts            導覽結構      styles/global.css   Tailwind + 設計 tokens

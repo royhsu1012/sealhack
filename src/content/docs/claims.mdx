@@ -85,3 +85,23 @@ import Aside from '../../components/Aside.astro';
 - Abhishek Thakur,[*Approaching (Almost) Any Machine Learning Problem*](https://github.com/abhishekkrthakur/approachingalmost)—— 端到端解題流程的免費書(含 PDF)。
 - Chris Deotte,《Winning a Kaggle Competition with Generative AI–Assisted Coding》(2026)——「先診斷再讓 AI 動手」的實戰印證。
 - Carlens, H.,《State of Machine Learning Competitions in 2025》,[ML Contests](https://mlcontests.com/state-of-machine-learning-competitions-2025/)—— 解題地圖三軸與軌道分類的實證基礎。
+
+### 冠軍解法彙整(學別人怎麼贏)
+
+- **[faridrashidi/kaggle-solutions](https://github.com/faridrashidi/kaggle-solutions)** —— 上百場競賽的冠軍方案、討論串、notebook 彙整,持續更新(也有網站版 [farid.one/kaggle-solutions](https://farid.one/kaggle-solutions/))。**最推薦的起點。**
+- **[EliotAndres/kaggle-past-solutions](https://github.com/EliotAndres/kaggle-past-solutions)** —— 可搜尋/排序的歷屆解法索引,用來按題型找靈感。
+- **[kyaiooiayk/Kaggle-Competitions-Analysis](https://github.com/kyaiooiayk/Kaggle-Competitions-Analysis)** —— 除了解法連結,還附「takeaway」重點整理,適合快速看方法。
+- **[lmassaron/Machine-Learning-on-Tabular-Data](https://github.com/lmassaron/Machine-Learning-on-Tabular-Data)** —— Manning 表格資料 ML 書的程式碼(XGBoost / LightGBM / 深度學習)。
+
+### 怎麼配本站用
+
+<Aside type="caution" title="學思路,不要照抄">
+方法論 §9 明說:**不要照抄別人的獲獎方案**。任何從論壇或過往方案借來的技巧,都必須在**你自己的切分與算力預算**下重新驗證一次。別人的方案是**線索,不是結論**。
+</Aside>
+
+1. 跟著[快速版](/workflow/quickstart/)或完整 workflow 打一場真賽。
+2. 卡在某階段 → 去 **faridrashidi/kaggle-solutions** 找**同題型**的冠軍怎麼做那一步。
+3. 回本站對照方法論的**原理**(為什麼這樣做),不是只抄程式碼。
+4. **自己重跑驗證**——用上方驗證腳本的協議(共用 fold、OOF 落盤、配對比較),確認那招在你的資料上真的有效。
+
+> 差異化不在「知道更多技巧」,在「知道怎麼問對、怎麼驗證」。技巧會過時,診斷與驗證的能力不會。

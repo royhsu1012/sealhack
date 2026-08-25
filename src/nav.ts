@@ -1,4 +1,4 @@
-// 網站導覽結構(取代舊 Starlight sidebar)。slug 對應 src/content/docs 下的檔名。
+// 網站導覽結構。slug 對應 src/content/docs 下的檔名。
 export interface NavItem { label: string; slug: string; }
 export interface NavGroup { group: string; items: NavItem[]; }
 
@@ -15,6 +15,7 @@ export const NAV: NavGroup[] = [
       { label: '集成', slug: 'workflow/4-ensemble' },
       { label: '收尾與提交', slug: 'workflow/5-submit' },
       { label: '小樣本作戰守則', slug: 'workflow/small-n' },
+      { label: '解題地圖:九軌道速查', slug: 'maps/solution' },
     ],
   },
   {
@@ -25,19 +26,11 @@ export const NAV: NavGroup[] = [
     ],
   },
   {
-    group: '地圖',
-    items: [
-      { label: '解題地圖', slug: 'maps/solution' },
-      { label: '學習地圖', slug: 'maps/learning' },
-      { label: '延伸學習資源', slug: 'resources' },
-    ],
-  },
-  {
-    group: '',
+    group: '參考',
     items: [{ label: '詞彙表', slug: 'glossary' }],
   },
 ];
 
-// 扁平化(給 prev/next 用),排除純標題組
+// 扁平化(給 prev/next 用)
 export const FLAT: NavItem[] = NAV.flatMap((g) => g.items);
 export const href = (slug: string) => `/${slug}/`;

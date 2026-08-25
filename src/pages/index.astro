@@ -17,7 +17,7 @@ const stats = [
 
 const backing = [
   { k: '學術', v: '11 篇原始論文', d: '每個核心技術對得上原始論文,全數查證。', href: '/claims/' },
-  { k: '大神', v: 'Kaggle Grandmasters', d: 'NVIDIA GM Playbook、Chris Deotte、Abhishek Thakur。', href: '/resources/' },
+  { k: '大神', v: 'Kaggle Grandmasters', d: 'NVIDIA GM Playbook、Chris Deotte、Abhishek Thakur。', href: '/claims/' },
   { k: '可跑專案', v: `${nScripts} 支驗證腳本`, d: '每條主張附一支可下載重跑的腳本,不是空口說白話。', href: '/claims/' },
   { k: '簡單', v: '七步快速版', d: '趕時間先看最短完賽路,約 3–4 週獨立完賽。', href: '/workflow/quickstart/' },
 ];
@@ -59,19 +59,15 @@ const stages = [
     </div>
   </section>
 
-  <!-- 幻覺金句 -->
-  <section class="mx-auto max-w-3xl px-4 pb-4">
-    <p class="text-center text-lg leading-relaxed">
+  <!-- 金句 + 這是你能看懂的 AutoML(含背書與差異化) -->
+  <section class="mx-auto max-w-4xl px-4 pb-16">
+    <p class="text-center text-lg leading-relaxed max-w-3xl mx-auto">
       <strong>幻覺不是最大的危險,「流暢地執行錯誤的方向」才是。</strong>
       <span style="color:var(--fg-muted)"> AI 能流暢地寫程式碼,但它寫什麼取決於你怎麼問。不會診斷題型的人,會讓 AI 做出一個 CV 漂亮、實戰歸零的方案,而且不會告訴你錯了。</span>
     </p>
-  </section>
-
-  <!-- 這是你能看懂的 AutoML -->
-  <section class="mx-auto max-w-4xl px-4 py-16">
-    <h2 class="text-2xl sm:text-3xl font-extrabold text-center">這是一套你能看懂的 AutoML</h2>
+    <h2 class="mt-16 text-2xl sm:text-3xl font-extrabold text-center">這是一套你能看懂的 AutoML</h2>
     <p class="mt-4 text-center max-w-2xl mx-auto" style="color:var(--fg-muted)">
-      AutoGluon 這類 AutoML 做的事——k-fold bagging 產 OOF、多層 stacking、加權集成——<strong style="color:var(--fg)">就是本方法論的自動化版</strong>。差別在:AutoML 是黑箱,你不知道它為什麼行、更不知道它哪裡會錯;本站教你手動走一遍,所以你能<strong style="color:var(--fg)">診斷、操控、在它自動化不了的地方贏過它</strong>。
+      AutoGluon 這類 AutoML 做的事——k-fold bagging 產 OOF、多層 stacking、加權集成——<strong style="color:var(--fg)">就是本方法論的自動化版</strong>。差別在:AutoML 是黑箱;本站教你手動走一遍,所以你能<strong style="color:var(--fg)">診斷、操控、在它自動化不了的地方贏過它</strong>。
     </p>
     <div class="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {backing.map((b) => (
@@ -82,17 +78,11 @@ const stages = [
         </a>
       ))}
     </div>
-  </section>
-
-  <!-- 差異化 -->
-  <section class="border-y" style="border-color:var(--border);background:var(--bg-soft)">
-    <div class="mx-auto max-w-4xl px-4 py-16 text-center">
-      <h2 class="text-2xl sm:text-3xl font-extrabold">差異化:每條主張都可重跑</h2>
-      <p class="mt-4 max-w-2xl mx-auto" style="color:var(--fg-muted)">
-{nClaims} 條主張(C1a–C11)逐一經文獻 + 沙盒驗證,12 條雙證、含 1 個官方反例,並用鐵達尼真提交拿到第一個真實排行榜數據點——內部 CV 對真實 LB 系統性樂觀 0.06~0.09,<strong style="color:var(--fg)">正是方法論自己預測到的</strong>。
-      </p>
-      <p class="mt-6 text-sm" style="color:var(--fg-muted)">別人的方案教你技巧,本站教你<strong style="color:var(--fg)">怎麼驗證那些技巧</strong>。</p>
-      <a href="/claims/" class="inline-block mt-6 px-5 py-2.5 rounded-lg font-semibold border hover:opacity-80" style="border-color:var(--border)">看主張登錄表 →</a>
+    <p class="mt-10 text-center max-w-2xl mx-auto text-sm" style="color:var(--fg-muted)">
+      {nClaims} 條主張逐一經文獻 + 沙盒驗證、含 1 個官方反例;鐵達尼真提交顯示內部 CV 對真實 LB 樂觀 0.06~0.09——<strong style="color:var(--fg)">正是方法論自己預測到的</strong>。別人的方案教你技巧,本站教你<strong style="color:var(--fg)">怎麼驗證那些技巧</strong>。
+    </p>
+    <div class="text-center mt-6">
+      <a href="/claims/" class="inline-block px-5 py-2.5 rounded-lg font-semibold border hover:opacity-80" style="border-color:var(--border)">看主張登錄表 →</a>
     </div>
   </section>
 
