@@ -350,3 +350,17 @@ C9/C10 small_n_paired v2(配對差 std ≈ 分數 std 的 1/4;票團有害 0/20�
 - **DESIGN.md 設計憲法**:原則/tokens(唯一來源 global.css)/字階/間距/版面/元件規則/a11y 底線/驗收清單/修改流程;防漂移。
 - **S10 機械防漂移**:check.py 新增 raw-hex 掃描(components/layouts/pages 禁 hex)→ 首跑即抓到 Aside 三個語意色寫死 → 收編為 --aside-note/tip/caution tokens(淺色給深一階變體)→ S10=0。STANDARDS 立 S10、CLAUDE.md 掛 DESIGN.md 引用。
 - **SKILL.md v2**:研究現有任務型態後重寫為三種輪——A 審計輪(七查固化進 repo,cron 瘦身為指向 skill)/ B 案例輪(六階段協議 + harness 合約備忘 + 已知坑:pandas 3.0 str dtype、caruana dict、-999 佔位、ref-only 群組統計、簡單模型裁示)/ C 研究輪(v1 骨架保留)。cron 重建(551b9cd2)。
+### L3|s6e8 階段 3 完成|2026-08-25 23:20
+- 特徵迭代(48.4 分,5 組候選、同折配對 t>2):**B1 螢幕比值留(t=+8.99)**,B2~B5 全棄(t=-2.8~-11.9;絕對 OOF 看似無害、配對檢定揭露為傷害——沒有 §5.1 就會全收)。單模 OOF 0.96251→0.96285。
+- 真提交 v2:**single2 public 0.96414**(v1 0.96391;OOF 預測 +0.00034、實得 +0.00023)、ensemble2 0.96355(C3 無紅利再現)。**CV→LB 位移四筆全部 +0.0013~0.0014,一致性驚人=CV 誠實度的第四個數據點。**
+- 榜位:v1 前 67.3% → v2 約前 62%(1941→約 1786/2883,以稍舊 leaderboard 快照估)。與中位 0.96558 的差 = 0.0014,約等於一組強特徵;要再上須更多領域特徵組,依 §13 不急——私榜實驗(8/31)才是本案目的。
+- 最終計分:未在網站手選時 Kaggle 自動取 public 最高兩份(=single2+single1,恰為 CV 序)。若要嚴格照 §7(CV最高+穩健集成)需使用者在網站點選 single2+ensemble2——低利害,選配。
+### 審計 A11|2026-08-25 23:23|全綠無異常(SKILL v2 首輪)
+七查全過:build 12+Indexed 12 · check 硬錯 0(27/27 腳本、S10=0)· 無 stale · 13/24/0.7727 ✓ · nav 11 ✓ · 回歸無(landing 3 段、40px 按鈕×3、Aside ≤3、搜尋 UI)· 線上 200/301/200/301/301 ✓ · git 同步 5b6c00c。未提交 2 檔=LOOP_LOG 紀錄+s6e8 提交 log(依政策隨下次帶上)。修 0、發現 0、待使用者 0(選配:網站手選最終兩份提交)。
+### L3|三場並發完賽|2026-08-26 00:00(加速指令後 30 分內)
+- **spaceship**(2.0 分):消費特徵組配對 t+4.38 留;lgbm .88933/ET .87498/logreg .86298(相近!)→ **集成有紅利 .89136(C3 前提滿足的正例,與 s6e8 懸殊無紅利對照)**。LB:單模 Acc 0.80406(OOF .80571,差 −.0017)、集成 0.80243(門檻敏感,均在 test SE≈.006 內)。
+- **house-prices**(6.0 分,n=1460 → small-n 守則:跳爬山、5-seed 平均):lgbm RMSE(log) OOF .13255 → **LB 0.12749(LB 優 .005)**;ridge .16442(t+2.50)。洞察:factory 未開 subsample → LGBM 全確定性 → seed 平均為空操作(印證校準「增益隨 seed 方差而定」的零方差極端)。
+- **nlp**(2.7 分,TF-IDF only、零預訓練):char .86936 > word .85804(相近)→ 集成 .87067 小紅利。LB:**單模 F1 0.79619**(OOF .76818,LB 高 +.028,本賽 test 已知偏易)、集成 0.79068。
+- 待辦 3 進度:**6 場中 5 場已完賽並真提交**(titanic、s6e8、spaceship、house、nlp);digit 跑中;store-sales 待專場。加速手段:並行 3+1、SKILL v2 協議直套、s6e8 坑不再踩。
+### L3|digit 完賽|2026-08-26 00:10
+lgbm 多分類(200 樹、無 CNN,22.3 分):OOF Acc 0.97760(五折 ±0.001)→ **LB 0.97660**(差 −0.001,CV 誠實 ×6 場)。單家族免集成(無近敵)。**待辦 3:6 場完賽 5+1(titanic/s6e8/spaceship/house/nlp/digit),僅剩 store-sales(T4 時序專場)。**

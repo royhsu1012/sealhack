@@ -13,3 +13,4 @@ validation/results/
 .claude/scheduled_tasks.lock
 validation/data/
 validation/submission_*.csv
+validation/*.log
