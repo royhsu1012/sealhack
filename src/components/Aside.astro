@@ -3,9 +3,9 @@
 interface Props { type?: 'note' | 'tip' | 'caution'; title?: string; }
 const { type = 'note', title } = Astro.props;
 const styles = {
-  note:    { c: '#3b82f6', icon: 'ℹ', label: '注意' },
-  tip:     { c: '#22c55e', icon: '✓', label: '訣竅' },
-  caution: { c: '#f59e0b', icon: '⚠', label: '當心' },
+  note:    { c: 'var(--aside-note)', icon: 'ℹ', label: '注意' },
+  tip:     { c: 'var(--aside-tip)', icon: '✓', label: '訣竅' },
+  caution: { c: 'var(--aside-caution)', icon: '⚠', label: '當心' },
 }[type];
 ---
 <aside class="my-5 rounded-lg border-l-4 p-4" style={`border-color:${styles.c};background:var(--bg-soft)`}>

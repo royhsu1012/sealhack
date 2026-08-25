@@ -69,3 +69,8 @@ small_n_paired.py 與 case_titanic.py 的 base 特徵不同(年齡填補一個�
 | requirements 全 pin、fetch_data.py 存在 | S4 | ✓ |
 | 無語言標籤的 code fence 數 | S6 | 0 |
 | internal/LOOP_LOG 結構 | 迴圈(已暫停) | ✓ |
+
+## S10 設計系統防漂移(來源:DESIGN.md)
+- src/{components,layouts,pages} 的 .astro 檔**禁 raw hex**——顏色一律 `var(--token)`;token 唯一來源是 `src/styles/global.css`(深淺兩主題成對定義)
+- 新視覺模式(元件/動效/字體)須先立進 DESIGN.md 再實作;DESIGN.md 與實作不符=缺陷,修其一並在 LOOP_LOG 記一行
+- check.py 掃描 raw hex;完整設計驗收清單見 DESIGN.md §八(375px 無橫捲、表格內捲、雙主題對比、40px 觸控目標)

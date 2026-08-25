@@ -338,3 +338,15 @@ C9/C10 small_n_paired v2(配對差 std ≈ 分數 std 的 1/4;票團有害 0/20�
 - 已完成(不需資料):s6e8 五問診斷(公開頁)——T1 表格二分類、AUC(平滑指標)、synthetic 29 欄、train≈69 萬列(非小樣本→集成有紅利、5-fold 可信)、8/31 截止。
 - `validation/case_s6e8.py` 就緒:內嵌診斷 + 對抗驗證防呆 + 3 家族基線(lgbm/logreg/extratrees)+ Caruana 集成 + 雙提交(§7/§13);可編譯、缺資料時優雅提示。venv 重建(kaggle CLI 2.2.4,token 有效)。
 - 解鎖後流程:download → case_s6e8.py(~30-60 分機器時間)→ 兩份提交 → 記 public LB → 8/31 私榜揭曉 = C7a/C1 的真 shake-up 測試。
+### 使用者裁示|2026-08-25 22:00|多案例掃描一律用簡單模型
+「記得用簡單的模型 這樣才代表我們的方法論更好」——分數的來源必須是方法論紀律(診斷/鎖CV/OOF/配對比較/誠實集成),不是模型火力。執行約束:全 6 案模型池限近預設 LightGBM + 樸素線性 + 樸素樹系;**禁止**超參掃描、深度學習、外部預訓練模型;NLP=TF-IDF+LogReg、影像=像素直入 LGBM、時序=滯後特徵+LGBM(TimeSeriesSplit)。對照敘事=「簡單模型+方法論」落在排行榜哪裡。
+### L3|s6e8 首輪真提交|2026-08-25 22:26
+- Join 6/6(使用者授權 Chrome 代按;API 下載全通過=規則閘門鐵證)。資料 6 場全下載(s6e8 68M/digit 123M/store-sales 120M…)。
+- s6e8 完整六階段(case_s6e8.py,21.9 分):對抗驗證 AUC 0.5528(診斷「隨機切」證實)→ 簡單三家族:lgbm 0.96251(五折±0.0009)/ ET 0.92107 / LogReg 0.50606(選錯家族=歸零)→ Caruana {lgbm:7, ET:1} OOF 0.96197 < 單模——**C3 反例活教材(成員懸殊無紅利)**。
+- **真提交×2:single public 0.96391、ensemble 0.96331。CV→LB 落差 +0.0014**(方法論預測同分布≈0,證實;對照鐵達尼漂移 −0.06~0.09)。榜位:1941/2883(前 67.3%),中位 0.96558——裸基線(零特徵工程)低於中位,符合預期:階段 3 未做。
+- 階段 3 進行中(case_s6e8_stage3.py):5 組領域特徵、同折配對 t>2 才留、模型不動。修訂:pandas 3.0 str dtype 判斷、caruana dict 合約(兩處一次性,後 5 案受益)。
+### 設計與 skills 品質輪|2026-08-25 22:45(使用者指令:檢驗前端設計、設計框架成文檔、skills 重設計)
+- **實測設計審計(live 站,JS 量測)**:375px 無橫捲、表格全數自帶內捲(先前一筆「散文表被裁切」是量測錯誤——查了 parent 而非 table 本身,已更正)、淺色主題對比 AA(5.6:1/16.5:1)、字階/間距節奏一致、零 inline hex。**修 1:Nav 三顆圖示按鈕 32→40px(a11y 觸控下限)。**
+- **DESIGN.md 設計憲法**:原則/tokens(唯一來源 global.css)/字階/間距/版面/元件規則/a11y 底線/驗收清單/修改流程;防漂移。
+- **S10 機械防漂移**:check.py 新增 raw-hex 掃描(components/layouts/pages 禁 hex)→ 首跑即抓到 Aside 三個語意色寫死 → 收編為 --aside-note/tip/caution tokens(淺色給深一階變體)→ S10=0。STANDARDS 立 S10、CLAUDE.md 掛 DESIGN.md 引用。
+- **SKILL.md v2**:研究現有任務型態後重寫為三種輪——A 審計輪(七查固化進 repo,cron 瘦身為指向 skill)/ B 案例輪(六階段協議 + harness 合約備忘 + 已知坑:pandas 3.0 str dtype、caruana dict、-999 佔位、ref-only 群組統計、簡單模型裁示)/ C 研究輪(v1 骨架保留)。cron 重建(551b9cd2)。

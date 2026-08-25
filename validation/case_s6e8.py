@@ -34,7 +34,7 @@ def feature_fn(d, ref, use):
     """基線特徵:數值原樣(LGBM 原生吃 NaN);類別欄以 ref 的類別集合做 codes(fold 內統計,C2/C10 紀律)。"""
     out = {}
     for c in use:
-        if d[c].dtype == object:
+        if not pd.api.types.is_numeric_dtype(d[c]):  # pandas 3.0:字串欄是 str dtype,非 object
             cats = pd.Categorical(ref[c]).categories
             out[c] = pd.Categorical(d[c], categories=cats).codes.astype(float)
         else:
@@ -84,13 +84,16 @@ def main():
         cvs[name] = metric(y, oof)
         print(f"{name:10s} OOF AUC {cvs[name]:.5f}  折 {np.round(fold,5)}  {time.time()-t:.0f}s")
 
-    # 階段 4|Caruana 爬山集成(§6.1;n 大 → 集成有紅利)
-    names = list(oofs)
-    w, ens_cv = H.caruana([oofs[n] for n in names], y, lambda p: metric(y, p), n_iter=30)
-    ens_oof = sum(wi * oofs[n] for wi, n in zip(w, names))
-    ens_te = sum(wi * tests[n] for wi, n in zip(w, names))
+    # OOF 落盤(§3.1:整合的原料)
+    np.savez_compressed(DATA / "oofs.npz", y=y, **{f"oof_{k}": v for k, v in oofs.items()},
+                        **{f"test_{k}": v for k, v in tests.items()})
+
+    # 階段 4|Caruana 爬山集成(§6.1;n 大 → 集成有紅利;harness 合約:oofs=dict、回 counts 整數權重)
+    counts, order = H.caruana(oofs, y, lambda p: metric(y, p), n_iter=30)
+    ens_oof = H.blend(oofs, counts)
+    ens_te = H.blend(tests, counts)
     best = max(cvs, key=cvs.get)
-    print(f"集成權重 {dict(zip(names, np.round(w,3)))}  集成 OOF AUC {metric(y, ens_oof):.5f}  vs 最佳單模 {best} {cvs[best]:.5f}")
+    print(f"集成計數 {counts}(排序 {order})  集成 OOF AUC {metric(y, ens_oof):.5f}  vs 最佳單模 {best} {cvs[best]:.5f}")
 
     # 階段 5|雙提交(§7):CV 最高單模 + 穩健集成;不追 public LB(§13)
     H.write_submission(str(Path(__file__).parent / "submission_s6e8_single.csv"),

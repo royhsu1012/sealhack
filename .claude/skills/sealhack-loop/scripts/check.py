@@ -111,7 +111,20 @@ def check_log():
     has_status = "## 目前狀態" in s; rounds = len(re.findall(r"^## 第 \d+ 輪", s, re.M))
     return has_status and rounds > 0, f"目前狀態 {'✓' if has_status else '✗'},輪次 {rounds}"
 
+def scan_design_drift():
+    """S10(DESIGN.md 鐵律):components/layouts/pages 禁 raw hex,一律 var(--token)。token 唯一來源是 global.css。"""
+    hits = []
+    for sub in ("components", "layouts", "pages"):
+        d = ROOT / "src" / sub
+        if not d.exists(): continue
+        for f in d.rglob("*.astro"):
+            for i, line in enumerate(read(f).splitlines(), 1):
+                if re.search(r"#[0-9a-fA-F]{6}\b", line):
+                    hits.append((f"src/{sub}/{f.name}", i))
+    return hits
+
 simp = scan_simplified(); opencc = scan_opencc(); fences = scan_bare_fences(); links = scan_links()
+drift = scan_design_drift()
 scripts = check_scripts(); req_ok, req_msg = check_requirements(); log_ok, log_msg = check_log()
 fetch_ok = (ROOT / "validation" / "fetch_data.py").exists()
 n_code = sum(1 for _, _, c in simp if c); n_prose = len(simp) - n_code
@@ -127,6 +140,7 @@ print(f"  [S4] requirements 全 pin        {'✓' if req_ok else '✗'}   {req_m
 print(f"  [S4] fetch_data.py 存在          {'✓' if fetch_ok else '✗'}")
 print(f"  [S6] 無語言標籤的 code fence    {len(fences):>4}   目標 0")
 print(f"  [S6] 內部斷連結                 {len(links):>4}   目標 0")
+print(f"  [S10] 設計漂移(raw hex)       {len(drift):>4}   目標 0(tokens 之外禁 hex,見 DESIGN.md)")
 print(f"  [日誌] LOOP_LOG 結構             {'✓' if log_ok else '✗'}   {log_msg}")
 
 if "-v" in sys.argv:

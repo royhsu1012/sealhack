@@ -17,6 +17,9 @@
   --fg: #e8eaed;
   --fg-muted: #9aa3ad;
   --brand: #ff5a2c;
+  --aside-note: #3b82f6;
+  --aside-tip: #22c55e;
+  --aside-caution: #f59e0b;
 }
 :root.light {
   --bg: #ffffff;
@@ -26,6 +29,9 @@
   --fg: #16181d;
   --fg-muted: #5b6470;
   --brand: #e8481f;
+  --aside-note: #2563eb;
+  --aside-tip: #16a34a;
+  --aside-caution: #d97706;
 }
 
 html { scroll-behavior: smooth; }

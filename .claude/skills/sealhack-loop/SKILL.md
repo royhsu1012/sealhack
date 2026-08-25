@@ -1,73 +1,52 @@
----
-name: sealhack-loop
-description: SealHack 方法論與教材的持續優化迴圈——每 30 分鐘一輪:讀 LOOP_LOG.md 狀態、挑最高優先待辦、做完並驗證、寫回日誌、自省改規則。只要使用者或 cron 提到「跑一輪」「繼續優化」「loop」「迴圈」「下一輪」「驗證主張」「覆現」「鐵達尼案例」「多案例 harness」「Kaggle 驗證」「方法論優化」,就用這個 skill,即使沒有明講 skill 名稱。
----
+# SealHack 迴圈(v2:三種輪)
 
-# SealHack 優化迴圈
+一輪 = 30 分內「做完並驗證」的單位;價值在留下可檢查的痕跡(數字、腳本、日誌)。
+標準:內容 `STANDARDS.md`(S1–S10)· 設計 `DESIGN.md` · 憲法 `CLAUDE.md`。狀態:`internal/LOOP_LOG.md`。
+計分板:`python .claude/skills/sealhack-loop/scripts/check.py`(含 S10 設計漂移)。
+三種輪共用鐵律:**改完重跑 build + check.py,計分板不得變差;紀錄寫回 LOOP_LOG**。
 
-一輪 = 一個能在 30 分鐘內「做完並驗證」的單位。迴圈的價值不在每輪做很多事,
-而在每輪都留下可檢查的痕跡(數字、腳本、日誌),讓下一輪(或人)能接手。
-標準在 `STANDARDS.md`,狀態在 `internal/LOOP_LOG.md`,兩者都是活文件——迴圈有權改它們。
+## A|審計輪(每小時 cron;抓不一致、不修錯)
 
-## 每輪固定骨架(照順序,不跳步)
+只修「不會有第二種正確答案」的錯;其餘寫待辦標「待使用者判斷」。七查:
+1. `npm run build`:零錯誤、**12 頁 + 4 redirect**、pagefind Indexed 12(看完整輸出,別搶讀)。
+2. `check.py`:硬錯誤 0、各項不得比上輪差(含 S10=0)。
+3. 文件對現況:grep stale(starlight/舊頁數/已併頁 URL);LOOP_LOG 歷史段與 redirects 設定豁免。
+4. 數字對資料:主張「13 條 C1a–C11,12 條 L1+L2、C11 僅 L2、C3 官方反例」;LB 0.7488/0.7727;landing nScripts=validation.json 條數(check.py 的腳本數含已棄用 v1,兩者不同指標皆正確)。
+5. 連結:斷連結 0;nav.ts 每 slug 有頁(11 slug)。
+6. 回歸:landing 3 段、卡 4/5 同連 4-ensemble、Aside ≤3/頁、搜尋 UI 在 dist;設計抽驗照 DESIGN.md §八。
+7. 線上:apex 200 / www 301 / pagefind 200 / 舊 URL 301。
+紀錄追加 LOOP_LOG,**不單獨 commit/push**(push 觸發正式站重建;隨下次實質變更帶上)。全綠就回報「全綠無異常」,不為做事而亂改。
 
-**0. 定位** — 讀 `internal/LOOP_LOG.md` 頂部「目前狀態」與待辦;讀 `STANDARDS.md`(上一輪可能改過);
-從 repo 根目錄跑 `python .claude/skills/sealhack-loop/scripts/check.py` 取得起點計分板。
-先讀再做,因為上一輪可能留了「阻塞」或改了規則,憑記憶會做錯方向。
+## B|案例輪(L3 多案例掃描;一輪推進一場比賽的一個階段)
 
-**1. 挑任務** — 待辦第一個未完成且未標「阻塞」的項。任務大於一輪就切出「本輪可驗證的一片」,
-剩餘寫回待辦。切片的判準是「本輪結束時能跑出數字或跑過 check.py」,不是「寫了一半的程式碼」。
+**使用者裁示:一律簡單模型**(近預設 LightGBM + 樸素線性/樹;禁調參、深度學習、預訓練)——分數必須來自方法論紀律。
+流程(每場一支 `validation/case_<賽>.py`,六階段內嵌):
+0. 診斷:公開頁定五問(模態/任務/指標/切法/賽制);資料 `kaggle competitions download`(需已 Join——只有使用者能按)。
+1. 鎖 CV:任務對應切法,全流程共用 folds+seed;**對抗驗證**先跑(AUC≈0.5 → 隨機切證實;>0.8 → 查漂移)。
+2. 基線:2–3 個簡單家族 → OOF 落盤(npz,§3.1)。
+3. 特徵迭代:候選分組、**一次一組、同折配對 t>2 才留**(H.paired_t;模型不動)。
+4. 集成:`H.caruana(oofs_dict)`(成員懸殊時預期無紅利=C3,照做記錄)。
+5. 雙提交:CV 最高 + 最穩健;`kaggle competitions submit`;**只如實記 public LB,不追榜(§13)**;寫回 LOOP_LOG + src/data/cases.json。
+harness 合約備忘:`run_cv(feature_fn, tr, te, y, folds, use, factory, scale, predict_fn, metric_fn)`;
+`caruana(oofs=dict, y, score_fn)→(counts, order)`、`blend(dict, counts)`;metric 一律「越高越好」。
+已知坑:pandas 3.0 字串欄是 `str` dtype(用 `is_numeric_dtype` 判斷,別用 `==object`);線性/樹系不吃 NaN 用 -999 佔位;群組統計只用 ref(C2/C10)。
 
-**2. 做** — 守這四條:
-- 方法論修改必須引文獻或新增/修改 L2 實驗(CLAUDE.md 憲法);判準照 STANDARDS S2(相對量、多 seed、同一種量)。
-- 文件裡每個數字來自腳本輸出(S1):改腳本 → 重跑 → 改文件,同一輪做完,不留「待更新」。
-- 能刪就刪:新增規則或段落前先問「刪掉什麼換它進來」(S7)。
-- 實驗超過 5 分鐘就 `run_in_background`,先做不依賴結果的事;但本輪結束前要等到結果,否則數字寫不回去。
+## C|研究輪(方法論強化;要續跑 /loop)
 
-**3. 驗** — 重跑 check.py(計分板不得變差);受影響的腳本至少跑一次;腳本輸出與文件數字逐一對照。
-「我改了程式碼」不算完成,「數字一致」才算。
+照 v1 骨架:讀狀態 → 挑待辦第一個未阻塞項 → 做(方法論修改必須引文獻或 L2 實驗;判準照 S2)→ 驗 → 寫回 → 自省。
+方法論結論反轉:證據達 S2 就改+留修訂史(S3);**首頁文案/定位句/刪整節仍需使用者拍板**。
 
-**4. 寫回 `internal/LOOP_LOG.md`** — 改寫頂部(狀態、待辦、計分板);底部追加本輪紀錄(模板見下)。
+## 停下來等使用者(三種輪通用)
+- 憑證與 Join:token 只能使用者放;競賽規則接受只能使用者做(或其明確授權下用其已登入瀏覽器代按)。
+- 真提交後不為衝分反覆提交;最終計分只選兩份(CV 依據)。
+- 刪除整節內容/一條主張、改 hero/金句/tagline、改版設計原則(DESIGN.md §一)。
+阻塞時在 LOOP_LOG 待辦標「阻塞(等使用者:原因)」,跳下一項。
 
-**5. 自省(迴圈的自我改進)** — 回答兩個問題寫進本輪紀錄:
-(a) 本輪哪裡浪費了時間或差點出錯?(b) 哪條 SKILL.md / STANDARDS.md 規則能防止它?
-有答案就當場改規則,並在 LOOP_LOG 的「規則變更」區加一行(日期、改了什麼、因為哪一輪的什麼事)。
-沒有就寫「無」。這一步是 skill 持續變好的唯一機制,跳過它迴圈就只是重複。
+## 自省(每輪最後)
+(a) 哪裡浪費了時間或差點出錯?(b) 哪條規則能防止它?有答案當場改 SKILL/STANDARDS/DESIGN,LOOP_LOG「規則變更」加一行;沒有寫「無」。
 
-**6. 回報** — ≤ 10 行:做了什麼、關鍵數字、計分板變化、下一輪做什麼、需要使用者的事。
-
-## 待辦優先序(固定)
-可重跑性 > 證據正確性 > 方法論覆蓋缺口 > 模板正確 > 措辭一致 > 語言/排版。
-後面每一項都建立在前一項之上——數字不對時去修措辭是浪費。
-新發現的問題:< 5 分鐘當場修;否則加到待辦對應層級,**不插隊**。
-
-## 整理輪(每 5 輪一次,或待辦清空時)
-不做新任務。讀完整 SKILL.md、STANDARDS.md、LOOP_LOG.md:
-刪掉從未阻止過錯誤、也沒省過時間的規則;合併重複;舊輪次壓成一行摘要;依證據重排待辦。
-整理輪一樣留紀錄。
-
-## 停下來等使用者(其餘自己決定)
-- **憑證與競賽閘門**:Kaggle token 只能使用者放(迴圈用唯讀 `kaggle competitions list` 驗證,不 peek、不寫入);
-  每個新競賽的規則接受(網站按 Join)只能使用者做——列出來請他接受,不要繞過。
-- **真提交後只如實記錄 public LB,不為衝分反覆提交**(§13 禁止擬合 LB)。
-- 刪除一整節內容或一條主張(降級、改措辭可以自己做;刪除不行)。
-- 方法論結論要反轉:證據達 S2(多次切分、配對檢定、同一種量)就直接改,舊措辭依 S3 留修訂史,回報時放第一條
-  (使用者已授權,第 2 輪「你執行」);只有 CLAUDE.md 首頁文案與定位句仍需使用者拍板。
-停下來時在 LOOP_LOG 待辦項標「阻塞(等使用者:原因)」,下一輪跳過它做下一項。
-
-## LOOP_LOG.md 模板
-
-```text
-## 目前狀態            ← 每輪改寫
-環境 / 憑證 / 覆現狀態 / 計分板(貼 check.py 輸出)/ 待辦(編號、[x]/[ ]、阻塞標記)
-## 規則變更            ← 只追加
-- YYYY-MM-DD|改了什麼|因為第 N 輪的什麼事
----
-## 第 N 輪|YYYY-MM-DD HH:MM|任務名     ← 只追加
-### 做了什麼  ### 數字(文件 vs 腳本)  ### 自省  ### 下一步
-```
-
-## 本機環境(僅此機器)
-- Python:uv 管理的 3.12 venv,位置見 LOOP_LOG「目前狀態」;全域 3.14 沒有 ML 套件,不要裝進去
-- 跑驗證腳本時 cwd = `validation/`;背景執行用 `-u` 並把輸出導到檔案
-- 這台機器常有使用者其他 Python 工作在跑,合成資料腳本 4–11 分鐘一支;五支並行會互相拖慢
+## 本機環境
+- venv:session scratchpad `.venv`(`uv venv --python 3.12` + `uv pip install -r validation/requirements.txt kaggle`);PYTHONUTF8=1。
+- kaggle CLI 前先 `export USERPROFILE='C:\Users\royhs'`;迴圈不寫入 token、不 peek。
+- 跑腳本 cwd=`validation/`;>5 分鐘用 run_in_background;競賽資料在 `validation/data/<賽>/`(gitignored)。
+- push astro-site = 正式站自動重建(~2 分);純日誌不 push。

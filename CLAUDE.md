@@ -21,6 +21,7 @@ src/data/*.json             主張/案例/驗證索引(手維護原始檔,commit
 validation/*.py             研究腳本(數字的唯一事實來源);build 時 copy 到 public/validation/ 供下載
 scripts/copy-validation.mjs 唯一 build 前置:把 validation/ 複製進 public/(研究內嵌網站)
 internal/                   MASTER_PLAN.md / LOOP_LOG.md(規劃與歷史,不建頁面)
+DESIGN.md                   設計系統憲法(tokens/字階/間距/元件規則/驗收;防漂移,S10 掃描)
 ```
 - 指令:`npm run dev`(預覽 localhost:4321)、`npm run build`(= copy-validation + astro build + pagefind 索引 dist,不需 Python)。搜尋索引只在 build 後產出,dev 模式無搜尋。
 - 改內容 = 編 src/content/docs 的 MD/MDX;改主張/案例數字 = 編 src/data/*.json(對應 validation/ 腳本重跑後,手動同步);改導覽 = src/nav.ts。
@@ -56,6 +57,7 @@ internal/                   MASTER_PLAN.md / LOOP_LOG.md(規劃與歷史,不建�
 
 ## 品質標準與持續優化
 - 內容與腳本的可檢查標準:STANDARDS.md(計分板:`python .claude/skills/sealhack-loop/scripts/check.py`,掃 src/content/docs)
+- 前端設計的可檢查標準:DESIGN.md(tokens 唯一來源 global.css;S10 禁元件內 raw hex;驗收清單見 §八)
 - 方法論優化迴圈(研究階段,已暫停):`.claude/skills/sealhack-loop/SKILL.md`,歷史在 internal/LOOP_LOG.md
 
 ## 內容規則
