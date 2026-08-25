@@ -1,2 +1,4 @@
 /maps/learning/ /workflow/quickstart/ 301
 /resources/ /claims/ 301
+/workflow/0-clean/ /workflow/0-diagnose/ 301
+/workflow/5-submit/ /workflow/4-ensemble/ 301

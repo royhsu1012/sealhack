@@ -11,7 +11,8 @@ src/content/docs/ 的 Markdown 與 validation/ 的腳本是唯一事實來源,�
 src/pages/index.astro       自訂 landing(3 段:hero+數據條 → 金句+看得懂的AutoML+背書+差異化 → 六階段)
 src/pages/[...slug].astro    動態路由:用 content collection 渲染 src/content/docs 的每頁
 src/content/docs/           頁面內容(方法論散文,MD/MDX):
-  claims.mdx(含來源+延伸資源) cases/titanic.mdx  workflow/*.md(quickstart 含學習地圖) maps/solution.md  glossary.md
+  claims.mdx(含來源+延伸資源) cases/titanic.mdx  glossary.md  maps/solution.md
+  workflow/:quickstart(含學習地圖)· 0-diagnose(含 0.5 清洗)· 1-validate · 2-baseline · 3-features · 4-ensemble(含 5 提交)· small-n
 src/layouts/                Base.astro(shell + Nav + Footer)、Doc.astro(側欄 + 內文 + TOC + 上/下頁)
 src/components/             Nav / Sidebar / Footer / Aside / ClaimsTable / ValidationList / CasesTable
 src/nav.ts                  導覽結構(取代舊 Starlight sidebar)
@@ -43,10 +44,9 @@ internal/                   MASTER_PLAN.md / LOOP_LOG.md(規劃與歷史,不建�
 ## 網站結構(已建置;導覽順序見 src/nav.ts)
 ```text
 首頁 landing(src/pages/index.astro)  hero「先學會診斷,再讓 AI 動手」+ tagline「The simple way to AutoML」;actions [開始→quickstart] [驗證證據→claims]
-方法論(group)  quickstart(含學習地圖)· 0-diagnose · 0-clean · 1-validate · 2-baseline · 3-features · 4-ensemble · 5-submit · small-n · maps/solution(九軌道速查)
-證據(group)    claims(<ClaimsTable> + 學術來源 + 延伸資源)· cases/titanic(六階段敘事 + <CasesTable>)
-參考            glossary
-(收斂 2026-08-25:maps/learning 併入 quickstart、resources 併入 claims,舊網址 redirect;16 頁 → 14 頁)
+方法論(group)    quickstart · 0|診斷與清洗 · 1|鎖死驗證 · 2|基線 · 3|特徵 · 4–5|集成與提交 · 小樣本 · 解題地圖(側欄標籤帶階段序號)
+證據與參考(group) claims(<ClaimsTable> + 學術來源 + 延伸資源)· cases/titanic(六階段敘事 + <CasesTable>)· glossary(字典表格)
+(收斂 2026-08-25:16 頁 → 12 頁——maps/learning→quickstart、resources→claims、0-clean→0-diagnose、5-submit→4-ensemble,舊網址皆 301;六階段「模型」不變,landing 六卡照舊,卡 4/5 同頁)
 ```
 - 各頁內容由拆分前的方法論 monolith 遷移而來(原始檔已刪,現以 src/content/docs 為唯一來源)。
 - cases/titanic 的編輯基調:方法論如何得到誠實的 0.828(20 次切分分布,非單次幸運)。關鍵數字:配對 AUC t 檢定
@@ -66,8 +66,8 @@ internal/                   MASTER_PLAN.md / LOOP_LOG.md(規劃與歷史,不建�
 - 首頁 hero 下第一段必含:「幻覺不是最大的危險,『流暢地執行錯誤的方向』才是。」
 
 ## 驗收標準(前端重練後現況)
-- ✅ npm run build 零錯誤零警告(14 頁 + 2 redirect)
-- ✅ 首頁「開始」→ 快速版;方法論各頁用頁尾「下一頁」可從 0-diagnose 走到 small-n
+- ✅ npm run build 零錯誤零警告(12 頁 + 4 redirect)
+- ✅ 首頁「開始」→ 快速版;方法論各頁用頁尾「下一頁」可從 0-diagnose 走到 small-n(側欄 2 群組、方法論 8 項)
 - ✅ /claims 的 <ClaimsTable> 完整渲染(讀 src/data/claims.json:13 條核心主張 + demo/multi,含 L1/L2/L3 驗證層與腳本連結)
 - ✅ 手機 375px 無橫向捲動;行動選單(☰)展開全站導覽;寬表格在容器內捲
 - ✅ 深色為預設可切換淺色;Shiki 程式碼高亮;文件頁側欄 + TOC + 上/下頁

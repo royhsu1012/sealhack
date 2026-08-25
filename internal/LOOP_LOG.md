@@ -11,7 +11,7 @@
 **2026-08-25 站內搜尋加回(使用者核准,待辦 10)**:Pagefind 靜態索引(build 尾段 `pagefind --site dist`)+ Nav 🔍/Ctrl⌘K modal;16 頁索引、實測「集成」→12 結果、Esc 關閉。CLAUDE.md/README 已同步(搜尋只在 build 後可用)。
 
 **審計輪(每小時,現行)** — 目的是**抓不一致、不修錯**。固定六查,只修「不會有第二種正確答案」的錯,其餘寫進待辦標「待使用者判斷」:
-1. `npm run build` 零錯誤零警告(14 頁 + 2 redirect;pagefind Indexed 14)。
+1. `npm run build` 零錯誤零警告(12 頁 + 4 redirect;pagefind Indexed 12)。
 2. `python .claude/skills/sealhack-loop/scripts/check.py` 硬錯誤 0、計分板不得變差。
 3. **文件對現況**:grep 有無新的 Starlight/舊路徑/已刪檔殘留;CLAUDE.md 結構、驗收標準、頁數是否仍真。
 4. **數字對資料**:散文裡的主張數、LB、統計量對得上 src/data/*.json 與 validation/ 腳本輸出(S1)。
@@ -316,3 +316,11 @@ C9/C10 small_n_paired v2(配對差 std ≈ 分數 std 的 1/4;票團有害 0/20�
 - 補:Astro meta-refresh стуб 未進 Workers 資產,改用原生 `public/_redirects`(真 301,f46b970);線上終驗 resources→claims、learning→quickstart 皆 301→200 ✓。
 ### 收斂輪補|2026-08-25 15:20|glossary 瘦身(使用者核准)
 302 行/13.1k → 158 行/10.3k(−48% 行數)。刀法:散文詞條(55 個 ### 標題 ≈110 行結構開銷)改**字典表格**(詞|白話,2–3 欄),內容語意逐條保留;既有查閱表(切分策略/指標/編碼/GBDT 實作/工具)原樣;§九學習路徑建議刪除(與 quickstart 學習地圖重複)改指路連結;§八 GPU 段壓成表格導語一行。無錨點連結指向 glossary,無斷鏈。
+### 審計 A5|2026-08-25 15:39|收斂後首輪:修 1 項
+七查:build 14 頁+Indexed 14 ✓ · check.py 硬錯 0 ✓ · **修 1:MASTER_PLAN 兩處「16 頁」→「14 頁」(收斂漏改)** · 數字全對(13/24/0.7727,case LB 0.7488/0.7727)· nav 13 slug ✓ · landing 3 段、Aside ≤3、搜尋 UI ✓ · 線上:apex 200/www 301/pagefind 200/resources 301→claims/glossary 200 ✓。git 同步 f13ce72。註:resources 現為真 301(_redirects),優於原 стуб 描述,非缺陷。發現 1、修 1、待使用者 0。
+
+### 收斂輪 2|2026-08-25 15:55|架構再收斂(使用者指令「頁數更少/避免平行太多」)
+- **14 頁 → 12 頁**:0-clean(22 行,階段 0.5)併入 0-diagnose;5-submit(32 行)併入 4-ensemble(插延伸閱讀前,流:集成→收尾提交→踩雷)。內容原文搬移,§ 編號保留。
+- **導覽**:群組 3→2(方法論 8 項 / 證據與參考 3 項);方法論標籤加階段序號(0|、1|…4–5|),平行感 → 流水線。10→8 項。
+- **六階段模型不動**:landing 六卡照舊,卡 5 連到 4-ensemble(同頁含階段 5)。redirect 4 條(_redirects + astro.config)。
+- 驗證:build 12 頁 + Indexed 12、斷連結 0、стуб 正確指向。

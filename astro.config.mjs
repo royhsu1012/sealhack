@@ -12,5 +12,7 @@ export default defineConfig({
   redirects: {
     '/maps/learning/': '/workflow/quickstart/',
     '/resources/': '/claims/',
+    '/workflow/0-clean/': '/workflow/0-diagnose/',
+    '/workflow/5-submit/': '/workflow/4-ensemble/',
   },
 });
