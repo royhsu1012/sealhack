@@ -96,3 +96,7 @@ def target_encode(tr, va, col, y, smooth=20):
 - **消融驅動選題(§5.0)**:Google, *MLE-STAR*, 2025 — [arXiv:2506.15692](https://arxiv.org/abs/2506.15692)
 - **配對比較的統計基礎(§5.1)**:Nadeau & Bengio, *Inference for the Generalization Error*, 2003 — [doi:10.1023/A:1024068626366](https://doi.org/10.1023/A:1024068626366)
 - **特徵重要度偏誤(§5.3)**:Strobl et al., *Bias in Random Forest Variable Importance Measures*, BMC Bioinformatics 2007 — [PMC1796903](https://pmc.ncbi.nlm.nih.gov/articles/PMC1796903/)
+
+## 實戰印證:配對檢定攔下四組「看似無害」的特徵
+
+s6e8 階段 3 的五組候選,絕對 OOF 全在 0.9626~0.9629 之間「看起來都還行」——但同折配對 t 揭露:只有螢幕比值組是真訊號(**t=+8.99,留**),其餘四組 t = −2.8 ~ −11.9(**全棄**)。沒有 §5.1,四組噪音會全部進模型(`case_s6e8_stage3.py`)。比值特徵連兩場過關:s6e8 t+8.99、spaceship 消費組 t+4.38(`case_spaceship.py`)——正是「樹學不好除法」校準的實戰版。

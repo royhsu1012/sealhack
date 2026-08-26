@@ -64,3 +64,5 @@ Kaggle 競賽規則解鎖前,先用 sklearn 內建真實資料驗證「同一套
 (2) 這裡的 CV−holdout 差小到近乎零,和 Titanic 的 CV−LB 差 0.06~0.09(§16.8)形成對比:
 **差距的來源是分布,不是方法論**——同分布的 holdout 讓 CV 幾乎完美,Titanic 的真實 test 是分布不同的另一批人才有大差距。
 這是 §2.2 漂移警告的正面印證。⚠️ 此為 holdout 驗證,非 Kaggle 真提交(無 public/private LB);L3 仍以 §16.8 為準。
+
+**真賽應用**:house-prices(n=1460)照本守則跳過爬山集成、以配對檢定選型(lgbm 勝 ridge,t=+2.50),OOF RMSE(log) 0.1326 → 真實 LB **0.1275(LB 反而更好)**——小樣本紀律不是保守,是把方差留給該花的地方(`case_houseprices.py`)。

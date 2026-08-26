@@ -9,7 +9,7 @@
 **★ 狀態(2026-08-25):已上線 https://sealhack.com,收斂完成 12 頁。** Astro + Tailwind 自訂設計、深色預設;build 12 頁 + 4 redirect 零錯誤、pagefind Indexed 12;計分板全綠(25/25 腳本、0 簡體、0 斷連結);導覽 2 群組(方法論 8 項帶階段序號 / 證據與參考 3 項)、landing 3 段;六階段模型不變。
 **2026-08-25 里程碑(細節見底部各輪紀錄)**:文件校準(主張數統一 13 條 C1a–C11、清 Starlight 殘留)→ Pagefind 搜尋加回(🔍/Ctrl⌘K)→ 部署上線(Workers 靜態資產 + sealhack.com + www 301;push 自動建置部署)→ 收斂 16→14→12 頁(maps/learning→quickstart、resources→claims、0-clean→0-diagnose、5-submit→4-ensemble,皆 301)+ glossary 字典化(302→158 行)。
 
-**審計:連續全綠 10 輪(A12–A21,至 2026-08-26 09:23)。**
+**審計:連續全綠 15 輪(A12–A26,至 2026-08-26 14:23;基準 14 條主張/25 支腳本)。**
 **審計輪(每小時,現行)** — 目的是**抓不一致、不修錯**。固定六查,只修「不會有第二種正確答案」的錯,其餘寫進待辦標「待使用者判斷」:
 1. `npm run build` 零錯誤零警告(12 頁 + 4 redirect;pagefind Indexed 12)。
 2. `python .claude/skills/sealhack-loop/scripts/check.py` 硬錯誤 0、計分板不得變差。
@@ -356,3 +356,7 @@ A2–A4、A6–A10、A12–A21 皆全綠無異常(修 0/發現 0);有動作的�
 ### C12 正式登錄|2026-08-26 10:40
 - **L2**:case_storesales.py 三時間窗 3/3(LGBM 0.4007 < SES 0.4457 < naive 0.5661 RMSLE)。**L3**:真提交 LB 0.51465 vs naive 對照 0.57949(相對序在榜上兌現);LB>視窗 CV 之衰減兩法同幅 = C1b 再證。
 - 登錄表 **13→14 條(C1a–C12)**、validation.json 24→25 支;一致性鏈全更新(claims.mdx/landing/README/CLAUDE/SKILL 基準/maps T4 含邊界條件與 M4 反例)。store-sales 完賽 → **待辦 3 全 7 場完成**。審計新基準:nClaims=14、nScripts=25。
+### 框架優化輪|2026-08-26 14:50(使用者指令「優化整個框架」)
+- **七場實戰證據回灌框架**:0-diagnose(對抗驗證→落差可預測)、2-baseline(家族選對>調參:.9625 vs .506)、3-features(配對檢定攔四組負 t;比值兩場連勝)、4-ensemble(C3 三場雙向 + seed-avg 需隨機性邊界)、small-n(house n=1460 實戰)各加「實戰印證」段,逐條引 case 腳本(S1)。
+- **案例頁升級**:cases/titanic 加「七場實戰掃描」總表(7 場×CV/LB/落差)+ 三個框架級結論(落差=診斷的函數、C3 雙向、配對守門)。claims「multi」列 L3→done、證據改 7 場真賽;收斂聲明 L3 由單點升級為掃描。
+- 零新頁、零新元件、Aside 上限不變;build 12 頁、計分板全綠。

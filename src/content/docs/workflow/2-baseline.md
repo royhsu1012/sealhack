@@ -45,3 +45,7 @@ TabPFN-2.5 支援到 5 萬筆資料、2000 個特徵,在 TabArena 上已超越�
 
 - **TabPFN(§4.2)**:Prior Labs & Univ. Freiburg, *TabPFN-2.5*, 2025 — [arXiv:2511.08667](https://arxiv.org/abs/2511.08667)
 - **六階段流程的藍本**:NVIDIA / Kaggle Grandmasters, [*The Kaggle Grandmasters Playbook*](https://developer.nvidia.com/blog/the-kaggle-grandmasters-playbook-7-battle-tested-modeling-techniques-for-tabular-data)(2025)
+
+## 實戰印證:選對家族 > 調參
+
+s6e8 上同一組特徵:**近預設 LightGBM OOF AUC 0.9625,LogReg 只有 0.506(≈瞎猜)**——訊號是非線性的,家族選錯直接歸零,任何調參都救不回來(`case_s6e8.py`)。多樣化基線的目的不是每個都強,是**確認哪個家族接得住這份資料**,以及為集成準備誤差不同的成員。

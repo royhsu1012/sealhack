@@ -171,14 +171,19 @@
     },
     {
       "id": "multi",
-      "statement": "同一套 harness 方法論可完成不同任務型別(二分類/迴歸/多分類)",
+      "statement": "同一套 harness 方法論可完成不同任務型別的真實 Kaggle 競賽(二分類/迴歸/多分類/文字/時序)",
       "L1": null,
       "L2": true,
-      "L3": "pending",
-      "evidence": "breast_cancer/diabetes/digits 皆完成;乾淨資料 CV−holdout ≈ 0(對比 Titanic 分布差)",
+      "L3": "done",
+      "evidence": "7 場真提交完賽(titanic/s6e8/spaceship/house-prices/nlp/digit/store-sales),6 種型態、全簡單模型;同分布場次 CV→LB ≤0.002,異分布/時序如 C1b 預測衰減",
       "scripts": [
-        "multi_case_real.py",
-        "harness.py"
+        "harness.py",
+        "case_s6e8.py",
+        "case_spaceship.py",
+        "case_houseprices.py",
+        "case_nlp.py",
+        "case_digit.py",
+        "case_storesales.py"
       ],
       "revision": null
     },

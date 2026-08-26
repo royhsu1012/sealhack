@@ -127,3 +127,9 @@ def blend(preds, weights):                # 用同一組權重混合 OOF / test 
 - **爬山集成(§6.1 的來源)**:Caruana et al., *Ensemble Selection from Libraries of Models*, ICML 2004 — [doi:10.1145/1015330.1015432](https://doi.org/10.1145/1015330.1015432)
 - **知識蒸餾 / 偽標籤**:Hinton, Vinyals & Dean (2015) [arXiv:1503.02531](https://arxiv.org/abs/1503.02531) / Lee, *Pseudo-Label*, ICML 2013 Workshop
 - **實務入門**:MLWave, [*Kaggle Ensembling Guide*](https://mlwave.com/kaggle-ensembling-guide/)
+
+## 實戰印證:C3 前提在三場真比賽的雙向驗證
+
+- **成員懸殊 → 無紅利**:s6e8(lgbm .9625 vs ET .9211)集成 OOF .9620 < 單模,LB 同序(`case_s6e8.py`)。
+- **成員相近 → 有紅利**:spaceship(.889/.875/.863)集成 .8914 > 單模 .8893(`case_spaceship.py`);nlp(char .8694 / word .8580)集成 .8707(`case_nlp.py`)。
+- **多 seed 平均的邊界**:LGBM 若未開 subsample/colsample 為全確定性,**換 seed 是空操作**(house-prices 5-seed 平均與單 seed 逐值相同,`case_houseprices.py`)——「增益隨 seed 方差而定」的零方差極端。要用 seed 平均,先確認模型有隨機成分。
