@@ -349,3 +349,10 @@ lgbm 多分類(200 樹、無 CNN,22.3 分):OOF Acc 0.97760(五折 ±0.001)→ **
 
 ### 審計摘要|A2–A21(壓縮,2026-08-26 文件重規劃)
 A2–A4、A6–A10、A12–A21 皆全綠無異常(修 0/發現 0);有動作的輪:A1(claims.json 死欄位)、A5(MASTER_PLAN 頁數)、A11(log untrack)。**新政策:全綠審計輪不再逐條追加,只更新頂部「連續全綠」計數;有發現才立條目。**
+### 研究輪|C12 候選:時序的迴歸框架|2026-08-26 10:10(使用者提問驅動)
+- 使用者實務觀察「時序用 Regression 比專用時序模型好」→ S9 查證三來源:**M5**(Makridakis et al., IJF 38(4) 2022:史上首次全部前段=純 ML,多為 LightGBM 迴歸,顯著勝所有統計基準;42,840 條相關序列+共變量)、**Elsayed et al. 2021**(arXiv:2101.02118:視窗化 GBRT 平/勝 SOTA 深度學習)、**M4 反例**(100k 單變量:純 ML 輸 ARIMA/ETS 組合,冠軍為混合 ES-RNN,Smyl 2020)。
+- **C12 草案**:多條相關序列+共變量 → 全域 GBDT 迴歸框架勝經典每序列統計;單變量少序列不成立。條件式主張,含官方反例(M4),結構同 C3。
+- L2/L3 實驗執行中(case_storesales.py):三個 16 天時間視窗,同窗比較 seasonal-naive / 每序列 SES×週季節 / 全域 LGBM(lag≥16 無洩漏、log1p 目標);官方 test 雙提交(lgbm+naive 對照)。結果落地後若成立 → 進 claims.json C12 + maps/solution T4 軌道補寫。
+### C12 正式登錄|2026-08-26 10:40
+- **L2**:case_storesales.py 三時間窗 3/3(LGBM 0.4007 < SES 0.4457 < naive 0.5661 RMSLE)。**L3**:真提交 LB 0.51465 vs naive 對照 0.57949(相對序在榜上兌現);LB>視窗 CV 之衰減兩法同幅 = C1b 再證。
+- 登錄表 **13→14 條(C1a–C12)**、validation.json 24→25 支;一致性鏈全更新(claims.mdx/landing/README/CLAUDE/SKILL 基準/maps T4 含邊界條件與 M4 反例)。store-sales 完賽 → **待辦 3 全 7 場完成**。審計新基準:nClaims=14、nScripts=25。

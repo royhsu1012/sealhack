@@ -144,6 +144,12 @@
       "kind": "claim",
       "validates": "§6.3 偽標籤:標籤稀少 +0.0042(勝 6/8)、充足 −0.0026(勝 0/8)——資料不多時才值得",
       "runtime_sec": null
+    },
+    {
+      "file": "case_storesales.py",
+      "kind": "case",
+      "validates": "C12 時序迴歸框架:三時間窗 LGBM 0.4007 < SES 0.4457 < naive 0.5661;LB 0.51465 vs 0.57949",
+      "runtime_sec": 306
     }
   ]
 }

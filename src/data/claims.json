@@ -1,6 +1,6 @@
 {
   "version": "v2.2",
-  "statement": "方法論不是文件,是一組可測試的主張。L1=文獻收斂,L2=沙盒實驗(validation/),L3=實戰(真比賽)。登錄 13 條主張(C1a–C11):12 條達 L1+L2、C11 目前僅 L2(文獻待補);驗證過程推翻並修訂四處(C1 門檻、C3 前提、C7a 教條、C8 條件),修訂史全保留,含 1 官方反例 C3。",
+  "statement": "方法論不是文件,是一組可測試的主張。L1=文獻收斂,L2=沙盒實驗(validation/),L3=實戰(真比賽)。登錄 14 條主張(C1a–C12):13 條達 L1+L2、C11 目前僅 L2(文獻待補);驗證過程推翻並修訂四處(C1 門檻、C3 前提、C7a 教條、C8 條件),修訂史全保留,含 1 官方反例 C3。",
   "levels": {
     "L1": "文獻收斂",
     "L2": "沙盒實驗",
@@ -193,6 +193,18 @@
         "rank_vs_prob_auc.py"
       ],
       "revision": "推翻框架原斷言『rank 平均通常比機率平均好』,改為條件式(2026-08-23,第 18 輪)"
+    },
+    {
+      "id": "C12",
+      "statement": "多條相關序列+共變量:時序視窗化成迴歸、用全域 GBDT(lag/rolling/日曆)勝經典每序列統計;單變量少序列為反例(M4)",
+      "L1": true,
+      "L2": true,
+      "L3": "pending",
+      "evidence": "store-sales 三時間窗 3/3 勝:LGBM RMSLE 0.4007 vs 每序列 SES 0.4457 vs seasonal-naive 0.5661;真提交 LB 0.51465 vs naive 對照 0.57949",
+      "scripts": [
+        "case_storesales.py"
+      ],
+      "revision": "條件式主張,結構同 C3;L1:M5(IJF 2022)、Elsayed 2021、M4 反例(Smyl 2020)"
     }
   ]
 }
