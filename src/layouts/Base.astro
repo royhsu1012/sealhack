@@ -40,5 +40,21 @@ const fullTitle = title === 'SealHack' ? 'SealHack — The simple way to AutoML'
       <slot />
     </main>
     <Footer />
+    <script is:inline>
+      // 程式碼複製按鈕(DESIGN §六;換字回饋,不動畫)
+      document.querySelectorAll('.prose pre').forEach(function (pre) {
+        var b = document.createElement('button');
+        b.className = 'copy-btn'; b.type = 'button';
+        b.textContent = '複製'; b.setAttribute('aria-label', '複製程式碼');
+        b.addEventListener('click', function () {
+          var code = pre.querySelector('code');
+          navigator.clipboard.writeText(code ? code.innerText : pre.innerText).then(function () {
+            b.textContent = '已複製 ✓';
+            setTimeout(function () { b.textContent = '複製'; }, 1500);
+          });
+        });
+        pre.appendChild(b);
+      });
+    </script>
   </body>
 </html>

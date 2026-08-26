@@ -44,6 +44,7 @@
 - 文件頁:`max-w-7xl` 三欄 `240px / minmax(0,1fr) / 200px`(側欄 / 內文 / TOC);`lg` 以下側欄與 TOC 隱藏(行動選單補位)。TOC 只列 **H2**。
 - Nav:sticky + `backdrop-blur` + 82% 透明底;高度 56px;頂列連結 4 個(快速版/方法論/證據/案例),`md` 以下收進 ☰。
 - 斷點使用:`sm` 640 / `md` 768 / `lg` 1024,不自訂斷點。
+- 錨點落點:`.prose` 標題 `scroll-margin-top: 5rem`(sticky Nav 56px + 呼吸),點 TOC 不被蓋住。
 
 ## 六、元件清單(新增元件前先問「刪掉哪個換它進來」)
 
@@ -56,6 +57,9 @@
 | `.prose table` | `display:block; overflow-x:auto`(表格自己是捲動容器);**≤6 欄**(STANDARDS S6) |
 | 搜尋 modal | 懶載入 /pagefind/;`role=dialog aria-modal`;Esc 關閉並還原捲動;色彩走 `--pagefind-ui-*` tokens |
 | Footer | 5 連結;不放 sitemap 式長清單 |
+| 程式碼區塊 | 右上「複製」按鈕:桌面 hover 顯示、觸控裝置恆顯;成功後文字換「已複製 ✓」1.5s(換字,不動畫);tokens 配色 |
+| 行動版 TOC | `<details>` 摺疊「本頁內容」,`lg` 以下顯示;純 HTML 無 JS |
+| 桌面 TOC scroll-spy | IntersectionObserver 將目前章節連結染 `--brand`;無平滑捲動之外的動效 |
 
 ## 七、無障礙底線
 

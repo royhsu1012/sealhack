@@ -90,3 +90,16 @@ body {
 #search .pagefind-ui__result-title a { color: var(--fg); }
 #search .pagefind-ui__result-excerpt { color: var(--fg-muted); }
 #search mark { background: color-mix(in srgb, var(--brand) 26%, transparent); color: inherit; }
+
+/* 閱讀體驗(DESIGN §五/§六):錨點不被 sticky nav 蓋住;程式碼複製按鈕 */
+.prose h2, .prose h3, .prose h4 { scroll-margin-top: 5rem; }
+.prose pre { position: relative; }
+.copy-btn {
+  position: absolute; top: .5rem; right: .5rem;
+  font-size: .75rem; line-height: 1; padding: .45rem .6rem;
+  border: 1px solid var(--border); border-radius: .375rem;
+  background: var(--bg-card); color: var(--fg-muted);
+  opacity: 0; transition: opacity .15s ease; cursor: pointer;
+}
+.prose pre:hover .copy-btn, .copy-btn:focus-visible { opacity: 1; }
+@media (hover: none) { .copy-btn { opacity: .85; } }

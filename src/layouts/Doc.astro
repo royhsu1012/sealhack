@@ -23,6 +23,16 @@ const toc = headings.filter((h) => h.depth === 2);
     <article class="min-w-0">
       <h1 class="text-3xl font-extrabold mb-2">{title}</h1>
       {description && <p class="text-lg mb-6" style="color:var(--fg-muted)">{description}</p>}
+      {toc.length > 0 && (
+        <details class="lg:hidden mb-6 rounded-lg border" style="border-color:var(--border);background:var(--bg-card)">
+          <summary class="px-4 py-2.5 text-sm font-semibold cursor-pointer select-none">本頁內容</summary>
+          <ul class="px-4 pb-3 space-y-1.5 text-sm" style="color:var(--fg-muted)">
+            {toc.map((h) => (
+              <li><a href={`#${h.slug}`} class="block py-0.5">{h.text}</a></li>
+            ))}
+          </ul>
+        </details>
+      )}
       <div class="prose">
         <slot />
       </div>
@@ -45,7 +55,7 @@ const toc = headings.filter((h) => h.depth === 2);
       {toc.length > 0 && (
         <div class="sticky top-20 text-sm">
           <div class="text-xs font-semibold uppercase tracking-wide mb-2" style="color:var(--fg-muted)">本頁內容</div>
-          <ul class="space-y-1.5">
+          <ul class="space-y-1.5" data-toc>
             {toc.map((h) => (
               <li><a href={`#${h.slug}`} class="block hover:opacity-100" style="color:var(--fg-muted)">{h.text}</a></li>
             ))}
@@ -55,3 +65,23 @@ const toc = headings.filter((h) => h.depth === 2);
     </div>
   </div>
 </Base>
+<script is:inline>
+  // 桌面 TOC scroll-spy(DESIGN §六):目前章節染 brand 色
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('[data-toc] a'));
+    if (!links.length || !('IntersectionObserver' in window)) return;
+    var byId = {};
+    links.forEach(function (a) { byId[decodeURIComponent(a.hash.slice(1))] = a; });
+    var hs = Object.keys(byId).map(function (id) { return document.getElementById(id); }).filter(Boolean);
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (e.isIntersecting) {
+          links.forEach(function (l) { l.style.color = 'var(--fg-muted)'; l.style.fontWeight = ''; });
+          var l = byId[e.target.id];
+          if (l) { l.style.color = 'var(--brand)'; l.style.fontWeight = '600'; }
+        }
+      });
+    }, { rootMargin: '-15% 0px -75% 0px' });
+    hs.forEach(function (h) { io.observe(h); });
+  })();
+</script>
