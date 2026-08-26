@@ -24,7 +24,7 @@ src/pages/index.astro       自訂 landing(3 段:hero+數據條 → 金句+看�
 src/pages/[...slug].astro    動態路由:用 content collection 渲染 src/content/docs 的每頁
 src/content/docs/           頁面內容(方法論散文,MD/MDX):
   claims.mdx(含來源+延伸資源) cases/titanic.mdx  glossary.md  maps/solution.md
-  workflow/:quickstart(含學習地圖)· 0-diagnose(含 0.5 清洗)· 1-validate · 2-baseline · 3-features · 4-ensemble(含 5 提交)· small-n
+  workflow/:handbook(傻瓜手冊+流程圖)· quickstart(含學習地圖+自我檢核)· 0-diagnose(含 0.5 清洗)· 1-validate · 2-baseline · 3-features · 4-ensemble(含 5 提交)· small-n
 src/layouts/                Base.astro(shell + Nav + Footer)、Doc.astro(側欄 + 內文 + TOC + 上/下頁)
 src/components/             Nav / Sidebar / Footer / Aside / ClaimsTable / ValidationList / CasesTable
 src/nav.ts                  導覽結構(取代舊 Starlight sidebar)
@@ -56,8 +56,8 @@ DESIGN.md                   設計系統憲法(tokens/字階/間距/元件規則
 
 ## 網站結構(已建置;導覽順序見 src/nav.ts)
 ```text
-首頁 landing(src/pages/index.astro)  hero「先學會診斷,再讓 AI 動手」+ tagline「The simple way to AutoML」;actions [開始→quickstart] [驗證證據→claims]
-方法論(group)    quickstart · 0|診斷與清洗 · 1|鎖死驗證 · 2|基線 · 3|特徵 · 4–5|集成與提交 · 小樣本 · 解題地圖(側欄標籤帶階段序號)
+首頁 landing(src/pages/index.astro)  hero「先學會診斷,再讓 AI 動手」+ tagline「The simple way to AutoML」;actions [開始→handbook] [驗證證據→claims]
+方法論(group)    🐣 handbook · quickstart · 0|診斷與清洗 · 1|鎖死驗證 · 2|基線 · 3|特徵 · 4–5|集成與提交 · 小樣本 · 解題地圖(側欄標籤帶階段序號)
 證據與參考(group) claims(<ClaimsTable> + 學術來源 + 延伸資源)· cases/titanic(六階段敘事 + <CasesTable>)· glossary(字典表格)
 (收斂 2026-08-25:16 頁 → 12 頁——maps/learning→quickstart、resources→claims、0-clean→0-diagnose、5-submit→4-ensemble,舊網址皆 301;六階段「模型」不變,landing 六卡照舊,卡 4/5 同頁)
 ```
@@ -80,7 +80,7 @@ DESIGN.md                   設計系統憲法(tokens/字階/間距/元件規則
 - 首頁 hero 下第一段必含:「幻覺不是最大的危險,『流暢地執行錯誤的方向』才是。」
 
 ## 驗收標準(前端重練後現況)
-- ✅ npm run build 零錯誤零警告(12 頁 + 4 redirect)
+- ✅ npm run build 零錯誤零警告(13 頁 + 4 redirect)
 - ✅ 首頁「開始」→ 快速版;方法論各頁用頁尾「下一頁」可從 0-diagnose 走到 small-n(側欄 2 群組、方法論 8 項)
 - ✅ /claims 的 <ClaimsTable> 完整渲染(讀 src/data/claims.json:13 條核心主張 + demo/multi,含 L1/L2/L3 驗證層與腳本連結)
 - ✅ 手機 375px 無橫向捲動;行動選單(☰)展開全站導覽;寬表格在容器內捲

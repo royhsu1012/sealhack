@@ -8,11 +8,11 @@
 ## A|審計輪(每小時 cron;抓不一致、不修錯)
 
 只修「不會有第二種正確答案」的錯;其餘寫待辦標「待使用者判斷」。七查:
-1. `npm run build`:零錯誤、**12 頁 + 4 redirect**、pagefind Indexed 12(看完整輸出,別搶讀)。
+1. `npm run build`:零錯誤、**13 頁 + 4 redirect**、pagefind Indexed 13(看完整輸出,別搶讀)。
 2. `check.py`:硬錯誤 0、各項不得比上輪差(含 S10=0)。
 3. 文件對現況:grep stale(starlight/舊頁數/已併頁 URL);LOOP_LOG 歷史段與 redirects 設定豁免。
 4. 數字對資料:主張「14 條 C1a–C12,13 條 L1+L2、C11 僅 L2;官方反例 C3、C12(M4)」;LB 0.7488/0.7727;landing nScripts=validation.json 條數(check.py 的腳本數含已棄用 v1,兩者不同指標皆正確)。
-5. 連結:斷連結 0;nav.ts 每 slug 有頁(11 slug)。
+5. 連結:斷連結 0;nav.ts 每 slug 有頁(12 slug)。
 6. 回歸:landing 3 段、卡 4/5 同連 4-ensemble、Aside ≤3/頁、搜尋 UI 在 dist;設計抽驗照 DESIGN.md §八。
 7. 線上:apex 200 / www 301 / pagefind 200 / 舊 URL 301。
 紀錄政策:**全綠輪不追加條目**,只改寫 LOOP_LOG 頂部「審計:連續全綠 N 輪(至 A<編號> <時間>)」一行;**有發現/有修才立條目**。不單獨 commit/push(push 觸發正式站重建;隨下次實質變更帶上)。全綠就回報「全綠無異常」,不為做事而亂改。

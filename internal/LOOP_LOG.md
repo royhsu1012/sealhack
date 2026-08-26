@@ -6,7 +6,7 @@
 
 ## 目前狀態
 
-**★ 狀態(2026-08-25):已上線 https://sealhack.com,收斂完成 12 頁。** Astro + Tailwind 自訂設計、深色預設;build 12 頁 + 4 redirect 零錯誤、pagefind Indexed 12;計分板全綠(25/25 腳本、0 簡體、0 斷連結);導覽 2 群組(方法論 8 項帶階段序號 / 證據與參考 3 項)、landing 3 段;六階段模型不變。
+**★ 狀態(2026-08-25):已上線 https://sealhack.com,收斂完成 12 頁。** Astro + Tailwind 自訂設計、深色預設;build 13 頁 + 4 redirect 零錯誤、pagefind Indexed 13;計分板全綠(25/25 腳本、0 簡體、0 斷連結);導覽 2 群組(方法論 8 項帶階段序號 / 證據與參考 3 項)、landing 3 段;六階段模型不變。
 **2026-08-25 里程碑(細節見底部各輪紀錄)**:文件校準(主張數統一 13 條 C1a–C11、清 Starlight 殘留)→ Pagefind 搜尋加回(🔍/Ctrl⌘K)→ 部署上線(Workers 靜態資產 + sealhack.com + www 301;push 自動建置部署)→ 收斂 16→14→12 頁(maps/learning→quickstart、resources→claims、0-clean→0-diagnose、5-submit→4-ensemble,皆 301)+ glossary 字典化(302→158 行)。
 
 **審計:連續全綠 16 輪(A12–A27,至 2026-08-26 15:23;基準 14 條主張/25 支腳本,案例頁含七場總表)。**
@@ -362,3 +362,10 @@ A2–A4、A6–A10、A12–A21 皆全綠無異常(修 0/發現 0);有動作的�
 - 零新頁、零新元件、Aside 上限不變;build 12 頁、計分板全綠。
 ### 教學缺口 F 完成|2026-08-26 16:35(使用者選定)
 quickstart 學習地圖後新增「自我檢核:過關才前進」——13 個節點的驗證方式整理為第一人稱檢核題(L1 六題/L2 三題/L3 兩題),GFM checkbox 靜態渲染(不違互動禁令);收尾指路驗證腳本(「驗證而非記憶」)。MASTER_PLAN 缺口 F、D 標 ✅(D 由七場掃描達成)。
+### 使用者裁示|2026-08-26 16:50
+Phase 0 Concierge 準備包(招募文案/Notion 大綱/Discord 規範/課表)**不做**——勿再提案;Phase 0 啟動時點與形式由使用者決定。
+
+### 新手層|2026-08-26 17:10(使用者指令「太難→傻瓜手冊+流程圖」「網站更簡單易懂」)
+- 新頁 workflow/handbook「傻瓜手冊:第一場比賽保姆級教學」:全程 ASCII 流程圖(含兩個決策問句)+ 七步命令句 + 可直接貼的完整 LGBM 腳本(含迴歸改法附註)+ 卡關急救表(5 症狀)+ 完賽後升級指路。零術語開場、Aside 0。
+- 入口重接:landing hero「開始」、Nav 右上「開始」→ /workflow/handbook/;頂列第一連結改「新手入門」;側欄方法論第一位 🐣;quickstart 開頭加新手分流一行。hero/金句/tagline 未動。
+- 基準:12→13 頁、Indexed 13、nav 12 slug(SKILL/憲法/README 同步)。

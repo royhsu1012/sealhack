@@ -6,6 +6,7 @@ export const NAV: NavGroup[] = [
   {
     group: '方法論',
     items: [
+      { label: '🐣 傻瓜手冊:第一場比賽', slug: 'workflow/handbook' },
       { label: '⚡ 快速版:最短完賽路', slug: 'workflow/quickstart' },
       { label: '0｜讀題診斷與清洗', slug: 'workflow/0-diagnose' },
       { label: '1｜鎖死驗證', slug: 'workflow/1-validate' },

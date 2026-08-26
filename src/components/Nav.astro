@@ -2,7 +2,7 @@
 import { NAV, href } from '../nav';
 const path = Astro.url.pathname;
 const links = [
-  { label: '快速版', href: '/workflow/quickstart/' },
+  { label: '新手入門', href: '/workflow/handbook/' },
   { label: '方法論', href: '/workflow/0-diagnose/' },
   { label: '證據', href: '/claims/' },
   { label: '案例', href: '/cases/titanic/' },
@@ -27,7 +27,7 @@ const links = [
     <button id="theme-toggle" aria-label="切換主題" class="w-10 h-10 grid place-items-center rounded-md border hover:opacity-80" style="border-color:var(--border)">
       <span class="text-sm">◐</span>
     </button>
-    <a href="/workflow/quickstart/" class="hidden sm:inline text-sm font-semibold px-3 py-1.5 rounded-md text-white shrink-0" style="background:var(--brand)">開始</a>
+    <a href="/workflow/handbook/" class="hidden sm:inline text-sm font-semibold px-3 py-1.5 rounded-md text-white shrink-0" style="background:var(--brand)">開始</a>
     <button id="menu-toggle" aria-label="選單" class="md:hidden w-10 h-10 grid place-items-center rounded-md border" style="border-color:var(--border)">
       <span class="text-lg leading-none">☰</span>
     </button>
