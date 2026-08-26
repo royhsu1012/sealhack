@@ -9,6 +9,7 @@
 **★ 狀態(2026-08-25):已上線 https://sealhack.com,收斂完成 12 頁。** Astro + Tailwind 自訂設計、深色預設;build 12 頁 + 4 redirect 零錯誤、pagefind Indexed 12;計分板全綠(25/25 腳本、0 簡體、0 斷連結);導覽 2 群組(方法論 8 項帶階段序號 / 證據與參考 3 項)、landing 3 段;六階段模型不變。
 **2026-08-25 里程碑(細節見底部各輪紀錄)**:文件校準(主張數統一 13 條 C1a–C11、清 Starlight 殘留)→ Pagefind 搜尋加回(🔍/Ctrl⌘K)→ 部署上線(Workers 靜態資產 + sealhack.com + www 301;push 自動建置部署)→ 收斂 16→14→12 頁(maps/learning→quickstart、resources→claims、0-clean→0-diagnose、5-submit→4-ensemble,皆 301)+ glossary 字典化(302→158 行)。
 
+**審計:連續全綠 10 輪(A12–A21,至 2026-08-26 09:23)。**
 **審計輪(每小時,現行)** — 目的是**抓不一致、不修錯**。固定六查,只修「不會有第二種正確答案」的錯,其餘寫進待辦標「待使用者判斷」:
 1. `npm run build` 零錯誤零警告(12 頁 + 4 redirect;pagefind Indexed 12)。
 2. `python .claude/skills/sealhack-loop/scripts/check.py` 硬錯誤 0、計分板不得變差。
@@ -294,19 +295,10 @@ C9/C10 small_n_paired v2(配對差 std ≈ 分數 std 的 1/4;票團有害 0/20�
 - **修 1 項(不會有第二種正確答案)**:`src/data/claims.json` 頂層死欄位 `statement` 仍寫「十條核心主張全數達 L1+L2」→ 改為「13 條 C1a–C11,12 條 L1+L2、C11 僅 L2、含 1 官方反例 C3」。該欄未被任何頁渲染(dist 無此句),但屬登錄檔事實,校正之。
 - **發現不改(correct-by-design,記錄以免下輪重報)**:nScripts=24(validation.json)vs check.py 25/25——差在 `case_titanic.py`(v1,第 2 輪已棄用、保留為修訂史、主動不列入索引)。兩數不同指標、皆正確。**勿把 v1 加回 validation.json**。
 - **計分板**:硬錯誤 0、25/25 腳本、0 簡體、0 斷連結。**待使用者**:0 項(僅待辦 10 Pagefind 為選配)。
-### 審計 A2|2026-08-25 12:15|全綠無異常
-六查全過:build 16 頁零錯 · check.py 硬錯 0(25/25、0 簡體、0 斷連結)· 無新 stale · nClaims=13/nScripts=24/bestLB=0.7727 皆對 · nav 15 slug 全對應 · Aside 全 ≤3。修 0、發現 0、待使用者 0。
-### 審計 A3|2026-08-25 13:27|全綠無異常(Pagefind/git 後首檢)
-六查全過:build 16 頁零錯 + pagefind Indexed 16 · check.py 硬錯 0(25/25、0 簡體、0 斷連結)· stale 只剩正確描述性引用 · nClaims=13/nScripts=24/bestLB=0.7727 皆對、claims 頁「登錄 13 條主張」×3 一致 · nav 15 slug 全對應 · Aside 全 ≤3、搜尋 UI(search-open/search-modal)在 dist。修 0、發現 0、待使用者 0。git:已同步 origin/astro-site(e3a9710);部署待使用者手機設定方式 A。
-
 ### 部署上線|2026-08-25 15:00|sealhack.com(使用者授權,Chrome 代操作)
 - 使用者先手動 deploy Worker(astro-site 內容,最新版含 Pagefind)→ 我在其已登入 Chrome 完成:刪 sealhack.com 4 筆舊 GitHub Pages A 記錄(使用者確認舊站下線)→ Worker 綁 sealhack.com 自訂網域 → 加 www proxied CNAME → 部署「Redirect from WWW to Root」規則。
 - 驗證:apex/claims/pagefind/腳本下載/sitemap 全 200;www 301 → apex(路徑保留);真瀏覽器實測 hero/搜尋(「集成」12 結果)正常。DNS 已全網收斂(1.1.1.1/8.8.8.8/系統);唯操作機 Chrome 短暫殘留空窗期負面快取,自然過期。
 - 文件同步:CLAUDE.md 部署行改 Workers 現況、README 加線上版連結、MASTER_PLAN 部署項標done;**刪 internal/PROMPTS.md**(Starlight 建置腳本,無用)並清引用。
-### 審計 A4|2026-08-25 14:42|全綠(部署後首輪,加驗線上站)
-六查全過:build 16 頁 + Indexed 16 · check.py 硬錯 0(25/25、0 簡體、0 斷連結)· 無 stale(PROMPTS 引用已清乾淨)· nClaims=13/nScripts=24/bestLB=0.7727 ✓ · nav 15 slug ✓ · Aside ≤3、搜尋 UI 在。**線上站:apex 200 / www 301 / pagefind 200 ✓**。git HEAD=remote=3b490d3。修 0、發現 0、待使用者 0。
-註:審計紀錄自本輪起**不單獨 commit/push**(push 會觸發正式站自動重建,純日誌不值得);隨下次實質變更一起帶上。工作區暫留 LOOP_LOG 一檔未提交屬正常。
-
 ### 收斂輪|2026-08-25 15:00|網站精煉(使用者指令「開始收斂 更精煉」)
 - **16 頁 → 14 頁**:maps/learning 併入 quickstart(標題降級掛「## 學習地圖」,刪內部產品備註 blockquote);resources 併入 claims(去重:approachingalmost/MLWave 已在實務指南,刪重複與 anuj0456 彙整,4 冠軍解法源留 3+lmassaron)。舊網址 astro redirects 301(/maps/learning/→quickstart、/resources/→claims)。
 - **導覽**:群組 4→3(方法論 10 項含解題地圖、證據 2、參考=詞彙表);頂列 5→4(去「資源」);Footer 資源→解題地圖。
@@ -323,16 +315,6 @@ C9/C10 small_n_paired v2(配對差 std ≈ 分數 std 的 1/4;票團有害 0/20�
 - **導覽**:群組 3→2(方法論 8 項 / 證據與參考 3 項);方法論標籤加階段序號(0|、1|…4–5|),平行感 → 流水線。10→8 項。
 - **六階段模型不動**:landing 六卡照舊,卡 5 連到 4-ensemble(同頁含階段 5)。redirect 4 條(_redirects + astro.config)。
 - 驗證:build 12 頁 + Indexed 12、斷連結 0、стуб 正確指向。
-### 審計 A6|2026-08-25 16:30|全綠無異常(12 頁基準首輪)
-七查全過:build 12 頁+Indexed 12 ✓ · check.py 硬錯 0(25/25、0 簡體、0 斷連結)✓ · 無 stale ✓ · 數字 13/24/0.7727 ✓ · nav 11 slug ✓ · landing 3 段、卡 4/5 同連 4-ensemble、Aside ≤3、搜尋 UI ✓ · 線上 apex 200/www 301/pagefind 200/resources 301/5-submit 301 ✓ · git 同步 4284ea3、工作區乾淨。修 0、發現 0、待使用者 0。
-### 審計 A7|2026-08-25 17:30|全綠無異常
-七查全過:build 12 頁+Indexed 12 · 硬錯 0(25/25、0 簡體、0 斷連結)· 無 stale · 13/24/0.7727 ✓ · nav 11 slug ✓ · landing 3 段/卡 4-5 同連/Aside ≤3/搜尋 UI ✓ · 線上 200/301/200/301/301 ✓ · git 4284ea3 同步。修 0、發現 0、待使用者 0。
-### 審計 A8|2026-08-25 18:30|全綠無異常
-七查全過(同 A7 基準):build 12+Indexed 12 · 硬錯 0 · 無 stale · 13/24/0.7727 ✓ · nav 11 ✓ · 回歸無 · 線上 200/301/200/301/301 ✓ · git 4284ea3。修 0、發現 0、待使用者 0。
-### 審計 A9|2026-08-25 19:30|全綠無異常
-七查全過(同 A7/A8 基準):build 12+Indexed 12 · 硬錯 0 · 無 stale · 13/24/0.7727 ✓ · nav 11 ✓ · 回歸無 · 線上 200/301/200/301/301 ✓ · git 4284ea3。修 0、發現 0、待使用者 0。
-### 審計 A10|2026-08-25 20:30|全綠無異常
-七查全過(同 A7–A9 基準):build 12+Indexed 12 · 硬錯 0 · 無 stale · 13/24/0.7727 ✓ · nav 11 ✓ · 回歸無 · 線上 200/301/200/301/301 ✓ · git 4284ea3。修 0、發現 0、待使用者 0。連續 4 輪全綠。
 ### L3 多案例掃描重啟|2026-08-25 21:00|使用者授權(待辦 3 解凍)
 - 使用者裁示:①授權用其 Chrome 按 Join(6 場)②全 6 場、s6e8 優先。**卡點轉移:連上的 Chrome 未登入 Kaggle(帳密我不能代輸)→ 等使用者登入或手機 Join。**
 - 已完成(不需資料):s6e8 五問診斷(公開頁)——T1 表格二分類、AUC(平滑指標)、synthetic 29 欄、train≈69 萬列(非小樣本→集成有紅利、5-fold 可信)、8/31 截止。
@@ -364,3 +346,6 @@ C9/C10 small_n_paired v2(配對差 std ≈ 分數 std 的 1/4;票團有害 0/20�
 - 待辦 3 進度:**6 場中 5 場已完賽並真提交**(titanic、s6e8、spaceship、house、nlp);digit 跑中;store-sales 待專場。加速手段:並行 3+1、SKILL v2 協議直套、s6e8 坑不再踩。
 ### L3|digit 完賽|2026-08-26 00:10
 lgbm 多分類(200 樹、無 CNN,22.3 分):OOF Acc 0.97760(五折 ±0.001)→ **LB 0.97660**(差 −0.001,CV 誠實 ×6 場)。單家族免集成(無近敵)。**待辦 3:6 場完賽 5+1(titanic/s6e8/spaceship/house/nlp/digit),僅剩 store-sales(T4 時序專場)。**
+
+### 審計摘要|A2–A21(壓縮,2026-08-26 文件重規劃)
+A2–A4、A6–A10、A12–A21 皆全綠無異常(修 0/發現 0);有動作的輪:A1(claims.json 死欄位)、A5(MASTER_PLAN 頁數)、A11(log untrack)。**新政策:全綠審計輪不再逐條追加,只更新頂部「連續全綠」計數;有發現才立條目。**

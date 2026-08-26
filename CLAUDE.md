@@ -1,5 +1,17 @@
 # CLAUDE.md — sealhack.com 專案憲法 v5(定稿)
 
+## 文件地圖(每份一個職責,重疊即缺陷)
+| 文件 | 職責 | 何時讀 |
+|---|---|---|
+| CLAUDE.md(本檔) | 憲法:定位、結構、不可違反約束 | 每個 session 開頭 |
+| README.md | 對外門面:是什麼、線上版、怎麼跑 | GitHub 訪客 |
+| STANDARDS.md | 內容/腳本品質標準 S1–S10(check.py 計分) | 改內容或腳本前 |
+| DESIGN.md | 設計系統憲法(tokens/元件/驗收) | 改前端前 |
+| validation/README.md | 研究目錄導覽:重跑、harness 合約 | 跑驗證前 |
+| .claude/skills/sealhack-loop/SKILL.md | 三種輪操作手冊(審計/案例/研究) | 執行迴圈時 |
+| internal/LOOP_LOG.md | 狀態+待辦+歷史(頂部每輪改寫) | 每輪開頭 |
+| internal/MASTER_PLAN.md | 產品路線圖(Phase 0–3,使用者主權) | 規劃時 |
+
 ## 專案是什麼
 SealHack:機器學習競賽方法論教學網站。方法論 v2.2 已收斂
 (登錄 13 條主張 C1a–C11:12 條文獻+實驗雙驗證,C11 目前僅沙盒、文獻待補;含 1 個官方反例 C3)。

@@ -40,6 +40,4 @@ python validation/run_all.py         # 一鍵跑全套,印各主張判決
 
 腳本已強制 UTF-8 輸出,Windows 亦可。品質計分板:`python .claude/skills/sealhack-loop/scripts/check.py`。
 
-## 授權與定位
-
-本站是作者的資歷證明,**內容正確性優先於一切**。方法論修改須引文獻或新增可執行的 L2 實驗(見 CLAUDE.md 憲法)。
+> 內容正確性優先於一切;方法論修改須引文獻或 L2 實驗(規則見 CLAUDE.md / STANDARDS.md)。
