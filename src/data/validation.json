@@ -162,6 +162,24 @@
       "kind": "claim",
       "validates": "同模型裸版對照(方法論貢獻):watson +0.161、spaceship +0.019、house log1p −0.0033 RMSE、s6e8 +0.0002、nlp −0.003(怪 test,噪音內;OOF 端 +0.018)",
       "runtime_sec": 600
+    },
+    {
+      "file": "case_spaceship_v2.py",
+      "kind": "case",
+      "validates": "spaceship 階段3深化:cab_num t+10.37 留、group t+0.86 棄、log消費 t=nan(樹單調不變性實證)",
+      "runtime_sec": 78
+    },
+    {
+      "file": "case_spaceship_v3.py",
+      "kind": "case",
+      "validates": "GroupKFold(團體) 重裁:cab_num t+20.77 真訊號;LB 0.80617 前 22.9%;v2 LB −.0007 為單讀噪音(自我糾錯)",
+      "runtime_sec": 42
+    },
+    {
+      "file": "case_houseprices_v2.py",
+      "kind": "case",
+      "validates": "三組教科書特徵(TotalSF/屋齡/Qual×SF)配對檢定全否決;subsample+真5-seed平均 → LB 0.12574 前 29.6%",
+      "runtime_sec": 234
     }
   ]
 }
