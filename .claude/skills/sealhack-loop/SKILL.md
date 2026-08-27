@@ -11,7 +11,7 @@
 1. `npm run build`:零錯誤、**13 頁 + 4 redirect**、pagefind Indexed 13(看完整輸出,別搶讀)。
 2. `check.py`:硬錯誤 0、各項不得比上輪差(含 S10=0)。
 3. 文件對現況:grep stale(starlight/舊頁數/已併頁 URL);LOOP_LOG 歷史段與 redirects 設定豁免。
-4. 數字對資料:主張「14 條 C1a–C12,13 條 L1+L2、C11 僅 L2;官方反例 C3、C12(M4)」;LB 0.7488/0.7727;landing nScripts=validation.json 條數(check.py 的腳本數含已棄用 v1,兩者不同指標皆正確)。
+4. 數字對資料:主張「14 條 C1a–C12,13 條 L1+L2、C11 僅 L2;官方反例 C3、C12(M4)」;LB 0.7488/0.7727;landing nScripts=validation.json 條數=26(check.py 腳本數含已棄用 v1 與 kernel 版,不同指標皆正確)。
 5. 連結:斷連結 0;nav.ts 每 slug 有頁(12 slug)。
 6. 回歸:landing 3 段、卡 4/5 同連 4-ensemble、Aside ≤3/頁、搜尋 UI 在 dist;設計抽驗照 DESIGN.md §八。
 7. 線上:apex 200 / www 301 / pagefind 200 / 舊 URL 301。
@@ -29,7 +29,7 @@
 5. 雙提交:CV 最高 + 最穩健;`kaggle competitions submit`;**只如實記 public LB,不追榜(§13)**;寫回 LOOP_LOG + src/data/cases.json。
 harness 合約備忘:`run_cv(feature_fn, tr, te, y, folds, use, factory, scale, predict_fn, metric_fn)`;
 `caruana(oofs=dict, y, score_fn)→(counts, order)`、`blend(dict, counts)`;metric 一律「越高越好」。
-已知坑:pandas 3.0 字串欄是 `str` dtype(用 `is_numeric_dtype` 判斷,別用 `==object`);線性/樹系不吃 NaN 用 -999 佔位;群組統計只用 ref(C2/C10)。前端:.md→.mdx 轉換必把 `<br>` 改 `<br/>`(MDX JSX 規則);.astro 模板裡不能寫 markdown 星號。
+已知坑:pandas 3.0 字串欄是 `str` dtype(用 `is_numeric_dtype` 判斷,別用 `==object`);線性/樹系不吃 NaN 用 -999 佔位;群組統計只用 ref(C2/C10)。前端:.md→.mdx 轉換必把 `<br>` 改 `<br/>`;.astro 裡不能寫 markdown 星號。code 賽:kernel-metadata competition_sources + `kaggle kernels push`→poll status→比賽頁 Submit Prediction 選 notebook 輸出;**資料掛載在 `/kaggle/input/competitions/<slug>/`(多一層 competitions)**,kernel 內用 os.walk 找 train.csv 最穩。NLI 類句對資料:先查 premise/句子重複與跨 train-test 共享(群組軸+身分特徵反向記憶雙殺)。
 
 ## C|研究輪(方法論強化;要續跑 /loop)
 

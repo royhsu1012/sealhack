@@ -112,9 +112,10 @@
       "L1": true,
       "L2": true,
       "L3": "pending",
-      "evidence": "5 seeds:隨機切 ΔCV +0.013~+0.057、私榜 Δ -0.028~+0.005;GroupKF 更接近私榜",
+      "evidence": "5 seeds:隨機切 ΔCV +0.013~+0.057、私榜 Δ -0.028~+0.005;GroupKF 更接近私榜;野外實例:watson NLI GroupKFold CV 0.400 vs LB 0.254(premise 反向記憶),去身分後 CV 0.463→LB 0.415(case_watson.py)",
       "scripts": [
-        "claims_v5.py"
+        "claims_v5.py",
+        "case_watson.py"
       ],
       "revision": "判準由絕對門檻改為 5 seeds 相對(換函式庫版本即翻盤)"
     },
@@ -175,7 +176,7 @@
       "L1": null,
       "L2": true,
       "L3": "done",
-      "evidence": "7 場真提交完賽(titanic/s6e8/spaceship/house-prices/nlp/digit/store-sales),6 種型態、全簡單模型;同分布場次 CV→LB ≤0.002,異分布/時序如 C1b 預測衰減",
+      "evidence": "8 場真提交完賽(+watson 多語言 NLI code 賽),6 種型態、兩種賽制(prediction/code)、全簡單模型;同分布場次 CV→LB ≤0.002,結構性場次的偏差皆可診斷",
       "scripts": [
         "harness.py",
         "case_s6e8.py",
@@ -183,7 +184,8 @@
         "case_houseprices.py",
         "case_nlp.py",
         "case_digit.py",
-        "case_storesales.py"
+        "case_storesales.py",
+        "case_watson.py"
       ],
       "revision": null
     },

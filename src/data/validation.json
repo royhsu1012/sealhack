@@ -150,6 +150,12 @@
       "kind": "case",
       "validates": "C12 時序迴歸框架:三時間窗 LGBM 0.4007 < SES 0.4457 < naive 0.5661;LB 0.51465 vs 0.57949",
       "runtime_sec": 306
+    },
+    {
+      "file": "case_watson.py",
+      "kind": "case",
+      "validates": "多語言 NLI(code 賽):v1 隨機切 OOF 0.287<隨機→抓出 premise 群組;v2 GroupKFold CV 0.400 但 LB 0.254(C7b 野外脫鉤)→診斷 premise 反向記憶;v3 去 premise 身分 CV 0.463→LB 0.41520",
+      "runtime_sec": 204
     }
   ]
 }

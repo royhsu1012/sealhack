@@ -376,3 +376,8 @@ Phase 0 Concierge 準備包(招募文案/Notion 大綱/Discord 規範/課表)**�
 - **診斷:前台在說圈內話**。原則入 DESIGN §六之二:導覽只用訪客語言、首頁單一入口、h1 保留術語由導覽翻譯;details=密度控制標準手段。
 - ①首頁:tagline 下加白話定位一句(hero/金句/tagline 未動);AutoML 段、差異化段去術語;六卡描述全白話;底部 CTA 併入手冊(單一路徑)。②導覽:頂列改「新手入門/教學/實戰成績/為什麼可信」;側欄組改「教學/為什麼可信」,11 標籤全訪客語言(slug 全不動);Footer 對齊。③密度:quickstart→mdx(學習地圖+自我檢核收 details,錨點 id 掛盒上)、solution→mdx(九軌道各自收合)、claims(校準+來源收合)。
 - 踩坑:.astro 內寫 markdown 星號(修為 <strong>);MDX 要求 `<br/>` 自閉合(md→mdx 轉換的系統性坑,入 SKILL 已知坑)。驗證:13 頁、details 3/10/3、表格/ASCII/checkbox 在摺疊內正常、斷連結 0。
+
+### L3|第 8 案 watson(首個 code 賽)|2026-08-27 06:45(使用者指令「驗證更多比賽」)
+- 盤點:標準預測賽已掃盡,僅餘 code 賽(watson/llm-classification)→ 取 watson 補「賽制」軸;llm-class 暫緩(同軸、資料大)。
+- **三回合診斷劇**:v1 隨機切 OOF 0.287<隨機 → premise 群組結構(32.5% 多標籤);v2 StratifiedGroupKFold CV 0.400、**LB 0.254(C7b 野外脫鉤)** → test 共享 52% premise 且異標籤,全量模型 premise 反向記憶;v3 特徵去 premise 身分(hypothesis-only)→ CV 0.463、**LB 0.41520(+0.161 兌現)**。C7b/‘multi’ 證據已更新,cases 頁總表+結論 4。
+- **code 賽管線打通**:本地 CV 決策 → kernel push 遠端全量訓練 → Chrome 提交 notebook 輸出。坑:資料掛載 `/kaggle/input/competitions/<slug>/`(v1 kernel 因此炸)。基準:nScripts 25→26。
