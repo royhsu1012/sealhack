@@ -4,24 +4,24 @@ export interface NavGroup { group: string; items: NavItem[]; }
 
 export const NAV: NavGroup[] = [
   {
-    group: '方法論',
+    group: '教學',
     items: [
-      { label: '🐣 傻瓜手冊:第一場比賽', slug: 'workflow/handbook' },
-      { label: '⚡ 快速版:最短完賽路', slug: 'workflow/quickstart' },
-      { label: '0｜讀題診斷與清洗', slug: 'workflow/0-diagnose' },
-      { label: '1｜鎖死驗證', slug: 'workflow/1-validate' },
-      { label: '2｜多樣化基線', slug: 'workflow/2-baseline' },
-      { label: '3｜特徵迭代', slug: 'workflow/3-features' },
-      { label: '4–5｜集成與提交', slug: 'workflow/4-ensemble' },
-      { label: '小樣本作戰守則', slug: 'workflow/small-n' },
-      { label: '解題地圖:九軌道速查', slug: 'maps/solution' },
+      { label: '🐣 新手:45 分鐘完成第一場', slug: 'workflow/handbook' },
+      { label: '⚡ 進階:七步完賽攻略', slug: 'workflow/quickstart' },
+      { label: '0｜怎麼讀懂一場比賽', slug: 'workflow/0-diagnose' },
+      { label: '1｜建立可信的驗證', slug: 'workflow/1-validate' },
+      { label: '2｜先跑出基準分數', slug: 'workflow/2-baseline' },
+      { label: '3｜怎麼加特徵才有效', slug: 'workflow/3-features' },
+      { label: '4–5｜組合模型與交卷', slug: 'workflow/4-ensemble' },
+      { label: '資料很少怎麼辦', slug: 'workflow/small-n' },
+      { label: '題型速查表', slug: 'maps/solution' },
     ],
   },
   {
-    group: '證據與參考',
+    group: '為什麼可信',
     items: [
-      { label: '主張登錄表與 LB 教條', slug: 'claims' },
-      { label: '示範案例:鐵達尼', slug: 'cases/titanic' },
+      { label: '我們驗證過的 14 件事', slug: 'claims' },
+      { label: '實戰成績:七場比賽', slug: 'cases/titanic' },
       { label: '詞彙表', slug: 'glossary' },
     ],
   },

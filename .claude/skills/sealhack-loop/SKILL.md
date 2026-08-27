@@ -29,7 +29,7 @@
 5. 雙提交:CV 最高 + 最穩健;`kaggle competitions submit`;**只如實記 public LB,不追榜(§13)**;寫回 LOOP_LOG + src/data/cases.json。
 harness 合約備忘:`run_cv(feature_fn, tr, te, y, folds, use, factory, scale, predict_fn, metric_fn)`;
 `caruana(oofs=dict, y, score_fn)→(counts, order)`、`blend(dict, counts)`;metric 一律「越高越好」。
-已知坑:pandas 3.0 字串欄是 `str` dtype(用 `is_numeric_dtype` 判斷,別用 `==object`);線性/樹系不吃 NaN 用 -999 佔位;群組統計只用 ref(C2/C10)。
+已知坑:pandas 3.0 字串欄是 `str` dtype(用 `is_numeric_dtype` 判斷,別用 `==object`);線性/樹系不吃 NaN 用 -999 佔位;群組統計只用 ref(C2/C10)。前端:.md→.mdx 轉換必把 `<br>` 改 `<br/>`(MDX JSX 規則);.astro 模板裡不能寫 markdown 星號。
 
 ## C|研究輪(方法論強化;要續跑 /loop)
 

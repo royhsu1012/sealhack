@@ -23,12 +23,12 @@ const backing = [
 ];
 
 const stages = [
-  ['0', '讀題與五問診斷', '模態→任務→指標→test切法→code賽?先定 CV。', '/workflow/0-diagnose/'],
-  ['1', '鎖死驗證', '24h 跑通端到端 + OOF 落盤。', '/workflow/1-validate/'],
-  ['2', '多樣化基線', 'AutoGluon 錨點 + LGBM;≤5萬列試 TabPFN。', '/workflow/2-baseline/'],
-  ['3', '特徵迭代', '一次一組,配對 t>2 才留。', '/workflow/3-features/'],
-  ['4', '集成', 'Caruana 爬山;小樣本跳過。', '/workflow/4-ensemble/'],
-  ['5', '收尾與提交', '雙提交 + 防呆檢查。', '/workflow/4-ensemble/'],
+  ['0', '讀懂比賽', '先搞清楚題目在問什麼、分數怎麼算,再動手。', '/workflow/0-diagnose/'],
+  ['1', '建立驗證', '做一把可信的尺,之後每個改動都用它量。', '/workflow/1-validate/'],
+  ['2', '基準分數', '最簡單的模型先跑一次,知道起點在哪。', '/workflow/2-baseline/'],
+  ['3', '加特徵', '一次加一個想法,量過有效才留下。', '/workflow/3-features/'],
+  ['4', '組合模型', '幾個模型合起來,常比單獨一個更準。', '/workflow/4-ensemble/'],
+  ['5', '交卷', '選兩份提交 + 交前防呆檢查。', '/workflow/4-ensemble/'],
 ];
 ---
 <Base title="SealHack">
@@ -42,6 +42,9 @@ const stages = [
       </h1>
       <p class="mt-6 text-lg sm:text-xl" style="color:var(--fg-muted)">
         The simple way to AutoML｜一套你看得懂、可驗證的 Kaggle 競賽方法論
+      </p>
+      <p class="mt-3 text-base" style="color:var(--fg-muted)">
+        白話說:這是<strong style="color:var(--fg)">教你打 Kaggle 機器學習競賽</strong>的免費教學站——會 Python 就能照著做,45 分鐘交出第一份提交。
       </p>
       <div class="mt-9 flex items-center justify-center gap-3">
         <a href="/workflow/handbook/" class="px-5 py-2.5 rounded-lg font-semibold text-white shadow-lg" style="background:var(--brand);box-shadow:0 8px 24px -8px var(--brand)">開始 →</a>
@@ -67,7 +70,7 @@ const stages = [
     </p>
     <h2 class="mt-16 text-2xl sm:text-3xl font-extrabold text-center">這是一套你能看懂的 AutoML</h2>
     <p class="mt-4 text-center max-w-2xl mx-auto" style="color:var(--fg-muted)">
-      AutoGluon 這類 AutoML 做的事——k-fold bagging 產 OOF、多層 stacking、加權集成——<strong style="color:var(--fg)">就是本方法論的自動化版</strong>。差別在:AutoML 是黑箱;本站教你手動走一遍,所以你能<strong style="color:var(--fg)">診斷、操控、在它自動化不了的地方贏過它</strong>。
+      市面上的「自動機器學習」工具(AutoML)做的事,<strong style="color:var(--fg)">和本站教的是同一套流程</strong>——只是它是黑箱,你不知道它為什麼行、哪裡會錯。本站教你自己動手走一遍,所以你能<strong style="color:var(--fg)">看懂每一步、出錯時知道去哪修、在工具做不到的地方贏過它</strong>。
     </p>
     <div class="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {backing.map((b) => (
@@ -101,7 +104,7 @@ const stages = [
       ))}
     </div>
     <div class="text-center mt-10">
-      <a href="/workflow/quickstart/" class="inline-block px-5 py-2.5 rounded-lg font-semibold text-white" style="background:var(--brand)">⚡ 先看快速版七步 →</a>
+      <a href="/workflow/handbook/" class="inline-block px-5 py-2.5 rounded-lg font-semibold text-white" style="background:var(--brand)">🐣 從第一場比賽開始 →</a>
     </div>
   </section>
 </Base>

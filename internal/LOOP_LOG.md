@@ -369,3 +369,10 @@ Phase 0 Concierge 準備包(招募文案/Notion 大綱/Discord 規範/課表)**�
 - 新頁 workflow/handbook「傻瓜手冊:第一場比賽保姆級教學」:全程 ASCII 流程圖(含兩個決策問句)+ 七步命令句 + 可直接貼的完整 LGBM 腳本(含迴歸改法附註)+ 卡關急救表(5 症狀)+ 完賽後升級指路。零術語開場、Aside 0。
 - 入口重接:landing hero「開始」、Nav 右上「開始」→ /workflow/handbook/;頂列第一連結改「新手入門」;側欄方法論第一位 🐣;quickstart 開頭加新手分流一行。hero/金句/tagline 未動。
 - 基準:12→13 頁、Indexed 13、nav 12 slug(SKILL/憲法/README 同步)。
+### 閱讀體驗輪|2026-08-27 01:30(使用者指令「越方便閱讀 UX 越好」)
+四項(先立 DESIGN §五/§六 再實作):①**程式碼複製按鈕**(全站 pre;桌面 hover 顯/觸控恆顯、換字回饋)——手冊「貼上這段」變一鍵 ②**行動版頁內 TOC**(details 摺疊,純 HTML)——長頁手機不再盲捲 ③**錨點 scroll-margin 80px**——修「點 TOC 標題藏在 sticky nav 下」真缺陷 ④**桌面 TOC scroll-spy**(IO 染 brand)。自驗抓到 rootMargin 與錨點落點錯開的 bug(−15% 帶外)→ 修為 −5%(2d1a016)。線上靜態驗證:3 複製鈕、4 錨點全解析、新參數已部署;IO 在無合成窗格不觸發屬測試限制。
+
+### 訪客語言化輪|2026-08-27 12:50(使用者回饋:四項全困惑——首頁/三層/導覽詞/太密)
+- **診斷:前台在說圈內話**。原則入 DESIGN §六之二:導覽只用訪客語言、首頁單一入口、h1 保留術語由導覽翻譯;details=密度控制標準手段。
+- ①首頁:tagline 下加白話定位一句(hero/金句/tagline 未動);AutoML 段、差異化段去術語;六卡描述全白話;底部 CTA 併入手冊(單一路徑)。②導覽:頂列改「新手入門/教學/實戰成績/為什麼可信」;側欄組改「教學/為什麼可信」,11 標籤全訪客語言(slug 全不動);Footer 對齊。③密度:quickstart→mdx(學習地圖+自我檢核收 details,錨點 id 掛盒上)、solution→mdx(九軌道各自收合)、claims(校準+來源收合)。
+- 踩坑:.astro 內寫 markdown 星號(修為 <strong>);MDX 要求 `<br/>` 自閉合(md→mdx 轉換的系統性坑,入 SKILL 已知坑)。驗證:13 頁、details 3/10/3、表格/ASCII/checkbox 在摺疊內正常、斷連結 0。

@@ -23,8 +23,8 @@ src/content/docs/ 的 Markdown 與 validation/ 的腳本是唯一事實來源,�
 src/pages/index.astro       自訂 landing(3 段:hero+數據條 → 金句+看得懂的AutoML+背書+差異化 → 六階段)
 src/pages/[...slug].astro    動態路由:用 content collection 渲染 src/content/docs 的每頁
 src/content/docs/           頁面內容(方法論散文,MD/MDX):
-  claims.mdx(含來源+延伸資源) cases/titanic.mdx  glossary.md  maps/solution.md
-  workflow/:handbook(傻瓜手冊+流程圖)· quickstart(含學習地圖+自我檢核)· 0-diagnose(含 0.5 清洗)· 1-validate · 2-baseline · 3-features · 4-ensemble(含 5 提交)· small-n
+  claims.mdx(含來源+延伸資源) cases/titanic.mdx  glossary.md  maps/solution.mdx(九軌道 details 收合)
+  workflow/:handbook(傻瓜手冊+流程圖)· quickstart.mdx(學習地圖/自我檢核收合)· 0-diagnose(含 0.5 清洗)· 1-validate · 2-baseline · 3-features · 4-ensemble(含 5 提交)· small-n
 src/layouts/                Base.astro(shell + Nav + Footer)、Doc.astro(側欄 + 內文 + TOC + 上/下頁)
 src/components/             Nav / Sidebar / Footer / Aside / ClaimsTable / ValidationList / CasesTable
 src/nav.ts                  導覽結構(取代舊 Starlight sidebar)
@@ -57,8 +57,8 @@ DESIGN.md                   設計系統憲法(tokens/字階/間距/元件規則
 ## 網站結構(已建置;導覽順序見 src/nav.ts)
 ```text
 首頁 landing(src/pages/index.astro)  hero「先學會診斷,再讓 AI 動手」+ tagline「The simple way to AutoML」;actions [開始→handbook] [驗證證據→claims]
-方法論(group)    🐣 handbook · quickstart · 0|診斷與清洗 · 1|鎖死驗證 · 2|基線 · 3|特徵 · 4–5|集成與提交 · 小樣本 · 解題地圖(側欄標籤帶階段序號)
-證據與參考(group) claims(<ClaimsTable> + 學術來源 + 延伸資源)· cases/titanic(六階段敘事 + <CasesTable>)· glossary(字典表格)
+教學(group)      🐣 新手 · ⚡ 進階七步 · 0–4-5 階段(訪客語言標籤,slug 不變)· 資料很少怎麼辦 · 題型速查表
+為什麼可信(group) claims「我們驗證過的 14 件事」· cases/titanic「實戰成績:七場比賽」· glossary 詞彙表
 (收斂 2026-08-25:16 頁 → 12 頁——maps/learning→quickstart、resources→claims、0-clean→0-diagnose、5-submit→4-ensemble,舊網址皆 301;六階段「模型」不變,landing 六卡照舊,卡 4/5 同頁)
 ```
 - 各頁內容由拆分前的方法論 monolith 遷移而來(原始檔已刪,現以 src/content/docs 為唯一來源)。

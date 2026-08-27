@@ -83,23 +83,26 @@ Q5. 是 code 競賽嗎?        → 決定算力預算與推論限制
 
 ---
 
-## 軌道 T1|表格 · 二分類
+<details>
+<summary><strong>軌道 T1|表格 · 二分類</strong></summary>
 
 **辨識**:一列一個樣本,要預測「會/不會」。信用違約、客戶流失、疾病預測。
 
 | 專案 | 建議 |
 |---|---|
 | CV | StratifiedKFold(5)。若有實體重複 → StratifiedGroupKFold |
-| 指標 | AUC → 不需校準;整合預設機率平均,尺度差異大才轉 rank<br>LogLoss → 需要校準,clip 極端值 |
+| 指標 | AUC → 不需校準;整合預設機率平均,尺度差異大才轉 rank<br/>LogLoss → 需要校準,clip 極端值 |
 | 起手模型 | LightGBM(`objective='binary'`) |
 | 多樣化 | XGBoost / CatBoost / Logistic / MLP / TabPFN(≤5 萬列) |
 | 特徵重點 | 群組聚合、frequency encoding、類別兩兩互動、target encoding(fold 內) |
 | OOF 格式 | `(n_train,)` 一維 |
 | 專屬陷阱 | 類別不平衡時不要看 Accuracy;target encoding 洩漏 |
 
----
 
-## 軌道 T2|表格 · 多分類 / 多標籤
+</details>
+
+<details>
+<summary><strong>軌道 T2|表格 · 多分類 / 多標籤</strong></summary>
 
 **辨識**:預測屬於哪一類(多分類),或可同時屬於多類(多標籤)。
 
@@ -109,41 +112,47 @@ Q5. 是 code 競賽嗎?        → 決定算力預算與推論限制
 | 指標 | 多分類 LogLoss;多標籤 Macro-AUC / Macro-F1 |
 | 起手模型 | LightGBM `multiclass` / 多標籤用 OneVsRest |
 | OOF 格式 | **`(n_train, n_class)` 二維** ⚠️ |
-| 專屬陷阱 | **OOF 是矩陣,整合程式碼要另寫一套**<br>類別數多時訓練時間暴漲,考慮分層策略<br>罕見類別的 fold 內可能一個樣本都沒有 |
+| 專屬陷阱 | **OOF 是矩陣,整合程式碼要另寫一套**<br/>類別數多時訓練時間暴漲,考慮分層策略<br/>罕見類別的 fold 內可能一個樣本都沒有 |
 
----
 
-## 軌道 T3|表格 · 迴歸
+</details>
+
+<details>
+<summary><strong>軌道 T3|表格 · 迴歸</strong></summary>
 
 **辨識**:預測一個連續數值。房價、銷售額、物性預測。
 
 | 專案 | 建議 |
 |---|---|
 | CV | KFold。目標分布偏斜時 → 對 target 分箱做 StratifiedKFold |
-| 指標 | RMSE → 考慮 `log1p(target)`,預測後 `expm1` 還原<br>MAE → objective 直接設 MAE,整合用中位數 |
+| 指標 | RMSE → 考慮 `log1p(target)`,預測後 `expm1` 還原<br/>MAE → objective 直接設 MAE,整合用中位數 |
 | 起手模型 | LightGBM `regression` |
 | 特徵重點 | 同 T1,另加數值間的比值/差值 |
 | OOF 格式 | `(n_train,)` |
-| 專屬陷阱 | target 變換後**整合要在同一個尺度上做**<br>離群值會主導 RMSE,先看目標分布<br>預測值超出合理範圍要 clip |
+| 專屬陷阱 | target 變換後**整合要在同一個尺度上做**<br/>離群值會主導 RMSE,先看目標分布<br/>預測值超出合理範圍要 clip |
 
----
 
-## 軌道 T4|時間序列 · 預測
+</details>
+
+<details>
+<summary><strong>軌道 T4|時間序列 · 預測</strong></summary>
 
 **辨識**:資料有時間順序,且 test 在 train 之後。銷售預測、需求預測、股價。
 
 | 專案 | 建議 |
 |---|---|
-| CV | **絕對不能隨機切。** 用擴張窗(expanding)或滑動窗(rolling)<br>驗證段必須完全在訓練段之後,且留 gap 對應預測視野 |
+| CV | **絕對不能隨機切。** 用擴張窗(expanding)或滑動窗(rolling)<br/>驗證段必須完全在訓練段之後,且留 gap 對應預測視野 |
 | 指標 | RMSE / MAE / MAPE / SMAPE / Pinball(分位數) |
-| 起手模型 | **LightGBM + 滯後特徵**(視窗化成迴歸;M5 全前段皆此路,C12)<br>基線一定要有:naive(用上期值)、seasonal naive |
+| 起手模型 | **LightGBM + 滯後特徵**(視窗化成迴歸;M5 全前段皆此路,C12)<br/>基線一定要有:naive(用上期值)、seasonal naive |
 | 特徵重點 | 滯後(lag)、滾動統計(rolling mean/std)、指數加權、時間編碼(sin/cos)、節假日、事件旗標 |
 | OOF 格式 | `(n_train,)`,但只有驗證段有值 |
-| 專屬陷阱 | ⚠️ **滾動特徵只能用過去資料**,`shift(1)` 之後再 rolling<br>⚠️ 未來才知道的資訊(如當日總量)絕不可用<br>⚠️ 遞迴預測會累積誤差,考慮直接多步預測<br>分布漂移嚴重,近期資料權重要加高<br>⚠️ **邊界(C12)**:迴歸框架贏在「多序列共學+共變量」;單變量少序列時經典統計(ETS/ARIMA)反而強(M4 反例) |
+| 專屬陷阱 | ⚠️ **滾動特徵只能用過去資料**,`shift(1)` 之後再 rolling<br/>⚠️ 未來才知道的資訊(如當日總量)絕不可用<br/>⚠️ 遞迴預測會累積誤差,考慮直接多步預測<br/>分布漂移嚴重,近期資料權重要加高<br/>⚠️ **邊界(C12)**:迴歸框架贏在「多序列共學+共變量」;單變量少序列時經典統計(ETS/ARIMA)反而強(M4 反例) |
 
----
 
-## 軌道 T5|時間序列 · 異常偵測
+</details>
+
+<details>
+<summary><strong>軌道 T5|時間序列 · 異常偵測</strong></summary>
 
 **辨識**:找出不正常的時段或事件。裝置故障、詐欺偵測。
 
@@ -152,52 +161,60 @@ Q5. 是 code 競賽嗎?        → 決定算力預算與推論限制
 | CV | 時間切分,且要保證每折都有正例 |
 | 指標 | 極度不平衡 → PR-AUC 優於 ROC-AUC |
 | 起手模型 | 監督式有標籤 → GBDT;無標籤 → Isolation Forest / 重建誤差 |
-| 專屬陷阱 | 正例可能只有 0.1%,取樣策略比模型重要<br>「異常」的定義常常模糊,先跟資料對齊 |
+| 專屬陷阱 | 正例可能只有 0.1%,取樣策略比模型重要<br/>「異常」的定義常常模糊,先跟資料對齊 |
 
----
 
-## 軌道 T6|影像
+</details>
+
+<details>
+<summary><strong>軌道 T6|影像</strong></summary>
 
 **辨識**:輸入是圖片、影片或 3D 體積。
 
 | 專案 | 建議 |
 |---|---|
 | CV | StratifiedKFold;同一病人/場景的多張圖必須 GroupKFold |
-| 起手模型 | 分類/迴歸 → ViT(DinoV2)或 Swin(2025 已超越 CNN)<br>物件偵測 → YOLOv8 / YOLO11<br>分割 → U-Net 系 / SegFormer<br>醫療影像 → MONAI |
+| 起手模型 | 分類/迴歸 → ViT(DinoV2)或 Swin(2025 已超越 CNN)<br/>物件偵測 → YOLOv8 / YOLO11<br/>分割 → U-Net 系 / SegFormer<br/>醫療影像 → MONAI |
 | 核心工具 | `timm`(預訓練模型)、`albumentations`(增強) |
 | 勝負關鍵 | **資料增強策略 > 模型選擇**;TTA(測試時增強)幾乎必做 |
 | 硬體 | 需要 GPU。免費 Kaggle Notebook 的 T4/P100 仍能拿冠軍 |
-| 專屬陷阱 | 影像尺寸與 batch size 的取捨<br>預訓練權重的授權規定<br>Code 競賽的推論時間上限 |
+| 專屬陷阱 | 影像尺寸與 batch size 的取捨<br/>預訓練權重的授權規定<br/>Code 競賽的推論時間上限 |
 
----
 
-## 軌道 T7|文字 NLP
+</details>
+
+<details>
+<summary><strong>軌道 T7|文字 NLP</strong></summary>
 
 **辨識**:輸入是文字。
 
 | 專案 | 建議 |
 |---|---|
 | CV | StratifiedKFold;同作者/同來源要 GroupKFold |
-| 起手模型 | **2025 已轉向生成式 LLM**:Qwen2.5 / Qwen3 系列<br>輕量需求仍可用 DeBERTa-v3 |
+| 起手模型 | **2025 已轉向生成式 LLM**:Qwen2.5 / Qwen3 系列<br/>輕量需求仍可用 DeBERTa-v3 |
 | 核心工具 | `transformers`, `peft`(LoRA 微調), `unsloth`(省記憶體), `vllm`(快速推論) |
 | 勝負關鍵 | 微調策略(LoRA vs 全參數)、量化、推論最佳化 |
-| 專屬陷阱 | Code 競賽的 12 小時上限 + 無網路,模型必須預先上傳<br>記憶體不足是常態,量化是必修課 |
+| 專屬陷阱 | Code 競賽的 12 小時上限 + 無網路,模型必須預先上傳<br/>記憶體不足是常態,量化是必修課 |
 
----
 
-## 軌道 T8|音訊
+</details>
+
+<details>
+<summary><strong>軌道 T8|音訊</strong></summary>
 
 **辨識**:輸入是聲音。
 
 | 專案 | 建議 |
 |---|---|
-| 起手模型 | 有人聲 → 微調 Whisper(2025 年 5 場中 4 場冠軍)<br>非人聲(如鳥鳴) → CNN + 聲音事件偵測頭 |
+| 起手模型 | 有人聲 → 微調 Whisper(2025 年 5 場中 4 場冠軍)<br/>非人聲(如鳥鳴) → CNN + 聲音事件偵測頭 |
 | 核心工具 | `librosa`, `torchaudio`, `jiwer`(語音評估) |
 | 常見做法 | 轉成梅爾頻譜圖 → 當成影像問題處理 |
 
----
 
-## 軌道 T9|排序 / 推薦
+</details>
+
+<details>
+<summary><strong>軌道 T9|排序 / 推薦</strong></summary>
 
 **辨識**:要給出一個排序,而非單一預測。
 
@@ -209,7 +226,8 @@ Q5. 是 code 競賽嗎?        → 決定算力預算與推論限制
 | 勝負關鍵 | **候選生成的品質決定上限**,排序模型只能在候選裡挑 |
 | 專屬陷阱 | 評估要模擬真實場景(冷啟動、時間順序) |
 
----
+
+</details>
 
 ## 2.9 跨軌道共通層
 
