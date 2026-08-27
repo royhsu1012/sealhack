@@ -156,6 +156,12 @@
       "kind": "case",
       "validates": "多語言 NLI(code 賽):v1 隨機切 OOF 0.287<隨機→抓出 premise 群組;v2 GroupKFold CV 0.400 但 LB 0.254(C7b 野外脫鉤)→診斷 premise 反向記憶;v3 去 premise 身分 CV 0.463→LB 0.41520",
       "runtime_sec": 204
+    },
+    {
+      "file": "naive_vs_method.py",
+      "kind": "claim",
+      "validates": "同模型裸版對照(方法論貢獻):watson +0.161、spaceship +0.019、house log1p −0.0033 RMSE、s6e8 +0.0002、nlp −0.003(怪 test,噪音內;OOF 端 +0.018)",
+      "runtime_sec": 600
     }
   ]
 }

@@ -381,3 +381,6 @@ Phase 0 Concierge 準備包(招募文案/Notion 大綱/Discord 規範/課表)**�
 - 盤點:標準預測賽已掃盡,僅餘 code 賽(watson/llm-classification)→ 取 watson 補「賽制」軸;llm-class 暫緩(同軸、資料大)。
 - **三回合診斷劇**:v1 隨機切 OOF 0.287<隨機 → premise 群組結構(32.5% 多標籤);v2 StratifiedGroupKFold CV 0.400、**LB 0.254(C7b 野外脫鉤)** → test 共享 52% premise 且異標籤,全量模型 premise 反向記憶;v3 特徵去 premise 身分(hypothesis-only)→ CV 0.463、**LB 0.41520(+0.161 兌現)**。C7b/‘multi’ 證據已更新,cases 頁總表+結論 4。
 - **code 賽管線打通**:本地 CV 決策 → kernel push 遠端全量訓練 → Chrome 提交 notebook 輸出。坑:資料掛載 `/kaggle/input/competitions/<slug>/`(v1 kernel 因此炸)。基準:nScripts 25→26。
+
+### 同模型對照實驗|2026-08-27 15:20(使用者問「我們的方法有比較好嗎」;裁示:不用 AutoGluon,用 LGBM)
+naive_vs_method.py:同模型拔掉方法論決策,三場新增真提交對照(+既有 watson/s6e8 兩點):watson +0.161、spaceship +0.019、house log1p −0.0033、s6e8 +0.0002、nlp −0.003(怪 test,OOF 端 +0.018——「OOF 優化不保證轉移到異常 test」誠實反例)。結論寫進 cases 頁結論 4:結構越複雜方法論越值錢;已對齊時價值=確認沒做錯。nScripts 26→27。
