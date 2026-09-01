@@ -5,6 +5,8 @@ description: 24 小時內跑通端到端閉環;鎖死可信的 CV 與 OOF 落盤
 
 > 你在這裡:[🐣 手冊](/workflow/handbook/) → [0 診斷](/workflow/0-diagnose/) → **1 驗證** → [2 基線](/workflow/2-baseline/) → [3 特徵](/workflow/3-features/) → [4–5 集成與交卷](/workflow/4-ensemble/)
 
+> ⏱ 閱讀約 **16 分鐘** · 前置:階段 0(知道 test 怎麼切) · 讀 + 動手改你的 CV 切法
+
 ## 這頁在講什麼
 
 先做出一把**可信的尺**(驗證方法),之後每個改動都用它量。有第一次成功提交之前,不要碰特徵工程。
