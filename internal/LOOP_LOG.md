@@ -6,7 +6,7 @@
 
 ## 目前狀態
 
-**★ 狀態(2026-08-25):已上線 https://sealhack.com,收斂完成 12 頁。** Astro + Tailwind 自訂設計、深色預設;build 13 頁 + 4 redirect 零錯誤、pagefind Indexed 13;計分板全綠(25/25 腳本、0 簡體、0 斷連結);導覽 2 群組(方法論 8 項帶階段序號 / 證據與參考 3 項)、landing 3 段;六階段模型不變。
+**★ 狀態(2026-09-01 session 結束):站上線且穩定。** https://sealhack.com,13 頁 + 4 redirect,build 零錯、計分板硬錯誤 0(S10=0、斷連結 0)。方法論 14 條主張(C1a–C12)、30 支可重跑腳本、**8 場真實 Kaggle 完賽**(6 種任務型態、2 種賽制),s6e8 私榜終審無跳水。前端完成三次大改:收斂(16→12 頁)→ 訪客語言化 → 8 輪學習體驗優化(術語就地翻譯、提取練習、路線與時間、迷思對照、三招萬用特徵)。
 **2026-08-25 里程碑(細節見底部各輪紀錄)**:文件校準(主張數統一 13 條 C1a–C11、清 Starlight 殘留)→ Pagefind 搜尋加回(🔍/Ctrl⌘K)→ 部署上線(Workers 靜態資產 + sealhack.com + www 301;push 自動建置部署)→ 收斂 16→14→12 頁(maps/learning→quickstart、resources→claims、0-clean→0-diagnose、5-submit→4-ensemble,皆 301)+ glossary 字典化(302→158 行)。
 
 **審計:連續全綠 16 輪(A12–A27,至 2026-08-26 15:23;基準 14 條主張/25 支腳本,案例頁含七場總表)。**
