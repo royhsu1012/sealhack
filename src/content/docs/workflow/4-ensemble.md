@@ -3,9 +3,9 @@ title: 集成與提交
 description: Hill Climbing 防過擬合三招 + Stacking + 偽標籤 + 知識蒸餾;收尾強化(多 seed、雙提交)與常見踩雷清單。
 ---
 
-> 你在這裡:[🐣 手冊](/workflow/handbook/) → [0 診斷](/workflow/0-diagnose/) → [1 驗證](/workflow/1-validate/) → [2 基線](/workflow/2-baseline/) → [3 特徵](/workflow/3-features/) → **4–5 集成與交卷**
-
-> ⏱ 閱讀約 **18 分鐘** · 前置:階段 3(有多個模型的 OOF) · 讀 + 收尾實作
+> [🐣 手冊](/workflow/handbook/) → [0 診斷](/workflow/0-diagnose/) → [1 驗證](/workflow/1-validate/) → [2 基線](/workflow/2-baseline/) → [3 特徵](/workflow/3-features/) → **4–5 集成**
+>
+> ⏱ 約 18 分 · 前置:階段 3
 
 ## 這頁在講什麼
 
@@ -28,8 +28,6 @@ description: Hill Climbing 防過擬合三招 + Stacking + 偽標籤 + 知識蒸
 | **偽標籤** | 拿模型對無答案資料的預測當「假答案」,加回訓練集再訓練 |
 
 </details>
-
----
 
 ## 6. 階段 4:整合
 

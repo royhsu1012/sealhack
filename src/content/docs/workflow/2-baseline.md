@@ -3,9 +3,9 @@ title: 多樣化基線
 description: 先鋪開不同家族的模型群 + AutoGluon 錨點,而不是先鑽研單一模型。
 ---
 
-> 你在這裡:[🐣 手冊](/workflow/handbook/) → [0 診斷](/workflow/0-diagnose/) → [1 驗證](/workflow/1-validate/) → **2 基線** → [3 特徵](/workflow/3-features/) → [4–5 集成與交卷](/workflow/4-ensemble/)
-
-> ⏱ 閱讀約 **7 分鐘** · 前置:階段 1(CV 已鎖死) · 讀為主,跑基線約 30 分
+> [🐣 手冊](/workflow/handbook/) → [0 診斷](/workflow/0-diagnose/) → [1 驗證](/workflow/1-validate/) → **2 基線** → [3 特徵](/workflow/3-features/) → [4–5 集成](/workflow/4-ensemble/)
+>
+> ⏱ 約 7 分 · 前置:階段 1
 
 ## 這頁在講什麼
 
@@ -27,8 +27,6 @@ description: 先鋪開不同家族的模型群 + AutoGluon 錨點,而不是先�
 | **錨點** | 不做人工特徵能到的分數;你的努力要贏過它才算數 |
 
 </details>
-
----
 
 ## 4. 階段 2:多樣化 Baseline 群(1 天)
 

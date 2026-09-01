@@ -3,9 +3,9 @@ title: 特徵迭代
 description: 時間大頭:消融驅動的選題 + 一次一組特徵 + 配對比較。
 ---
 
-> 你在這裡:[🐣 手冊](/workflow/handbook/) → [0 診斷](/workflow/0-diagnose/) → [1 驗證](/workflow/1-validate/) → [2 基線](/workflow/2-baseline/) → **3 特徵** → [4–5 集成與交卷](/workflow/4-ensemble/)
-
-> ⏱ 閱讀約 **15 分鐘** · 前置:階段 1、2(有 OOF 與基準分數) · **時間大頭**:本階段實作會佔整場比賽一半時間
+> [🐣 手冊](/workflow/handbook/) → [0 診斷](/workflow/0-diagnose/) → [1 驗證](/workflow/1-validate/) → [2 基線](/workflow/2-baseline/) → **3 特徵** → [4–5 集成](/workflow/4-ensemble/)
+>
+> ⏱ 約 15 分 · 前置:階段 1、2
 
 ## 這頁在講什麼
 
@@ -28,8 +28,6 @@ description: 時間大頭:消融驅動的選題 + 一次一組特徵 + 配對比
 | **消融(ablation)** | 逐一拿掉某組特徵,看分數掉多少,用來決定下一步投資哪裡 |
 
 </details>
-
----
 
 ## 5. 階段 3:特徵工程迭代(時間大頭)
 

@@ -3,9 +3,9 @@ title: 傻瓜手冊:第一場比賽保姆級教學
 description: 零基礎照抄版:一張流程圖 + 七個命令句步驟 + 一段可直接貼的程式碼,今天就交出你的第一份提交。
 ---
 
-> 你在這裡:**🐣 手冊** → [0 診斷](/workflow/0-diagnose/) → [1 驗證](/workflow/1-validate/) → [2 基線](/workflow/2-baseline/) → [3 特徵](/workflow/3-features/) → [4–5 集成與交卷](/workflow/4-ensemble/)
-
-> ⏱ 閱讀約 **18 分鐘** · 前置:會跑 Python + 一個 Kaggle 帳號 · **動手做**:跟著做完就有第一份提交
+> **🐣 手冊** → [0 診斷](/workflow/0-diagnose/) → [1 驗證](/workflow/1-validate/) → [2 基線](/workflow/2-baseline/) → [3 特徵](/workflow/3-features/) → [4–5 集成](/workflow/4-ensemble/)
+>
+> ⏱ 約 18 分 · 前置:會 Python + Kaggle 帳號
 
 你只需要:會跑 Python、一個 Kaggle 帳號、大約 45 分鐘。**不需要**懂機器學習理論——先完成,再理解。
 
