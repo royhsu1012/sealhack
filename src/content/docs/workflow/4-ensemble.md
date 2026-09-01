@@ -157,3 +157,22 @@ def blend(preds, weights):                # 用同一組權重混合 OOF / test 
 - **成員懸殊 → 無紅利**:s6e8(lgbm .9625 vs ET .9211)集成 OOF .9620 < 單模,LB 同序(`case_s6e8.py`)。
 - **成員相近 → 有紅利**:spaceship(.889/.875/.863)集成 .8914 > 單模 .8893(`case_spaceship.py`);nlp(char .8694 / word .8580)集成 .8707(`case_nlp.py`)。
 - **多 seed 平均的邊界**:LGBM 若未開 subsample/colsample 為全確定性,**換 seed 是空操作**(house-prices 5-seed 平均與單 seed 逐值相同,`case_houseprices.py`)——「增益隨 seed 方差而定」的零方差極端。要用 seed 平均,先確認模型有隨機成分。
+
+## 學會了沒?
+
+答得出來再往下一頁;答不出來,回頭看上面對應的段落——**能講出來才算學會,讀過不算**。
+
+1. 兩個模型分數差六個百分點,合起來會更好嗎?
+2. stacking 的第二層為什麼一定要用 OOF、而且要同一組折?
+3. 最終要選兩份提交,你的選法是什麼?哪一種選法絕對不能用?
+
+<details>
+<summary><strong>參考答案(先自己想過再展開)</strong></summary>
+
+1. 通常不會。集成紅利要「實力相近 + 誤差多樣」兩個條件(C3)。s6e8 成員懸殊時集成低於單模;spaceship/nlp 成員相近時紅利才出現。
+
+2. 用 in-sample 預測會讓第二層看到答案而虛高;折不同則第二層的輸入混進了洩漏。全流程共用 fold 是防洩漏的底線。
+
+3. 選「CV 最高」+「最穩健」各一份。**絕不能兩份都挑 public 榜最高**——public 只用一小部分測試資料,追它就是在擬合噪音(§13)。
+
+</details>
