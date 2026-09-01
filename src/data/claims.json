@@ -98,11 +98,12 @@
       "statement": "小 public LB 的危險在適應性反覆使用的累積過擬合;單次判讀屬合法訊號",
       "L1": true,
       "L2": true,
-      "L3": "pending",
-      "evidence": "public 引導採 3 次改動→私榜 0.7341;CV 引導採 1 次→0.7386",
+      "L3": "done",
+      "evidence": "public 引導採 3 次改動→私榜 0.7341;CV 引導採 1 次→0.7386;**L3 終審(s6e8 私榜 2026-08-31 揭曉)**:CV 引導的 4 筆提交 private≈public(0.96417/0.96389/0.96360/0.96332,差 ±0.00005)——無跳水",
       "scripts": [
         "claims_v4.py",
-        "claims_v5.py"
+        "claims_v5.py",
+        "case_s6e8.py"
       ],
       "revision": "教條級修訂:『只信 CV』過度簡化,見 §13 四條"
     },

@@ -46,6 +46,7 @@ harness 合約備忘:`run_cv(feature_fn, tr, te, y, folds, use, factory, scale, 
 (a) 哪裡浪費了時間或差點出錯?(b) 哪條規則能防止它?有答案當場改 SKILL/STANDARDS/DESIGN,LOOP_LOG「規則變更」加一行;沒有寫「無」。
 
 ## 本機環境
+- **批次改檔的 python heredoc 一律先 `export PYTHONUTF8=1`**(cp950 印中文/✓ 會中途炸,留下半改的檔案)
 - venv:session scratchpad `.venv`(`uv venv --python 3.12` + `uv pip install -r validation/requirements.txt kaggle`);PYTHONUTF8=1。
 - kaggle CLI 前先 `export USERPROFILE='C:\Users\royhs'`;迴圈不寫入 token、不 peek。
 - 跑腳本 cwd=`validation/`;>5 分鐘用 run_in_background;競賽資料在 `validation/data/<賽>/`(gitignored)。
