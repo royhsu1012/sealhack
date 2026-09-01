@@ -24,7 +24,7 @@ description: 先鋪開不同家族的模型群 + AutoGluon 錨點,而不是先�
 
 </details>
 
-## 4. 階段 2:多樣化 Baseline 群(1 天)
+## 階段 2:多樣化 Baseline 群(1 天)
 
 ### 4.0 先跑 AutoGluon 當錨點(v2.0 新增)
 起手第一件事:`AutoGluon best_quality` 跑一次。它內建的就是本方法論的自動化版
