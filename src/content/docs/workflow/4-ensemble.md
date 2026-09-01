@@ -3,13 +3,9 @@ title: 集成與提交
 description: Hill Climbing 防過擬合三招 + Stacking + 偽標籤 + 知識蒸餾;收尾強化(多 seed、雙提交)與常見踩雷清單。
 ---
 
-> [🐣 手冊](/workflow/handbook/) → [0 診斷](/workflow/0-diagnose/) → [1 驗證](/workflow/1-validate/) → [2 基線](/workflow/2-baseline/) → [3 特徵](/workflow/3-features/) → **4–5 集成**
+> 路線:[🐣](/workflow/handbook/) → [0](/workflow/0-diagnose/) → [1](/workflow/1-validate/) → [2](/workflow/2-baseline/) → [3](/workflow/3-features/) → **4–5 集成** ｜ ⏱ 約 18 分 · 前置:階段 3
 >
-> ⏱ 約 18 分 · 前置:階段 3
-
-## 這頁在講什麼
-
-把幾個模型合起來常比單獨一個準——**但有前提**。最後選兩份交卷,並做交卷前防呆檢查。
+> 把幾個模型合起來常比單獨一個準——**但有前提**。最後選兩份交卷,並做交卷前防呆檢查。
 
 **你要做的三件事**
 

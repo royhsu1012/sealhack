@@ -3,13 +3,9 @@ title: 讀題診斷與資料清洗
 description: 先學會診斷:五問路由定位軌道 + 讀題風險盤點 + 與 Claude 協作模板;含階段 0.5 清洗與補全守則。
 ---
 
-> [🐣 手冊](/workflow/handbook/) → **0 診斷** → [1 驗證](/workflow/1-validate/) → [2 基線](/workflow/2-baseline/) → [3 特徵](/workflow/3-features/) → [4–5 集成](/workflow/4-ensemble/)
+> 路線:[🐣](/workflow/handbook/) → **0 診斷** → [1](/workflow/1-validate/) → [2](/workflow/2-baseline/) → [3](/workflow/3-features/) → [4–5](/workflow/4-ensemble/) ｜ ⏱ 約 17 分 · 前置:做過一次手冊
 >
-> ⏱ 約 17 分 · 前置:做過一次手冊
-
-## 這頁在講什麼
-
-動手前先搞清楚:題目在問什麼、分數怎麼算、資料該怎麼切。**這步錯,後面全錯,而且 AI 不會告訴你。**
+> 動手前先搞清楚:題目在問什麼、分數怎麼算、資料該怎麼切。**這步錯,後面全錯,而且 AI 不會告訴你。**
 
 **你要做的三件事**
 
