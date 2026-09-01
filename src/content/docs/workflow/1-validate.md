@@ -185,3 +185,10 @@ def run_experiment(model_factory, X, y, X_test, folds, exp_id, model_name, notes
 3. GroupKFold(以使用者為群組)。否則同一人被拆到訓練與驗證兩側,模型「認得這個人」而不是學會規律——spaceship 與 watson 兩場都栽在這。
 
 </details>
+
+## 動手驗證
+
+光讀不會信,跑過才會。本頁對應的可下載腳本(先 `pip install -r validation/requirements.txt && python validation/fetch_data.py`):
+
+- [`run_experiment_demo.py`](/validation/run_experiment_demo.py) —— 一次跑完 4 個模型、把 OOF 落盤成檔案並記錄 experiments.csv——這就是本頁說的協議,親眼看它長什麼樣。
+- [`harness_selftest.py`](/validation/harness_selftest.py) —— 同一套管線在二分類/迴歸/多分類三種任務上跑通,證明流程與模型無關。

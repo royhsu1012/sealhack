@@ -89,7 +89,7 @@ Kaggle 競賽規則解鎖前,先用 sklearn 內建真實資料驗證「同一套
 **差距的來源是分布,不是方法論**——同分布的 holdout 讓 CV 幾乎完美,Titanic 的真實 test 是分布不同的另一批人才有大差距。
 這是 §2.2 漂移警告的正面印證。⚠️ 此為 holdout 驗證,非 Kaggle 真提交(無 public/private LB);L3 仍以 §16.8 為準。
 
-**真賽應用**:house-prices(n=1460)照本守則跳過爬山集成、以配對檢定選型(lgbm 勝 ridge,t=+2.50),OOF RMSE(log) 0.1326 → 真實 LB **0.1275(LB 反而更好)**——小樣本紀律不是保守,是把方差留給該花的地方(`case_houseprices.py`)。
+**真賽應用**:house-prices(n=1460)照本守則跳過爬山集成、以配對檢定選型(lgbm 勝 ridge,t=+2.50),OOF RMSE(log) 0.1326 → 真實 LB **0.1275(LB 反而更好)**——小樣本紀律不是保守,是把方差留給該花的地方([`case_houseprices.py`](/validation/case_houseprices.py))。
 
 ## 學會了沒?
 
@@ -109,3 +109,10 @@ Kaggle 競賽規則解鎖前,先用 sklearn 內建真實資料驗證「同一套
 3. 通常不該。湊不出實力相近的成員,爬山只會過擬合 OOF;改用單模 + 多種子平均(前提:模型要有隨機成分,否則平均是空操作)。
 
 </details>
+
+## 動手驗證
+
+光讀不會信,跑過才會。本頁對應的可下載腳本(先 `pip install -r validation/requirements.txt && python validation/fetch_data.py`):
+
+- [`small_n_paired.py`](/validation/small_n_paired.py) —— 20 次切分的配對比較:配對差的標準差只有分數標準差的 1/4——這就是小樣本要用配對比較的理由。
+- [`case_houseprices.py`](/validation/case_houseprices.py) —— n=1460 照小樣本守則打:跳過爬山、用 5-seed 平均,LB 0.12574 進前 30%。

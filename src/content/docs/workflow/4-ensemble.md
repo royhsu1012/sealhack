@@ -154,9 +154,9 @@ def blend(preds, weights):                # 用同一組權重混合 OOF / test 
 
 ## 實戰印證:C3 前提在三場真比賽的雙向驗證
 
-- **成員懸殊 → 無紅利**:s6e8(lgbm .9625 vs ET .9211)集成 OOF .9620 < 單模,LB 同序(`case_s6e8.py`)。
-- **成員相近 → 有紅利**:spaceship(.889/.875/.863)集成 .8914 > 單模 .8893(`case_spaceship.py`);nlp(char .8694 / word .8580)集成 .8707(`case_nlp.py`)。
-- **多 seed 平均的邊界**:LGBM 若未開 subsample/colsample 為全確定性,**換 seed 是空操作**(house-prices 5-seed 平均與單 seed 逐值相同,`case_houseprices.py`)——「增益隨 seed 方差而定」的零方差極端。要用 seed 平均,先確認模型有隨機成分。
+- **成員懸殊 → 無紅利**:s6e8(lgbm .9625 vs ET .9211)集成 OOF .9620 < 單模,LB 同序([`case_s6e8.py`](/validation/case_s6e8.py))。
+- **成員相近 → 有紅利**:spaceship(.889/.875/.863)集成 .8914 > 單模 .8893([`case_spaceship.py`](/validation/case_spaceship.py));nlp(char .8694 / word .8580)集成 .8707([`case_nlp.py`](/validation/case_nlp.py))。
+- **多 seed 平均的邊界**:LGBM 若未開 subsample/colsample 為全確定性,**換 seed 是空操作**(house-prices 5-seed 平均與單 seed 逐值相同,[`case_houseprices.py`](/validation/case_houseprices.py))——「增益隨 seed 方差而定」的零方差極端。要用 seed 平均,先確認模型有隨機成分。
 
 ## 學會了沒?
 
@@ -176,3 +176,10 @@ def blend(preds, weights):                # 用同一組權重混合 OOF / test 
 3. 選「CV 最高」+「最穩健」各一份。**絕不能兩份都挑 public 榜最高**——public 只用一小部分測試資料,追它就是在擬合噪音(§13)。
 
 </details>
+
+## 動手驗證
+
+光讀不會信,跑過才會。本頁對應的可下載腳本(先 `pip install -r validation/requirements.txt && python validation/fetch_data.py`):
+
+- [`hill_climb_weights.py`](/validation/hill_climb_weights.py) —— 爬山法選權重的完整過程(含本站修過的權重記帳 bug)。
+- [`case_spaceship.py`](/validation/case_spaceship.py) —— 成員實力相近 → 集成有紅利(0.8893→0.8914);對照 case_s6e8.py 成員懸殊時反而降級,C3 前提的雙向證據。

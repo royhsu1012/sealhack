@@ -180,7 +180,7 @@ test 切分:<隨機 / 按時間 / 按 group>
 
 ## 實戰印證(2026-08 七場掃描)
 
-對抗驗證不是儀式:s6e8(69 萬列 synthetic)開跑前先測 train-vs-test 可分性得 **AUC 0.553 ≈ 0.5** → 診斷「隨機切」成立;之後四筆真提交的 CV→LB 落差全部只有 **+0.0013~0.0014**——切法對,CV 就誠實(`case_s6e8.py`)。對照組:鐵達尼真實 test 為異分布,同一套流程 CV−LB 差 0.06~0.09。**先測分布,再選切法,落差可預測。**
+對抗驗證不是儀式:s6e8(69 萬列 synthetic)開跑前先測 train-vs-test 可分性得 **AUC 0.553 ≈ 0.5** → 診斷「隨機切」成立;之後四筆真提交的 CV→LB 落差全部只有 **+0.0013~0.0014**——切法對,CV 就誠實([`case_s6e8.py`](/validation/case_s6e8.py))。對照組:鐵達尼真實 test 為異分布,同一套流程 CV−LB 差 0.06~0.09。**先測分布,再選切法,落差可預測。**
 
 ## 學會了沒?
 
@@ -200,3 +200,9 @@ test 切分:<隨機 / 按時間 / 按 group>
 3. 指標決定所有戰術:AUC 只看排序(不必校準機率)、LogLoss 在乎機率準不準、Accuracy/F1 要在 OOF 上搜最佳閾值。答不出來就回頭讀題。
 
 </details>
+
+## 動手驗證
+
+光讀不會信,跑過才會。本頁對應的可下載腳本(先 `pip install -r validation/requirements.txt && python validation/fetch_data.py`):
+
+- [`case_s6e8.py`](/validation/case_s6e8.py) —— 開跑前先做對抗驗證:印出 train/test 可分性 AUC。0.553≈0.5 → 診斷「隨機切」成立,之後四筆真提交的 CV−LB 落差果然只有 ±0.0014。
