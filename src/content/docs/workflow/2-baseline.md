@@ -3,6 +3,8 @@ title: 多樣化基線
 description: 先鋪開不同家族的模型群 + AutoGluon 錨點,而不是先鑽研單一模型。
 ---
 
+> 你在這裡:[🐣 手冊](/workflow/handbook/) → [0 診斷](/workflow/0-diagnose/) → [1 驗證](/workflow/1-validate/) → **2 基線** → [3 特徵](/workflow/3-features/) → [4–5 集成與交卷](/workflow/4-ensemble/)
+
 ## 這頁在講什麼
 
 先用幾個**原理不同**的簡單模型跑出基準分數,知道自己的起點在哪、哪個家族接得住這份資料。

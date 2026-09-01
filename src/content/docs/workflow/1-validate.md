@@ -3,6 +3,8 @@ title: 鎖死驗證
 description: 24 小時內跑通端到端閉環;鎖死可信的 CV 與 OOF 落盤協議。
 ---
 
+> 你在這裡:[🐣 手冊](/workflow/handbook/) → [0 診斷](/workflow/0-diagnose/) → **1 驗證** → [2 基線](/workflow/2-baseline/) → [3 特徵](/workflow/3-features/) → [4–5 集成與交卷](/workflow/4-ensemble/)
+
 ## 這頁在講什麼
 
 先做出一把**可信的尺**(驗證方法),之後每個改動都用它量。有第一次成功提交之前,不要碰特徵工程。

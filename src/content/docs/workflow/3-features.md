@@ -3,6 +3,8 @@ title: 特徵迭代
 description: 時間大頭:消融驅動的選題 + 一次一組特徵 + 配對比較。
 ---
 
+> 你在這裡:[🐣 手冊](/workflow/handbook/) → [0 診斷](/workflow/0-diagnose/) → [1 驗證](/workflow/1-validate/) → [2 基線](/workflow/2-baseline/) → **3 特徵** → [4–5 集成與交卷](/workflow/4-ensemble/)
+
 ## 這頁在講什麼
 
 加特徵是最花時間的一步(約佔一半)。心法只有一句:**一次加一組,量過真的有效才留下。**
