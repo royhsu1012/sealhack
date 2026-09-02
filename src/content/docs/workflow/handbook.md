@@ -5,9 +5,7 @@ description: 零基礎照抄版:一張流程圖 + 七個命令句步驟 + 一段
 
 > 路線:**🐣 手冊** → [0](/workflow/0-diagnose/) → [1](/workflow/1-validate/) → [2](/workflow/2-baseline/) → [3](/workflow/3-features/) → [4–5](/workflow/4-ensemble/) ｜ ⏱ 約 18 分 · 前置:會 Python + Kaggle 帳號
 >
-> 
-
-你只需要:會跑 Python、一個 Kaggle 帳號、大約 45 分鐘。**不需要**懂機器學習理論——先完成,再理解。
+> 你只需要:會跑 Python、一個 Kaggle 帳號、大約 45 分鐘。**不需要**懂機器學習理論——先完成,再理解。
 
 ## 全程流程圖(整場比賽就這一張)
 

@@ -6,6 +6,18 @@ description: 六階段端到端示範 + 七場實戰掃描總表。基調不是�
 import CasesTable from '../../../components/CasesTable.astro';
 import Aside from '../../../components/Aside.astro';
 
+## 戰績總覽
+
+同一套方法論、全部零調參的簡單模型,在 **8 場真實 Kaggle 比賽**上完賽(6 種任務型態、2 種賽制):
+
+- **CV 誠實**:同分布的場次,內部分數與真實排行榜落差 ≤0.002——落差不是運氣,是診斷的函數。
+- **前 30% ×2**:spaceship 22.9%、house-prices 29.6%,靠的是紀律不是火力。
+- **私榜無跳水**:s6e8 用 CV 選的提交,私榜揭曉 private≈public(差 ±0.00005)。
+
+想直接看數字 → [七場掃描總表](#七場實戰掃描2026-08同一套-harness全部簡單模型);想看方法論**怎麼完整走一遍**一場,就從下面這場鐵達尼開始。
+
+---
+
 鐵達尼(訓練池 n=623)是小樣本題,重點不在分數高,在**方法論如何得到一個誠實的數字**——而且它預測到了自己在真實排行榜上的衰減。全程只看 CV,最後才由 holdout 與真實 Kaggle LB 揭曉。腳本:[`case_titanic_v2.py`](/validation/case_titanic_v2.py)、[`submit_titanic.py`](/validation/submit_titanic.py)。
 
 ## 階段 0|讀題與五問診斷
