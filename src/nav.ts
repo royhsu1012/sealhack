@@ -27,6 +27,19 @@ export const NAV: NavGroup[] = [
   },
 ];
 
-// 扁平化(給 prev/next 用)
+// 扁平化(側欄用)
 export const FLAT: NavItem[] = NAV.flatMap((g) => g.items);
+
+// 學習主線(文件頁「上/下頁」依它,與側欄順序脫鉤)。
+// 小樣本 / 題型速查表 / 證據頁是參考與支線,不在線性主線上——它們有自己的定位條。
+export const LEARN_PATH: NavItem[] = [
+  { label: '🐣 新手手冊', slug: 'workflow/handbook' },
+  { label: '⚡ 進階七步', slug: 'workflow/quickstart' },
+  { label: '0｜讀懂比賽', slug: 'workflow/0-diagnose' },
+  { label: '1｜建立驗證', slug: 'workflow/1-validate' },
+  { label: '2｜基準分數', slug: 'workflow/2-baseline' },
+  { label: '3｜加特徵', slug: 'workflow/3-features' },
+  { label: '4–5｜集成與交卷', slug: 'workflow/4-ensemble' },
+];
+
 export const href = (slug: string) => `/${slug}/`;
