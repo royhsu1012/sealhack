@@ -465,3 +465,10 @@ claims 頁(為什麼可信)加兩塊,把證據從「給同行看」改成「幫�
 補讀 glossary 全文(#20 誤稱已覆蓋,實際只讀開頭)。抓到 **2 處 glossary 把站上『自己已用 L2 推翻的民間智慧』當事實教**(內容正確性優先,最高優先類):①line 126「Rank 平均…**AUC 評分時通常較好**」——正是 C11 與 claims 迷思表推翻的說法,C11 實測是「只在成員分數尺度差很多時才有利、尺度相近反而略差」→ 改為 C11 結論。②line 131「Seed Averaging…**通常更準**」——迷思表「多 seed 平均一定有用」已被推翻(增益視 seed 方差、確定性模型上空操作)→ 改為「永遠不虧但增益視方差、確定性模型上空操作」。這兩者非方法論反轉決策(C11/迷思表早已驗證發佈),只是把 glossary 對齊站上既有結論=安全一致性修正,不需使用者拍板。line 97 gain 那條的**建議**(用 permutation)與站上結論一致、僅簡化,不算矛盾,未動。line 111 AutoGluon-錨點(見 §4.0)與 2-baseline/quickstart 一致(屬待決策的 AutoGluon 線)。build 13 頁零錯、斷連結 0、S10=0。自省:**glossary 這種「簡化定義」頁最容易與驗證過的細緻結論脫節**——凡站上有 L2 推翻/修正過的民間智慧(迷思表 8 條),glossary 對應詞條都該逐一對照;已把「glossary × 迷思表交叉核對」列入內容巡檢固定項。
 ### UX 續優化 #23(4-ensemble 內容實讀·無變更;內容覆蓋真正完成)|2026-09-01(/loop 45 分,f0a8565e)
 補讀 4-ensemble 全文(最後一個只讀過片段的頁)。**乾淨**,且**反向印證 #22**:本頁 rank 平均(line 89-90)與 seed 平均(line 122/157)都已是 C11/迷思表的正確版本——證實 glossary 才是唯一過期 outlier,#22 修對。§13→[LB 教條]、mlwave→Wayback、§2.1/§3.1/§6.1 引用皆解析(屬待決策編號)。house-prices(line 157)只述 v1「確定性→seed 平均空操作」方法論點、未引 LB 數字,不涉 #19 v1/v2 衝突。與 glossary 交叉核對一致(Stacking 同折、pseudo 軟標籤)。**里程碑:內容實讀真正完整覆蓋**——7 workflow 頁 + landing/claims/cases/glossary 全讀。無站點變更。自省:#22 找到 glossary 矛盾後,本輪順勢在 4-ensemble 反查同主題(rank/seed),確認站上其餘頁一致——**發現某頁與驗證結論脫節時,應同題掃全站確認只有那頁脫節**,避免「修一處、漏三處」;這次確認只 glossary 一處脫節,收束。
+### 術語降噪(使用者直接指令:「太多專有名詞對新手不友善 開始修改」)|2026-09-03
+使用者在穩態監測期間直接下指令,離開自動 loop 節奏,做兩輪程式化掃描找真缺口:
+①**handbook 缺術語表**:全站 7 個 workflow 頁都有「這頁會出現的術語」表,唯獨 handbook(新手第一個讀的頁)沒有,但 CV/LightGBM/AUC 就在這頁第一次出現且零解釋。補上,格式與其他頁一致(LightGBM/CV/折/AUC 四詞)。
+②**glossary 缺排序/校準指標**:0-diagnose 與 maps/solution(×2)用到 MAP@k/NDCG/Recall@k/Brier/Platt/isotonic,全站零定義。glossary 補「排序/推薦用」小節 + 擴充「校準」條目。
+③**系統性缺口:全站無內文連到 /glossary/**,只能靠側欄(手機需點 ☰)。在 8 頁(handbook+6 workflow 頁+small-n+solution)的術語表結尾各加一條「查完整詞彙表」連結。過程中自查糾正一次:原本在 solution.mdx 寫「CNN/ViT/LLM 查詞彙表」,一查 glossary 根本沒收這些深度學習架構名——改寫成誠實版本(glossary 覆蓋核心 CV/OOF 詞彙;深度學習軌道專有模型名是路標非教材,不逐一收錄)。順手清一處殘留雙 `---`。
+兩輪 build 皆零錯、斷連結 0、S10=0;三次線上部署驗證(curl 直接查 live HTML,非 WebFetch 快取)確認生效。
+**方法論**:掃描邏輯是「逐頁比對術語表 vs 內文實際出現的英文/縮寫詞」找真缺口,不是憑印象猜;找到後先查證(glossary 是否真的有該詞)才寫連結文字,避免對讀者做假承諾。
