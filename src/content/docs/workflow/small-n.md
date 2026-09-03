@@ -118,3 +118,6 @@ Kaggle 競賽規則解鎖前,先用 sklearn 內建真實資料驗證「同一套
 
 - [`small_n_paired.py`](/validation/small_n_paired.py) —— 20 次切分的配對比較:配對差的標準差只有分數標準差的 1/4——這就是小樣本要用配對比較的理由。
 - [`case_houseprices.py`](/validation/case_houseprices.py) —— n=1460 照小樣本守則打:跳過爬山、用 5-seed 平均,LB 0.12574 進前 30%。
+---
+
+> 讀完了?**回主線繼續**:把這套判斷方式套回 [0 診斷](/workflow/0-diagnose/) 起的每一步——小樣本改的是決策統計,流程不變。
