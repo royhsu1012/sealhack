@@ -137,7 +137,7 @@ def blend(preds, weights):                # 用同一組權重混合 OOF / test 
 | Target encoding 洩漏 | CV 極高,LB 崩 | fold 內計算 + 平滑 |
 | CV 切法與 test 不符 | CV 與 LB 完全脫鉤 | 回到 §2.1 決策樹 |
 | 用不同 fold 做 stacking | 第二層 CV 虛高 | 全流程共用 fold |
-| 擬合 public LB | 私榜大跳水 | 迭代決策用 CV,LB 只做單次判讀(§13)|
+| 擬合 public LB | 私榜大跳水 | 迭代決策用 CV,LB 只做單次判讀([LB 教條](/claims/))|
 | 沒存 OOF | 後期無法整合 | §3.1 協議 |
 | 把 fold 平均當 CV | 整合時基準對不上 | 用全體 OOF 算 |
 | 提交前沒檢查格式 | 直接 0 分 | 防呆檢查清單 |
@@ -171,7 +171,7 @@ def blend(preds, weights):                # 用同一組權重混合 OOF / test 
 
 2. 用 in-sample 預測會讓第二層看到答案而虛高;折不同則第二層的輸入混進了洩漏。全流程共用 fold 是防洩漏的底線。
 
-3. 選「CV 最高」+「最穩健」各一份。**絕不能兩份都挑 public 榜最高**——public 只用一小部分測試資料,追它就是在擬合噪音(§13)。
+3. 選「CV 最高」+「最穩健」各一份。**絕不能兩份都挑 public 榜最高**——public 只用一小部分測試資料,追它就是在擬合噪音([LB 教條](/claims/))。
 
 </details>
 

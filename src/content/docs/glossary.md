@@ -135,7 +135,7 @@ description: 邊做專案邊學的查閱字典:每個詞一句白話 + 為什麼
 | 詞 | 白話 |
 |---|---|
 | **Leaderboard**(LB) | Public LB:比賽中看得到,只用一小部分 test;Private LB:結束才揭曉,**這才是最終名次** |
-| **Shake-up**(跳水) | 結束時名次大洗牌,幾乎都是有人過度擬合 public LB。防範:迭代決策以 CV 為準(見框架 §13),最終選一個 CV 高分 + 一個穩健方案 |
+| **Shake-up**(跳水) | 結束時名次大洗牌,幾乎都是有人過度擬合 public LB。防範:迭代決策以 CV 為準(見 [LB 使用教條](/claims/)),最終選一個 CV 高分 + 一個穩健方案 |
 | **Adversarial Validation**(對抗驗證) | 訓練分類器區分「這筆來自 train 還是 test」:分不出(AUC≈0.5)= 同分布可隨機切;分很清楚(AUC>0.8)= 有漂移,找出漂移特徵再決定去留 |
 | **分布漂移**(Distribution Shift) | train 和 test 長得不一樣,造成「CV 很好但實戰失靈」 |
 | **Baseline**(基線) | 最簡單的可行方案,當比較基準;任何新做法要贏過它才有意義 |
