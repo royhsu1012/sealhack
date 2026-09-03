@@ -149,7 +149,7 @@ def run_experiment(model_factory, X, y, X_test, folds, exp_id, model_name, notes
 **今天就做這三件事,其他先不要碰:**
 
 1. 建好 §3 的目錄結構,寫死 `config.py`(SEED、N_FOLDS、METRIC_FN)與 `folds.py`。
-2. 跑 §1.3 的 adversarial validation,決定 CV 切法,產出 Data Memo。
+2. 跑[0 診斷](/workflow/0-diagnose/)教的對抗驗證(adversarial validation),決定 CV 切法,產出 Data Memo。
 3. 跑一次 LGBM baseline 走完 `run_experiment`,完成第一次提交,記錄 CV 與 LB。
 
 做完這三件,框架就活了,之後每一次實驗都會自動累積成資產。
