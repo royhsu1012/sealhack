@@ -1,7 +1,12 @@
 ---
 import data from '../data/claims.json';
 const badge = (v) => (v === true || v === 'done') ? '✅' : v === 'pending' ? '⏳' : '—';
-const rows = data.claims;
+// 依 id 前綴分兩區:C 主張(保留檔內人工順序 C1a–C12)在前、示範案例在後。
+// 分組靠前綴而非陣列位置,新列不論 append 在哪都自動歸位。
+const claimRows = data.claims.filter((c) => c.id.startsWith('C'));
+const demoRows = data.claims.filter((c) => !c.id.startsWith('C'));
+const rows = [...claimRows, ...demoRows];
+const firstDemo = demoRows.length ? claimRows.length : -1; // 示範區起點(無示範列則不畫分隔)
 ---
 <div class="sh-table">
   <table>
@@ -9,7 +14,11 @@ const rows = data.claims;
       <tr><th>#</th><th>主張</th><th>L1</th><th>L2</th><th>L3</th><th>證據 · 驗證腳本</th></tr>
     </thead>
     <tbody>
-      {rows.map((c) => (
+      {rows.map((c, i) => (
+        <>
+          {i === firstDemo && (
+            <tr class="sh-group"><td colspan="6">↓ 以下是<strong>示範案例</strong>(不是主張,是把方法論完整走一遍的實例)</td></tr>
+          )}
         <tr>
           <td><code>{c.id}</code></td>
           <td>
@@ -28,6 +37,7 @@ const rows = data.claims;
             </div>
           </td>
         </tr>
+        </>
       ))}
     </tbody>
   </table>
@@ -39,4 +49,6 @@ const rows = data.claims;
   .sh-rev { font-size: 0.8rem; color: var(--fg-muted); margin-top: 0.25rem; }
   .sh-scripts { margin-top: 0.35rem; display: flex; flex-wrap: wrap; gap: 0.4rem; }
   .sh-scripts a { font-size: 0.8rem; font-family: var(--font-mono); }
+  .sh-group td { padding-top: 0.7rem; font-size: 0.85rem; font-weight: 600; color: var(--fg-muted); border-top: 2px solid var(--border); }
+  .sh-group strong { color: var(--fg); }
 </style>
