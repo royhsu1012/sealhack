@@ -159,6 +159,30 @@
       "revision": null
     },
     {
+      "id": "C11",
+      "statement": "AUC 集成:rank 平均只在成員分數尺度差異大時有益;成員同為機率、尺度相近時無優勢、甚至略差",
+      "L1": null,
+      "L2": true,
+      "L3": "pending",
+      "evidence": "尺度相近 20 seeds rank 勝 4/20、均值 −0.0005(合成 t=−4.59);尺度×50 時 10/10 勝、+0.0077(t=+9.55)",
+      "scripts": [
+        "rank_vs_prob_auc.py"
+      ],
+      "revision": "推翻框架原斷言『rank 平均通常比機率平均好』,改為條件式(2026-08-23,第 18 輪)"
+    },
+    {
+      "id": "C12",
+      "statement": "多條相關序列+共變量:時序視窗化成迴歸、用全域 GBDT(lag/rolling/日曆)勝經典每序列統計;單變量少序列為反例(M4)",
+      "L1": true,
+      "L2": true,
+      "L3": "pending",
+      "evidence": "store-sales 三時間窗 3/3 勝:LGBM RMSLE 0.4007 vs 每序列 SES 0.4457 vs seasonal-naive 0.5661;真提交 LB 0.51465 vs naive 對照 0.57949",
+      "scripts": [
+        "case_storesales.py"
+      ],
+      "revision": "條件式主張,結構同 C3;L1:M5(IJF 2022)、Elsayed 2021、M4 反例(Smyl 2020)"
+    },
+    {
       "id": "demo",
       "statement": "鐵達尼端到端示範:六階段全流程 + 真實 Kaggle 提交",
       "L1": null,
@@ -189,30 +213,6 @@
         "case_watson.py"
       ],
       "revision": null
-    },
-    {
-      "id": "C11",
-      "statement": "AUC 集成:rank 平均只在成員分數尺度差異大時有益;成員同為機率、尺度相近時無優勢、甚至略差",
-      "L1": null,
-      "L2": true,
-      "L3": "pending",
-      "evidence": "尺度相近 20 seeds rank 勝 4/20、均值 −0.0005(合成 t=−4.59);尺度×50 時 10/10 勝、+0.0077(t=+9.55)",
-      "scripts": [
-        "rank_vs_prob_auc.py"
-      ],
-      "revision": "推翻框架原斷言『rank 平均通常比機率平均好』,改為條件式(2026-08-23,第 18 輪)"
-    },
-    {
-      "id": "C12",
-      "statement": "多條相關序列+共變量:時序視窗化成迴歸、用全域 GBDT(lag/rolling/日曆)勝經典每序列統計;單變量少序列為反例(M4)",
-      "L1": true,
-      "L2": true,
-      "L3": "pending",
-      "evidence": "store-sales 三時間窗 3/3 勝:LGBM RMSLE 0.4007 vs 每序列 SES 0.4457 vs seasonal-naive 0.5661;真提交 LB 0.51465 vs naive 對照 0.57949",
-      "scripts": [
-        "case_storesales.py"
-      ],
-      "revision": "條件式主張,結構同 C3;L1:M5(IJF 2022)、Elsayed 2021、M4 反例(Smyl 2020)"
     }
   ]
 }
