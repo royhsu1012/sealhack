@@ -144,7 +144,7 @@ def run_experiment(model_factory, X, y, X_test, folds, exp_id, model_name, notes
 
 ---
 
-## 11. 第一步該做什麼
+## 第一步該做什麼
 
 **今天就做這三件事,其他先不要碰:**
 
