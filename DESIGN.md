@@ -51,7 +51,8 @@
 | 元件 | 規則 |
 |---|---|
 | Nav | 圖示按鈕 **40×40**(a11y 觸控下限);搜尋 🔍 = Ctrl/⌘K;主題切換寫 `sh-theme` localStorage |
-| Sidebar / 行動選單 | 資料來源唯一:`src/nav.ts`(2 群組;方法論帶階段序號標籤) |
+| Sidebar / 行動選單 | 資料來源唯一:`src/nav.ts` 的 NAV(3 群組:照順序學 7 步 / 卡住時查 3 / 為什麼可信 2) |
+| 文件頁上/下頁 | 走 `nav.ts` 的 **LEARN_PATH**(7 步主線,與側欄脫鉤);參考/支線頁不顯示;主線末頁出「🎉 完賽 → 實戰成績」卡 |
 | Aside | 三型 note/tip/caution;**每頁 ≤3**(CLAUDE.md 內容規則) |
 | ClaimsTable / CasesTable / ValidationList | 靜態渲染 `src/data/*.json`;自帶捲動容器 |
 | `.prose table` | `display:block; overflow-x:auto`(表格自己是捲動容器);**≤6 欄**(STANDARDS S6) |

@@ -57,8 +57,9 @@ DESIGN.md                   設計系統憲法(tokens/字階/間距/元件規則
 ## 網站結構(已建置;導覽順序見 src/nav.ts)
 ```text
 首頁 landing(src/pages/index.astro)  hero「先學會診斷,再讓 AI 動手」+ tagline「The simple way to AutoML」;actions [開始→handbook] [驗證證據→claims]
-教學(group)      🐣 新手 · ⚡ 進階七步 · 0–4-5 階段(訪客語言標籤,slug 不變)· 資料很少怎麼辦 · 題型速查表
-為什麼可信(group) claims「我們驗證過的 14 件事」· cases/titanic「實戰成績:七場比賽」· glossary 詞彙表
+照順序學(group)  🐣 新手 · ⚡ 進階七步 · 0–4-5 五階段(7 步主線=文件頁 prev/next 依 LEARN_PATH)
+卡住時查(group)  資料很少怎麼辦 · 題型速查表 · 詞彙表
+為什麼可信(group) claims「我們驗證過的 14 件事」· cases/titanic「實戰成績:七場比賽」
 (收斂 2026-08-25:16 頁 → 12 頁——maps/learning→quickstart、resources→claims、0-clean→0-diagnose、5-submit→4-ensemble,舊網址皆 301;六階段「模型」不變,landing 六卡照舊,卡 4/5 同頁)
 ```
 - 各頁內容由拆分前的方法論 monolith 遷移而來(原始檔已刪,現以 src/content/docs 為唯一來源)。
@@ -81,8 +82,8 @@ DESIGN.md                   設計系統憲法(tokens/字階/間距/元件規則
 
 ## 驗收標準(前端重練後現況)
 - ✅ npm run build 零錯誤零警告(13 頁 + 4 redirect)
-- ✅ 首頁「開始」→ 快速版;方法論各頁用頁尾「下一頁」可從 0-diagnose 走到 small-n(側欄 2 群組、方法論 8 項)
-- ✅ /claims 的 <ClaimsTable> 完整渲染(讀 src/data/claims.json:13 條核心主張 + demo/multi,含 L1/L2/L3 驗證層與腳本連結)
+- ✅ 首頁「開始」→ 傻瓜手冊;文件頁「上/下頁」走 LEARN_PATH 7 步主線(手冊→進階→0→1→2→3→4–5,末頁出完賽卡);側欄 3 群組(照順序學/卡住時查/為什麼可信)
+- ✅ /claims 的 <ClaimsTable> 完整渲染(讀 src/data/claims.json:14 條主張 C1a–C12 + demo/multi,含 L1/L2/L3 驗證層與腳本連結)
 - ✅ 手機 375px 無橫向捲動;行動選單(☰)展開全站導覽;寬表格在容器內捲
 - ✅ 深色為預設可切換淺色;Shiki 程式碼高亮;文件頁側欄 + TOC + 上/下頁
 - ✅ 站內搜尋:Pagefind 靜態索引(build 後掃 dist);🔍 或 Ctrl/⌘K 開啟,深/淺色跟隨主題;dev 模式無索引(僅正式 build 可用)
