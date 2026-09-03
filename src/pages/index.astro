@@ -11,12 +11,13 @@ const bestLB = Math.max(...cases.titanic.submissions.map((s: any) => s.public_lb
 const stats = [
   { n: nClaims, l: '條主張,文獻+沙盒雙驗證' },
   { n: nScripts, l: '支可下載重跑的腳本' },
-  { n: 12, l: '篇原始論文與知名專案' },
+  // 13 = claims 頁「學術來源」兩節:8 篇核心技術原始論文 + 5 項實務指南/知名專案(數字更動時同步 backing 學術卡)
+  { n: 13, l: '篇原始論文與知名專案' },
   { n: bestLB.toFixed(4), l: '鐵達尼真實 public LB' },
 ];
 
 const backing = [
-  { k: '學術', v: '11 篇原始論文', d: '每個核心技術對得上原始論文,全數查證。', href: '/claims/' },
+  { k: '學術', v: '8 篇原始論文', d: '每個核心技術對得上原始論文,全數查證。', href: '/claims/' },
   { k: '大神', v: 'Kaggle Grandmasters', d: 'NVIDIA GM Playbook、Chris Deotte、Abhishek Thakur。', href: '/claims/' },
   { k: '可跑專案', v: `${nScripts} 支驗證腳本`, d: '每條主張附一支可下載重跑的腳本,不是空口說白話。', href: '/claims/' },
   { k: '簡單', v: '七步快速版', d: '趕時間先看最短完賽路,約 3–4 週獨立完賽。', href: '/workflow/quickstart/' },
