@@ -148,7 +148,7 @@ def blend(preds, weights):                # 用同一組權重混合 OOF / test 
 - **Stacking 原始論文**:Wolpert, *Stacked Generalization*, Neural Networks 1992 — [doi:10.1016/S0893-6080(05)80023-1](https://doi.org/10.1016/S0893-6080(05)80023-1)
 - **爬山集成(§6.1 的來源)**:Caruana et al., *Ensemble Selection from Libraries of Models*, ICML 2004 — [doi:10.1145/1015330.1015432](https://doi.org/10.1145/1015330.1015432)
 - **知識蒸餾 / 偽標籤**:Hinton, Vinyals & Dean (2015) [arXiv:1503.02531](https://arxiv.org/abs/1503.02531) / Lee, *Pseudo-Label*, ICML 2013 Workshop
-- **實務入門**:MLWave, [*Kaggle Ensembling Guide*](https://mlwave.com/kaggle-ensembling-guide/)
+- **實務入門**:MLWave, [*Kaggle Ensembling Guide*](https://web.archive.org/web/20210924023432/https://mlwave.com/kaggle-ensembling-guide/)(原站下線,Wayback 存檔)
 
 ## 實戰印證:C3 前提在三場真比賽的雙向驗證
 
