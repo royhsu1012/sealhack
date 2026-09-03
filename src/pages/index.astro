@@ -92,7 +92,10 @@ const stages = [
   <!-- 六階段 -->
   <section class="mx-auto max-w-5xl px-4 py-16">
     <h2 class="text-2xl sm:text-3xl font-extrabold text-center">完整流程,六個階段</h2>
-    <div class="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <p class="mt-3 text-center text-sm max-w-xl mx-auto" style="color:var(--fg-muted)">
+      第一次來?別急著點進單一階段——先花 45 分鐘跟著 <a href="/workflow/handbook/" style="color:var(--brand);font-weight:600">🐣 傻瓜手冊</a> 把六階段走一遍,再回來逐階段深入。
+    </p>
+    <div class="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {stages.map(([n, t, d, href]) => (
         <a href={href} class="lift block p-5 rounded-xl border" style="border-color:var(--border);background:var(--bg-card)">
           <div class="flex items-center gap-3">
