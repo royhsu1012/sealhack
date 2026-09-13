@@ -15,9 +15,9 @@ import Aside from '../../components/Aside.astro';
 
 | 等級 | 白話 |
 |---|---|
-| **L1** | 有原始論文或業界公認實務支持 |
-| **L2** | 我們寫了程式跑過,結果附在下方腳本索引 |
-| **L3** | 在真實 Kaggle 比賽上驗證過(共 8 場) |
+| **L1(文獻收斂)** | 有原始論文或業界公認實務支持 |
+| **L2(沙盒實驗)** | 我們寫了程式跑過,結果附在下方腳本索引 |
+| **L3(實戰驗證)** | 在真實 Kaggle 比賽上驗證過(共 8 場) |
 
 ## 你可能聽過的說法,以及我們實測的結果
 
@@ -28,10 +28,10 @@ import Aside from '../../components/Aside.astro';
 | 「特徵加越多越好」 | 五組候選特徵裡**只有一組是真的**——其餘四組的絕對分數看起來都沒問題,配對檢定卻是負的([case_s6e8_stage3.py](/validation/case_s6e8_stage3.py)) |
 | 「集成一定比單模好」 | 要成員**實力相近**才有紅利。實力懸殊時集成反而低於最佳單模(s6e8),相近時才贏(spaceship)——[兩邊的證據](/validation/case_s6e8.py) |
 | 「先把參數調好再說」 | 同一份特徵:LightGBM 0.9625、邏輯迴歸 0.506(≈瞎猜)。**選對模型家族的影響遠大於調參**([case_s6e8.py](/validation/case_s6e8.py)) |
-| 「public 榜分數高就是好」 | 我們全程只用 CV 做決策,最後私榜揭曉:四筆提交 private≈public,**完全沒跳水**(s6e8,2026-08-31) |
+| 「public 榜分數高就是好」 | 我們全程只用交叉驗證(CV)做決策,最後私榜揭曉:四筆提交 private≈public,**完全沒跳水**(s6e8,2026-08-31) |
 | 「教科書特徵(總面積、屋齡)一定有用」 | 三組經典房價特徵**全被配對檢定否決**——樹自己會組合面積([case_houseprices_v2.py](/validation/case_houseprices_v2.py)) |
-| 「AUC 題用 rank 平均比較好」 | **只在成員分數尺度差很多時成立**;尺度相近時反而略差([rank_vs_prob_auc.py](/validation/rank_vs_prob_auc.py)) |
-| 「時間序列要用時間序列模型」 | 多條序列 + 有促銷之類的共變量時,**把它當迴歸做的 GBDT 更好**;但單一序列時經典統計法才對([case_storesales.py](/validation/case_storesales.py)) |
+| 「曲線下面積(AUC)題用 rank 平均比較好」 | **只在成員分數尺度差很多時成立**;尺度相近時反而略差([rank_vs_prob_auc.py](/validation/rank_vs_prob_auc.py)) |
+| 「時間序列要用時間序列模型」 | 多條序列 + 有促銷之類的共變量時,**把它當迴歸做的梯度提升樹(GBDT)更好**;但單一序列時經典統計法才對([case_storesales.py](/validation/case_storesales.py)) |
 | 「多個隨機種子平均一定有用」 | 模型若沒有隨機成分,**平均是完全的空操作**(房價案第一版逐值相同)——先確認你的模型真的有隨機性 |
 
 > 這正是本站的立場:**別人的方案是線索,不是結論**。任何技巧都要在你自己的資料上重跑一次才算數。
@@ -48,16 +48,16 @@ import Aside from '../../components/Aside.astro';
 
 ## LB 使用教條(v2.1 修訂——被 L2 實驗打臉後的誠實版)
 
-原教條「只信 CV」在 L2 驗證中被證明**過度簡化**。修訂為四條:
+原教條「只信交叉驗證(CV)」在 L2(沙盒實驗) 驗證中被證明**過度簡化**。修訂為四條:
 
-1. **迭代決策(幾十次適應性選擇)一律用 CV。** 實驗:連續 30 次特徵開關,public(n=800) 引導接受 3 次噪音改動、私榜 0.7341;CV 引導只接受 1 次、私榜 0.7386。小樣本 LB 的危險在「反覆使用」的累積過擬合。
+1. **迭代決策(幾十次適應性選擇)一律用 CV。** 實驗:連續 30 次特徵開關,public(n=800) 引導接受 3 次噪音改動、私榜 0.7341;CV 引導只接受 1 次、私榜 0.7386。小樣本排行榜(LB)的危險在「反覆使用」的累積過擬合。
 2. **單次提交選擇、且 public 與 private 同分布時,public 是合法訊號。** 實驗:一次性從 12 個候選中選擇,public 後悔值 0.00098 < CV 的 0.00184。此時 public 評的是「同一份預測、同一分布」,可與 CV 併用。
-3. **懷疑分布漂移時(adversarial AUC 高、時間切分、public 佔比極小)→ 回到只用 CV。**
+3. **懷疑分布漂移時(adversarial 曲線下面積(AUC)高、時間切分、public 佔比極小)→ 回到只用 CV。**
 4. **CV 與 LB 方向脫鉤 = 切法錯誤警訊,立即回頭檢查。** 實驗(5 seeds):group 資料加 group_id 特徵,隨機切 ΔCV +0.013~+0.057、私榜 Δ 卻是 -0.028~+0.005(脫鉤);GroupKFold 的 ΔCV 在 5/5 seeds 都比隨機切更接近私榜。
 
 ## 收斂聲明
 
-登錄 14 條主張(C1a–C12):13 條達 L1 + L2 雙驗證,C11 目前僅 L2(rank 平均校準,文獻待補)。C12(時序迴歸框架)為條件式主張:L1 引 M5/Elsayed、以 M4 為官方反例,L2 用 store-sales 三時間窗 3/3 證實。驗證過程共推翻並修訂了四處原始表述(C1 門檻、C3 前提、C7a 教條、C8 條件強度),修訂史全數保留於登錄表;其中 C3 保留 1 個官方反例(集成無「實力相近」前提時反而有害)。L3 已從單點升級為[七場實戰掃描](/cases/titanic/)(6 種任務型態、15 筆真提交、全簡單模型):同分布場次 CV→LB 落差 ≤0.002,異分布與時序場次如 C1a/C1b 預測地衰減。方法論層面就此收斂,後續修改須引新文獻或新增 L2 實驗,否則不動。
+登錄 14 條主張(C1a–C12):13 條達 L1(文獻收斂) + L2(沙盒實驗) 雙驗證,C11 目前僅 L2(rank 平均校準,文獻待補)。C12(時序迴歸框架)為條件式主張:L1 引 M5/Elsayed、以 M4 為官方反例,L2 用 store-sales 三時間窗 3/3 證實。驗證過程共推翻並修訂了四處原始表述(C1 門檻、C3 前提、C7a 教條、C8 條件強度),修訂史全數保留於登錄表;其中 C3 保留 1 個官方反例(集成無「實力相近」前提時反而有害)。L3(實戰驗證) 已從單點升級為[七場實戰掃描](/cases/titanic/)(6 種任務型態、15 筆真提交、全簡單模型):同分布場次交叉驗證(CV)→排行榜(LB)落差 ≤0.002,異分布與時序場次如 C1a/C1b 預測地衰減。方法論層面就此收斂,後續修改須引新文獻或新增 L2 實驗,否則不動。
 
 <details>
 <summary><strong>框架校準:我們測過的民間智慧(展開)</strong></summary>
@@ -79,9 +79,9 @@ import Aside from '../../components/Aside.astro';
 
 ### 三、診斷工具:偵測強,行動需判斷
 
-- **對抗驗證**:偵測分布漂移(adversarial AUC 0.5↔1.0)、定位漂移源特徵(8/8)是強項;但「丟棄」是條件式——純 ID/洩漏才丟,同時帶真訊號的別急著丟(`adversarial_validation_test.py`)。
+- **對抗驗證**:偵測分布漂移(adversarial 曲線下面積(AUC)0.5↔1.0)、定位漂移源特徵(8/8)是強項;但「丟棄」是條件式——純 ID/洩漏才丟,同時帶真訊號的別急著丟(`adversarial_validation_test.py`)。
 
-> 一句話:很多表格建議源自舊模型(隨機森林、線性),現代 GBDT 常已內建防護;真正該手動補的,是模型結構上學不好的形狀(比值、偏斜)與小樣本的統計工具(配對比較)。
+> 一句話:很多表格建議源自舊模型(隨機森林、線性),現代梯度提升樹(GBDT)常已內建防護;真正該手動補的,是模型結構上學不好的形狀(比值、偏斜)與小樣本的統計工具(配對比較)。
 
 </details>
 
@@ -103,7 +103,7 @@ import Aside from '../../components/Aside.astro';
 | Stacking 堆疊(集成) | Wolpert, *Stacked Generalization*, Neural Networks 5(2), 1992 | [doi:10.1016/S0893-6080(05)80023-1](https://doi.org/10.1016/S0893-6080(05)80023-1) |
 | 集成選擇 / 爬山(集成) | Caruana, Niculescu-Mizil, Crew & Ksikes, *Ensemble Selection from Libraries of Models*, ICML 2004 | [doi:10.1145/1015330.1015432](https://doi.org/10.1145/1015330.1015432) |
 | 目標編碼(特徵迭代) | Micci-Barreca, *A Preprocessing Scheme for High-Cardinality Categorical Attributes*, SIGKDD Explorations 3(1), 2001 | [doi:10.1145/507533.507538](https://doi.org/10.1145/507533.507538) |
-| 配對比較 / CV 推論(特徵迭代、小樣本) | Nadeau & Bengio, *Inference for the Generalization Error*, Machine Learning 52, 2003 —— 重複 k 折配對 t 值膨脹、corrected resampled t-test 的依據 | [doi:10.1023/A:1024068626366](https://doi.org/10.1023/A:1024068626366) |
+| 配對比較 / 交叉驗證(CV)推論(特徵迭代、小樣本) | Nadeau & Bengio, *Inference for the Generalization Error*, Machine Learning 52, 2003 —— 重複 k 折配對 t 值膨脹、corrected resampled t-test 的依據 | [doi:10.1023/A:1024068626366](https://doi.org/10.1023/A:1024068626366) |
 | 知識蒸餾(集成) | Hinton, Vinyals & Dean, *Distilling the Knowledge in a Neural Network*, NIPS 2014 Workshop | [arXiv:1503.02531](https://arxiv.org/abs/1503.02531) |
 | 偽標籤(集成) | Lee, *Pseudo-Label: The Simple and Efficient Semi-Supervised Learning Method for Deep Neural Networks*, ICML 2013 Workshop | ICML 2013 WREPL |
 | TabPFN(多樣化基線) | Prior Labs & Univ. Freiburg, *TabPFN-2.5: Advancing the State of the Art in Tabular Foundation Models*, 2025 | [arXiv:2511.08667](https://arxiv.org/abs/2511.08667) |
@@ -133,7 +133,7 @@ import Aside from '../../components/Aside.astro';
 1. 跟著[快速版](/workflow/quickstart/)或完整 workflow 打一場真賽。
 2. 卡在某階段 → 去 **faridrashidi/kaggle-solutions** 找**同題型**的冠軍怎麼做那一步。
 3. 回本站對照方法論的**原理**(為什麼這樣做),不是只抄程式碼。
-4. **自己重跑驗證**——用上方驗證腳本的協議(共用 fold、OOF 落盤、配對比較),確認那招在你的資料上真的有效。
+4. **自己重跑驗證**——用上方驗證腳本的協議(共用 fold、折外預測(OOF)落盤、配對比較),確認那招在你的資料上真的有效。
 
 > 差異化不在「知道更多技巧」,在「知道怎麼問對、怎麼驗證」。技巧會過時,診斷與驗證的能力不會。
 

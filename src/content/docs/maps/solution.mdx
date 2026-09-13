@@ -37,7 +37,7 @@ description: 三個正交軸(模態×任務×機制)+ 五問路由 + 九條軌�
 
 | 模態 | 資料長相 | 2025 冠軍主流工具 |
 |---|---|---|
-| **表格 Tabular** | 列 × 欄的數值/類別 | GBDT(XGBoost / LightGBM / CatBoost) |
+| **表格 Tabular** | 列 × 欄的數值/類別 | 梯度提升樹(GBDT)(XGBoost / LightGBM / CatBoost) |
 | **時間序列 Time Series** | 有時間順序的觀測 | GBDT + 特徵工程 / 序列 NN |
 | **影像 Vision** | 圖片 / 影片 / 3D | Transformer(ViT, Swin)已超越 CNN |
 | **文字 NLP** | 句子 / 檔案 | 生成式 LLM(Qwen 主導) |
@@ -49,10 +49,10 @@ description: 三個正交軸(模態×任務×機制)+ 五問路由 + 九條軌�
 
 | 任務 | 輸出 | 常見指標 |
 |---|---|---|
-| **二分類** | 一個機率 | AUC / LogLoss |
+| **二分類** | 一個機率 | 曲線下面積(AUC) / LogLoss |
 | **多分類** | 一組機率 | LogLoss / Accuracy / F1 |
 | **多標籤** | 多個獨立機率 | Macro-AUC / F1 |
-| **迴歸** | 一個數值 | RMSE / MAE |
+| **迴歸** | 一個數值 | 均方根誤差(RMSE) / 平均絕對誤差(MAE) |
 | **多目標迴歸** | 多個數值 | 各目標加權 |
 | **排序 / 推薦** | 一個排序 | MAP@k / NDCG |
 | **偵測 / 分割** | 位置或遮罩 | mAP / Dice / IoU |
@@ -85,7 +85,7 @@ description: 三個正交軸(模態×任務×機制)+ 五問路由 + 九條軌�
 - 文字:Qwen 系列幾乎壟斷
 - 音訊:5 場有人聲的比賽中 4 場冠軍微調 Whisper
 - AutoGluon 首次進入冠軍方案,以極低算力打敗人工精調整合
-- TabPFN 首次進入冠軍方案,用途是「產生特徵餵給 GBDT」
+- TabPFN 首次進入冠軍方案,用途是「產生特徵餵給 梯度提升樹(GBDT)」
 - 超過一半冠軍是**單人**;超過一半是**首次奪冠**
 - 多數冠軍訓練成本 **< $100**,不少是免費 notebook 零成本完成
 
@@ -114,12 +114,12 @@ Q5. 是 code 競賽嗎?        → 決定算力預算與推論限制
 
 | 專案 | 建議 |
 |---|---|
-| CV | StratifiedKFold(5)。若有實體重複 → StratifiedGroupKFold |
-| 指標 | AUC → 不需校準;整合預設機率平均,尺度差異大才轉 rank<br/>LogLoss → 需要校準,clip 極端值 |
+| 交叉驗證(CV) | StratifiedKFold(5)。若有實體重複 → StratifiedGroupKFold |
+| 指標 | 曲線下面積(AUC) → 不需校準;整合預設機率平均,尺度差異大才轉 rank<br/>LogLoss → 需要校準,clip 極端值 |
 | 起手模型 | LightGBM(`objective='binary'`) |
 | 多樣化 | XGBoost / CatBoost / Logistic / MLP / TabPFN(≤5 萬列) |
 | 特徵重點 | 群組聚合、frequency encoding、類別兩兩互動、target encoding(fold 內) |
-| OOF 格式 | `(n_train,)` 一維 |
+| 折外預測(OOF) 格式 | `(n_train,)` 一維 |
 | 專屬陷阱 | 類別不平衡時不要看 Accuracy;target encoding 洩漏 |
 
 
@@ -132,10 +132,10 @@ Q5. 是 code 競賽嗎?        → 決定算力預算與推論限制
 
 | 專案 | 建議 |
 |---|---|
-| CV | StratifiedKFold。多標籤用 MultilabelStratifiedKFold |
+| 交叉驗證(CV) | StratifiedKFold。多標籤用 MultilabelStratifiedKFold |
 | 指標 | 多分類 LogLoss;多標籤 Macro-AUC / Macro-F1 |
 | 起手模型 | LightGBM `multiclass` / 多標籤用 OneVsRest |
-| OOF 格式 | **`(n_train, n_class)` 二維** ⚠️ |
+| 折外預測(OOF) 格式 | **`(n_train, n_class)` 二維** ⚠️ |
 | 專屬陷阱 | **OOF 是矩陣,整合程式碼要另寫一套**<br/>類別數多時訓練時間暴漲,考慮分層策略<br/>罕見類別的 fold 內可能一個樣本都沒有 |
 
 
@@ -148,11 +148,11 @@ Q5. 是 code 競賽嗎?        → 決定算力預算與推論限制
 
 | 專案 | 建議 |
 |---|---|
-| CV | KFold。目標分布偏斜時 → 對 target 分箱做 StratifiedKFold |
-| 指標 | RMSE → 考慮 `log1p(target)`,預測後 `expm1` 還原<br/>MAE → objective 直接設 MAE,整合用中位數 |
+| 交叉驗證(CV) | KFold。目標分布偏斜時 → 對 target 分箱做 StratifiedKFold |
+| 指標 | 均方根誤差(RMSE) → 考慮 `log1p(target)`,預測後 `expm1` 還原<br/>平均絕對誤差(MAE) → objective 直接設 MAE,整合用中位數 |
 | 起手模型 | LightGBM `regression` |
 | 特徵重點 | 同 T1,另加數值間的比值/差值 |
-| OOF 格式 | `(n_train,)` |
+| 折外預測(OOF) 格式 | `(n_train,)` |
 | 專屬陷阱 | target 變換後**整合要在同一個尺度上做**<br/>離群值會主導 RMSE,先看目標分布<br/>預測值超出合理範圍要 clip |
 
 
@@ -165,11 +165,11 @@ Q5. 是 code 競賽嗎?        → 決定算力預算與推論限制
 
 | 專案 | 建議 |
 |---|---|
-| CV | **絕對不能隨機切。** 用擴張窗(expanding)或滑動窗(rolling)<br/>驗證段必須完全在訓練段之後,且留 gap 對應預測視野 |
-| 指標 | RMSE / MAE / MAPE / SMAPE / Pinball(分位數) |
+| 交叉驗證(CV) | **絕對不能隨機切。** 用擴張窗(expanding)或滑動窗(rolling)<br/>驗證段必須完全在訓練段之後,且留 gap 對應預測視野 |
+| 指標 | 均方根誤差(RMSE) / 平均絕對誤差(MAE) / MAPE / SMAPE / Pinball(分位數) |
 | 起手模型 | **LightGBM + 滯後特徵**(視窗化成迴歸;M5 全前段皆此路,C12)<br/>基線一定要有:naive(用上期值)、seasonal naive |
 | 特徵重點 | 滯後(lag)、滾動統計(rolling mean/std)、指數加權、時間編碼(sin/cos)、節假日、事件旗標 |
-| OOF 格式 | `(n_train,)`,但只有驗證段有值 |
+| 折外預測(OOF) 格式 | `(n_train,)`,但只有驗證段有值 |
 | 專屬陷阱 | ⚠️ **滾動特徵只能用過去資料**,`shift(1)` 之後再 rolling<br/>⚠️ 未來才知道的資訊(如當日總量)絕不可用<br/>⚠️ 遞迴預測會累積誤差,考慮直接多步預測<br/>分布漂移嚴重,近期資料權重要加高<br/>⚠️ **邊界(C12)**:迴歸框架贏在「多序列共學+共變量」;單變量少序列時經典統計(ETS/ARIMA)反而強(M4 反例) |
 
 
@@ -182,9 +182,9 @@ Q5. 是 code 競賽嗎?        → 決定算力預算與推論限制
 
 | 專案 | 建議 |
 |---|---|
-| CV | 時間切分,且要保證每折都有正例 |
+| 交叉驗證(CV) | 時間切分,且要保證每折都有正例 |
 | 指標 | 極度不平衡 → PR-AUC 優於 ROC-AUC |
-| 起手模型 | 監督式有標籤 → GBDT;無標籤 → Isolation Forest / 重建誤差 |
+| 起手模型 | 監督式有標籤 → 梯度提升樹(GBDT);無標籤 → Isolation Forest / 重建誤差 |
 | 專屬陷阱 | 正例可能只有 0.1%,取樣策略比模型重要<br/>「異常」的定義常常模糊,先跟資料對齊 |
 
 
@@ -197,7 +197,7 @@ Q5. 是 code 競賽嗎?        → 決定算力預算與推論限制
 
 | 專案 | 建議 |
 |---|---|
-| CV | StratifiedKFold;同一病人/場景的多張圖必須 GroupKFold |
+| 交叉驗證(CV) | StratifiedKFold;同一病人/場景的多張圖必須 GroupKFold |
 | 起手模型 | 分類/迴歸 → ViT(DinoV2)或 Swin(2025 已超越 CNN)<br/>物件偵測 → YOLOv8 / YOLO11<br/>分割 → U-Net 系 / SegFormer<br/>醫療影像 → MONAI |
 | 核心工具 | `timm`(預訓練模型)、`albumentations`(增強) |
 | 勝負關鍵 | **資料增強策略 > 模型選擇**;TTA(測試時增強)幾乎必做 |
@@ -214,7 +214,7 @@ Q5. 是 code 競賽嗎?        → 決定算力預算與推論限制
 
 | 專案 | 建議 |
 |---|---|
-| CV | StratifiedKFold;同作者/同來源要 GroupKFold |
+| 交叉驗證(CV) | StratifiedKFold;同作者/同來源要 GroupKFold |
 | 起手模型 | **2025 已轉向生成式 LLM**:Qwen2.5 / Qwen3 系列<br/>輕量需求仍可用 DeBERTa-v3 |
 | 核心工具 | `transformers`, `peft`(LoRA 微調), `unsloth`(省記憶體), `vllm`(快速推論) |
 | 勝負關鍵 | 微調策略(LoRA vs 全參數)、量化、推論最佳化 |
@@ -244,7 +244,7 @@ Q5. 是 code 競賽嗎?        → 決定算力預算與推論限制
 
 | 專案 | 建議 |
 |---|---|
-| CV | 按使用者 GroupKFold;有時間性則按時間切 |
+| 交叉驗證(CV) | 按使用者 GroupKFold;有時間性則按時間切 |
 | 指標 | MAP@k / NDCG / Recall@k |
 | 起手模型 | 兩階段:召回(候選生成)→ 排序(LightGBM Ranker) |
 | 勝負關鍵 | **候選生成的品質決定上限**,排序模型只能在候選裡挑 |
@@ -258,8 +258,8 @@ Q5. 是 code 競賽嗎?        → 決定算力預算與推論限制
 不管哪條軌道,以下永遠適用:
 
 1. **Adversarial Validation** 檢查 train/test 分布
-2. **OOF 落盤協議** — 每個實驗都存
-3. **實驗記錄表** — 記 CV、CV 標準差、LB
+2. **折外預測(OOF) 落盤協議** — 每個實驗都存
+3. **實驗記錄表** — 記 交叉驗證(CV)、CV 標準差、排行榜(LB)
 4. **多樣化整合** — 模型差異性 > 單模型分數
 5. **提交選擇** — 一個 CV 最高 + 一個最穩健
 

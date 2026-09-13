@@ -43,12 +43,12 @@ test 是按時間切的?
                   └─ 否 → KFold(回歸可對 target 分箱後做 Stratified)
 ```
 
-**漂移警告(v2.0,經 L2 驗證)**:持續概念漂移下,連正確的時間切分 CV 都仍然樂觀
+**漂移警告(v2.0,經 L2(沙盒實驗)驗證)**:持續概念漂移下,連正確的時間切分交叉驗證(CV)都仍然樂觀
 (實驗:隨機切高估 +0.153,時間切仍高估 +0.098)。時間切「減少」而非「消除」高估。
 對策:以最近窗口的分數為準、預期上線衰減、訓練時加大近期樣本權重。
 
 **折數選擇**:5 折是預設。資料 < 5 萬或指標方差大 → 10 折 或 5×repeat。
-**Seed 固定**:`SEED=42` 寫進 config,所有實驗共用同一組 fold,否則 OOF 不可比較、無法整合。
+**Seed 固定**:`SEED=42` 寫進 config,所有實驗共用同一組 fold,否則折外預測(OOF)不可比較、無法整合。
 
 ### 2.2 CV vs LB 關係表(從第一次提交就開始記)
 
@@ -57,7 +57,7 @@ test 是按時間切的?
 | exp_001 | 0.8912 | 0.8887 | -0.0025 | — |
 | exp_002 | 0.8945 | 0.8921 | -0.0024 | ✅ |
 
-- 連續 5~8 次實驗若 **CV 上升 → LB 也上升**,則 CV 可信,之後**只看 CV 做決策**。
+- 連續 5~8 次實驗若 **CV 上升 → 排行榜(LB)也上升**,則 CV 可信,之後**只看 CV 做決策**。
 - 若兩者脫鉤,先懷疑:CV 切法錯、有洩漏、public LB 太小。**不要轉去擬合 LB。**
 
 ---
@@ -85,7 +85,7 @@ comp_name/
 
 ### 3.1 OOF 協議(不可妥協)
 
-**每一次實驗,無論 CV 好壞,都必須落盤:**
+**每一次實驗,無論交叉驗證(CV)好壞,都必須落盤:**
 
 ```text
 oof/train_oof_{MODEL}_{VERSION}.npy    # shape = (n_train,) 或 (n_train, n_class)
@@ -142,7 +142,7 @@ def run_experiment(model_factory, X, y, X_test, folds, exp_id, model_name, notes
     return oof, test_pred, cv_mean
 ```
 
-**注意**:`cv_mean` 用全體 OOF 算,不要用各 fold 分數的平均。對 AUC 這類非可加指標,兩者可能差很多,全體 OOF 才是整合時的真實基準。
+**注意**:`cv_mean` 用全體 OOF 算,不要用各 fold 分數的平均。對曲線下面積(AUC)這類非可加指標,兩者可能差很多,全體 OOF 才是整合時的真實基準。
 
 ---
 
@@ -151,8 +151,8 @@ def run_experiment(model_factory, X, y, X_test, folds, exp_id, model_name, notes
 **今天就做這三件事,其他先不要碰:**
 
 1. 建好 §3 的目錄結構,寫死 `config.py`(SEED、N_FOLDS、METRIC_FN)與 `folds.py`。
-2. 跑[0 診斷](/workflow/0-diagnose/)教的對抗驗證(adversarial validation),決定 CV 切法,產出 Data Memo。
-3. 跑一次 LGBM baseline 走完 `run_experiment`,完成第一次提交,記錄 CV 與 LB。
+2. 跑[0 診斷](/workflow/0-diagnose/)教的對抗驗證(adversarial validation),決定交叉驗證(CV)切法,產出 Data Memo。
+3. 跑一次 LGBM baseline 走完 `run_experiment`,完成第一次提交,記錄 CV 與排行榜(LB)。
 
 做完這三件,框架就活了,之後每一次實驗都會自動累積成資產。
 

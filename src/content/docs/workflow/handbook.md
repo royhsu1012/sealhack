@@ -118,7 +118,7 @@ pd.DataFrame({ID: te[ID], TARGET: pred}).to_csv("submission.csv", index=False)
 print("已產生 submission.csv")
 ```
 
-> 迴歸題(預測數字)改三處:`LGBMClassifier`→`LGBMRegressor`、`predict_proba(...)[:, 1]`→`predict(...)`、`StratifiedKFold(5, ...).split(X, y)`→`KFold(5, shuffle=True, random_state=42).split(X)`,分數改用 RMSE。
+> 迴歸題(預測數字)改三處:`LGBMClassifier`→`LGBMRegressor`、`predict_proba(...)[:, 1]`→`predict(...)`、`StratifiedKFold(5, ...).split(X, y)`→`KFold(5, shuffle=True, random_state=42).split(X)`,分數改用均方根誤差(RMSE)。
 
 比賽頁 **Submit Prediction** → 上傳 `submission.csv`。**恭喜,你已經在排行榜上了。**
 
@@ -126,7 +126,7 @@ print("已產生 submission.csv")
 
 想一個新欄位(例:兩欄相除、按某類別分組的平均),加進 `X` 和 `Xt`,**重跑第 5 步**:
 
-- CV 比剛才**明顯高** → 留下
+- 交叉驗證(CV)比剛才**明顯高** → 留下
 - 差不多或變低 → 刪掉,換下一個想法
 
 鐵律:**一次只加一個想法**。一次加十個,你永遠不知道是哪個有用。
@@ -171,7 +171,7 @@ Xt["n_missing"] = te.isna().sum(axis=1)
 | 症狀 | 原因與解法 |
 |---|---|
 | 交卷得 0 分或報錯 | 格式錯:對照 sample_submission 檢查欄名、列數、ID 順序 |
-| CV 很高、榜上很爛 | 十之八九是洩漏或切錯:時間資料用了隨機切?特徵偷看了答案? |
+| 交叉驗證(CV)很高、榜上很爛 | 十之八九是洩漏或切錯:時間資料用了隨機切?特徵偷看了答案? |
 | 程式跑不動:文字欄報錯 | 忘了第 5 步的「文字欄轉數字」迴圈 |
 | NaN 報錯 | 用 LightGBM 不會;若換其他模型,先 `X = X.fillna(-999)` |
 | 跑太慢 | `n_estimators` 先降到 100;資料太大先 `tr.sample(100000)` 練手 |
@@ -183,7 +183,7 @@ Xt["n_missing"] = te.isna().sum(axis=1)
 | 你剛剛做的 | 這在方法論裡叫 | 想做得更好 |
 |---|---|---|
 | 回答「有時間順序嗎」再決定怎麼切 | 階段 0:讀題診斷 | [0 診斷](/workflow/0-diagnose/) |
-| 貼上那段程式,跑通並交出第一份 | 階段 1:鎖死驗證(那個 5 折就是 CV) | [1 驗證](/workflow/1-validate/) |
+| 貼上那段程式,跑通並交出第一份 | 階段 1:鎖死驗證(那個 5 折就是交叉驗證(CV)) | [1 驗證](/workflow/1-validate/) |
 | 印出來的那個 CV 分數 | 階段 2:基線(你的起點) | [2 基線](/workflow/2-baseline/) |
 | 一次加一個欄位,看分數升不升 | 階段 3:特徵迭代 | [3 特徵](/workflow/3-features/) |
 | (這版先跳過) | 階段 4:集成 | [4–5 集成](/workflow/4-ensemble/) |

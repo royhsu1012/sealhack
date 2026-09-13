@@ -30,11 +30,11 @@ description: 先鋪開不同家族的模型群 + AutoGluon 錨點,而不是先�
 
 ### 4.0 先跑 AutoGluon 當錨點(v2.0 新增)
 起手第一件事:`AutoGluon best_quality` 跑一次。它內建的就是本方法論的自動化版
-——k-fold bagging 產 OOF、多層 stacking、Greedy Weighted Ensemble——
+——k-fold bagging 產折外預測(OOF)、多層 stacking、Greedy Weighted Ensemble——
 所以它的分數是「不做人工特徵能到哪」的誠實錨點。
 2025 年已有它擊敗人工精調集成奪冠的實例。你之後所有人工投入,
 都應該以「有沒有贏過錨點」來衡量;贏不過,代表你的時間該花在
-它自動化不了的地方:診斷、CV 設計、洩漏判斷、領域特徵。
+它自動化不了的地方:診斷、交叉驗證(CV)設計、洩漏判斷、領域特徵。
 
 
 一開始就鋪開**不同家族**的模型,而不是先鑽研單一模型。這能立刻告訴你哪個家族適合這份資料,也是整合多樣性的來源。
@@ -43,12 +43,12 @@ description: 先鋪開不同家族的模型群 + AutoGluon 錨點,而不是先�
 
 | 家族 | 模型 | 備註 |
 |---|---|---|
-| GBDT | LightGBM | 首選,最快 |
+| 梯度提升樹(GBDT) | LightGBM | 首選,最快 |
 | GBDT | XGBoost | `device="cuda"` |
 | GBDT | CatBoost | 類別特徵多時常最強 |
 | 線性 | Logistic / Ridge / Lasso | cuML 加速,提供最大誤差多樣性 |
-| 近鄰 | KNN | 弱但常在整合里加分 |
-| 核方法 | SVR / SVC | Rainfall 那場單一 SVC 就接近榜首 |
+| 近鄰 | K 近鄰(KNN) | 弱但常在整合里加分 |
+| 核方法 | 支援向量機(SVM,SVR/SVC) | Rainfall 那場單一 SVC 就接近榜首 |
 | NN | MLP / FT-Transformer | 與 GBDT 誤差方向差異大 |
 | 基礎模型 | **TabPFN-2.5** | ≤5 萬行 / ≤2000 特徵時非常強 |
 
@@ -71,7 +71,7 @@ TabPFN-2.5 支援到 5 萬筆資料、2000 個特徵,在 TabArena 上已超越�
 
 ## 實戰印證:選對家族 > 調參
 
-s6e8 上同一組特徵:**近預設 LightGBM OOF AUC 0.9625,LogReg 只有 0.506(≈瞎猜)**——訊號是非線性的,家族選錯直接歸零,任何調參都救不回來([`case_s6e8.py`](/validation/case_s6e8.py))。多樣化基線的目的不是每個都強,是**確認哪個家族接得住這份資料**,以及為集成準備誤差不同的成員。
+s6e8 上同一組特徵:**近預設 LightGBM 折外預測(OOF)曲線下面積(AUC)0.9625,LogReg 只有 0.506(≈瞎猜)**——訊號是非線性的,家族選錯直接歸零,任何調參都救不回來([`case_s6e8.py`](/validation/case_s6e8.py))。多樣化基線的目的不是每個都強,是**確認哪個家族接得住這份資料**,以及為集成準備誤差不同的成員。
 
 ## 學會了沒?
 
@@ -96,4 +96,4 @@ s6e8 上同一組特徵:**近預設 LightGBM OOF AUC 0.9625,LogReg 只有 0.506(
 
 光讀不會信,跑過才會。本頁對應的可下載腳本(先 `pip install -r validation/requirements.txt && python validation/fetch_data.py`):
 
-- [`case_s6e8.py`](/validation/case_s6e8.py) —— 同一份特徵下,LightGBM OOF 0.9625、邏輯迴歸 0.506(≈瞎猜)——家族選錯直接歸零,親眼看差距。
+- [`case_s6e8.py`](/validation/case_s6e8.py) —— 同一份特徵下,LightGBM 折外預測(OOF)0.9625、邏輯迴歸 0.506(≈瞎猜)——家族選錯直接歸零,親眼看差距。

@@ -31,10 +31,10 @@ description: Hill Climbing 防過擬合三招 + Stacking + 偽標籤 + 知識蒸
 
 ### 6.0 集成紅利的前提(v2.0 修訂,經 L2 驗證)
 集成要贏最佳單模,需要成員「實力相近 + 誤差多樣」。
-L2 實驗:當 logreg 落後 lgbm 六個百分點時,爬山集成毫無增益(-0.0005);
+L2(沙盒實驗) 實驗:當 logreg 落後 lgbm 六個百分點時,爬山集成毫無增益(-0.0005);
 換成實力相近的 lgbm / ExtraTrees / MLP 後,集成 +0.0024 且三者全被採用。
 教訓:多樣性是必要條件,不是充分條件——先把弱成員拉到可比水準
-(調參/換特徵),再談集成。強弱懸殊時,爬山只會過擬合 OOF。
+(調參/換特徵),再談集成。強弱懸殊時,爬山只會過擬合折外預測(OOF)。
 
 ### 6.1 Hill Climbing(先做這個,簡單且強)
 
@@ -85,7 +85,7 @@ def blend(preds, weights):                # 用同一組權重混合 OOF / test 
 
 > ⚠️ **常見錯**:早期版本只把新成員的舊權重乘 (1-w),沒縮放其他成員,`used` 權重和 > 1、
 > 拿去加權 test 得到的不是爬山選出的那個集成(`validation/hill_climb_weights.py`:文件舊版和=1.75、
-> 重建誤差 1.13;正解和=1.0、誤差 ~0;test AUC 0.7232 vs 0.7171)。混合 OOF 與 test **必用同一組 weights**。
+> 重建誤差 1.13;正解和=1.0、誤差 ~0;test 曲線下面積(AUC) 0.7232 vs 0.7171)。混合 OOF 與 test **必用同一組 weights**。
 
 **加速技巧**:用 CuPy 向量化,一次並行評估上千組權重組合。
 **AUC 專用(2026-08 修訂)**:rank 平均(`scipy.stats.rankdata` 後除以 n 再平均)**不是普遍較優**——L2 實驗(rank_vs_prob_auc.py,20 seeds)顯示成員同為 [0,1] 機率、尺度相近時 rank 平均沒有優勢、甚至略差(勝 4/20、均值 −0.0005);**只在成員分數尺度差異大時才有益**(把一個成員 ×50 模擬未正規化輸出後,rank 平均 10/10 勝、+0.0077)。
@@ -99,7 +99,7 @@ def blend(preds, weights):                # 用同一組權重混合 OOF / test 
 
 ⚠️ **關鍵防洩漏規則**:第二層必須使用**與第一層完全相同的 fold 劃分**。這就是為什麼 `SEED` 和 fold 生成器要寫死在 config 裡。
 
-冠軍方案常見結構:三到四層,Level 1 是多樣化基模型(線性、KNN、SVR、RF、MLP、TabPFN、GBDT),Level 2/3 是 XGBoost 與 MLP 的 stacker,最後一層加權平均。
+冠軍方案常見結構:三到四層,Level 1 是多樣化基模型(線性、K 近鄰(KNN)、支援向量機(SVR)、RF、MLP、TabPFN、梯度提升樹(GBDT)),Level 2/3 是 XGBoost 與 MLP 的 stacker,最後一層加權平均。
 
 ### 6.3 Pseudo-Labeling(資料不多時值得)
 
@@ -121,13 +121,13 @@ def blend(preds, weights):                # 用同一組權重混合 OOF / test 
 
 ## 階段 5:收尾強化(最後 3 天)
 
-1. **多 seed 平均**:同一組超參跑 10~100 個不同 seed 取平均。**實測(seed_averaging.py,8 切分)**:平均永遠不低於單 seed 均值、消掉「單顆種子的運氣」;但增益大小隨模型 seed 方差而定——穩定的 LightGBM 種子方差小(std≈0.001),增益就小(+0.0001~0.0015 AUC);少樹 / 強 subsample / NN / 小資料等高方差設定才明顯。**當它是保險(不虧),不是主力漲分。**
+1. **多 seed 平均**:同一組超參跑 10~100 個不同 seed 取平均。**實測(seed_averaging.py,8 切分)**:平均永遠不低於單 seed 均值、消掉「單顆種子的運氣」;但增益大小隨模型 seed 方差而定——穩定的 LightGBM 種子方差小(std≈0.001),增益就小(+0.0001~0.0015 曲線下面積(AUC));少樹 / 強 subsample / NN / 小資料等高方差設定才明顯。**當它是保險(不虧),不是主力漲分。**
 2. **全量重訓**:超參確定後,用 100% 訓練資料重訓最終模型。
 3. **提交選擇**(最關鍵,很多人在這裡翻車):
    - 選 **2 個** final submission:
-     - #1 = **CV 最高**的方案(相信自己的驗證)
+     - #1 = **交叉驗證(CV) 最高**的方案(相信自己的驗證)
      - #2 = **最穩健**的方案(模型數最多、fold 方差最小的整合)
-   - **絕不**兩個都選 public LB 最高的。
+   - **絕不**兩個都選 public 排行榜(LB) 最高的。
 4. **最後一次防呆檢查**:提交檔案行數、ID 順序、列名、是否有 NaN、機率是否在 [0,1]。
 
 ---
@@ -136,11 +136,11 @@ def blend(preds, weights):                # 用同一組權重混合 OOF / test 
 
 | 雷 | 症狀 | 解法 |
 |---|---|---|
-| Target encoding 洩漏 | CV 極高,LB 崩 | fold 內計算 + 平滑 |
+| Target encoding 洩漏 | 交叉驗證(CV) 極高,排行榜(LB) 崩 | fold 內計算 + 平滑 |
 | CV 切法與 test 不符 | CV 與 LB 完全脫鉤 | 回到 §2.1 決策樹 |
 | 用不同 fold 做 stacking | 第二層 CV 虛高 | 全流程共用 fold |
 | 擬合 public LB | 私榜大跳水 | 迭代決策用 CV,LB 只做單次判讀([LB 教條](/claims/))|
-| 沒存 OOF | 後期無法整合 | §3.1 協議 |
+| 沒存折外預測(OOF) | 後期無法整合 | §3.1 協議 |
 | 把 fold 平均當 CV | 整合時基準對不上 | 用全體 OOF 算 |
 | 提交前沒檢查格式 | 直接 0 分 | 防呆檢查清單 |
 | 一次加十組特徵 | 不知道哪組有用 | 一次一組 |
@@ -154,7 +154,7 @@ def blend(preds, weights):                # 用同一組權重混合 OOF / test 
 
 ## 實戰印證:C3 前提在三場真比賽的雙向驗證
 
-- **成員懸殊 → 無紅利**:s6e8(lgbm .9625 vs ET .9211)集成 OOF .9620 < 單模,LB 同序([`case_s6e8.py`](/validation/case_s6e8.py))。
+- **成員懸殊 → 無紅利**:s6e8(lgbm .9625 vs ET .9211)集成折外預測(OOF) .9620 < 單模,排行榜(LB) 同序([`case_s6e8.py`](/validation/case_s6e8.py))。
 - **成員相近 → 有紅利**:spaceship(.889/.875/.863)集成 .8914 > 單模 .8893([`case_spaceship.py`](/validation/case_spaceship.py));nlp(char .8694 / word .8580)集成 .8707([`case_nlp.py`](/validation/case_nlp.py))。
 - **多 seed 平均的邊界**:LGBM 若未開 subsample/colsample 為全確定性,**換 seed 是空操作**(house-prices 5-seed 平均與單 seed 逐值相同,[`case_houseprices.py`](/validation/case_houseprices.py))——「增益隨 seed 方差而定」的零方差極端。要用 seed 平均,先確認模型有隨機成分。
 
@@ -163,7 +163,7 @@ def blend(preds, weights):                # 用同一組權重混合 OOF / test 
 答得出來再往下一頁;答不出來,回頭看上面對應的段落——**能講出來才算學會,讀過不算**。
 
 1. 兩個模型分數差六個百分點,合起來會更好嗎?
-2. stacking 的第二層為什麼一定要用 OOF、而且要同一組折?
+2. stacking 的第二層為什麼一定要用折外預測(OOF)、而且要同一組折?
 3. 最終要選兩份提交,你的選法是什麼?哪一種選法絕對不能用?
 
 <details>
@@ -173,7 +173,7 @@ def blend(preds, weights):                # 用同一組權重混合 OOF / test 
 
 2. 用 in-sample 預測會讓第二層看到答案而虛高;折不同則第二層的輸入混進了洩漏。全流程共用 fold 是防洩漏的底線。
 
-3. 選「CV 最高」+「最穩健」各一份。**絕不能兩份都挑 public 榜最高**——public 只用一小部分測試資料,追它就是在擬合噪音([LB 教條](/claims/))。
+3. 選「交叉驗證(CV) 最高」+「最穩健」各一份。**絕不能兩份都挑 public 榜最高**——public 只用一小部分測試資料,追它就是在擬合噪音([排行榜(LB) 教條](/claims/))。
 
 </details>
 
