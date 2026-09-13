@@ -9,8 +9,8 @@ const styles = {
 }[type];
 ---
 <aside class="my-5 rounded-lg border-l-4 p-4" style={`border-color:${styles.c};background:var(--bg-soft)`}>
-  <div class="font-semibold flex items-center gap-2 mb-1" style={`color:${styles.c}`}>
-    <span>{styles.icon}</span><span>{title ?? styles.label}</span>
+  <div class="mb-1">
+    <span class="tag" style={`color:${styles.c};background:color-mix(in srgb, ${styles.c} 16%, transparent)`}>{styles.icon} {title ?? styles.label}</span>
   </div>
   <div class="prose"><slot /></div>
 </aside>

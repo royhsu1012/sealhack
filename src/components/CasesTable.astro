@@ -1,6 +1,7 @@
 ---
 import data from '../data/cases.json';
 const t = data.titanic;
+const bestLb = Math.max(...t.submissions.map((s) => s.public_lb));
 ---
 <div class="sh-table">
   <table>
@@ -8,7 +9,7 @@ const t = data.titanic;
     <thead><tr><th>提交</th><th>CV</th><th>holdout</th><th>public LB</th></tr></thead>
     <tbody>
       {t.submissions.map((s) => (
-        <tr><td>{s.name}</td><td>{s.cv}</td><td>{s.holdout}</td><td><strong>{s.public_lb}</strong></td></tr>
+        <tr><td>{s.name}</td><td>{s.cv}</td><td>{s.holdout}</td><td><strong>{s.public_lb}</strong>{s.public_lb === bestLb && <span class="tag tag-pass">最佳</span>}</td></tr>
       ))}
     </tbody>
   </table>
@@ -22,8 +23,3 @@ const t = data.titanic;
     </tbody>
   </table>
 </div>
-<style>
-  .sh-table { overflow-x: auto; }
-  .sh-table table { width: 100%; margin-bottom: 1rem; font-size: 0.9rem; }
-  .sh-table caption { text-align: left; font-weight: 600; padding-bottom: 0.4rem; }
-</style>

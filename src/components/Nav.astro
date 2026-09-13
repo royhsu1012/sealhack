@@ -16,7 +16,7 @@ const links = [
     </a>
     <nav class="hidden md:flex items-center gap-5 text-sm" style="color:var(--fg-muted)">
       {links.map((l) => (
-        <a href={l.href} class="hover:opacity-100 transition" style={`opacity:${path.startsWith(l.href) ? 1 : 0.75};${path.startsWith(l.href) ? 'color:var(--fg)' : ''}`}>{l.label}</a>
+        <a href={l.href} class="hover:opacity-100 transition pb-1" style={`opacity:${path.startsWith(l.href) ? 1 : 0.75};border-bottom:2px solid ${path.startsWith(l.href) ? 'var(--brand)' : 'transparent'};${path.startsWith(l.href) ? 'color:var(--fg)' : ''}`}>{l.label}</a>
       ))}
     </nav>
     <div class="flex-1"></div>

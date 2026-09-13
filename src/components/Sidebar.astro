@@ -11,7 +11,7 @@ const path = Astro.url.pathname;
           const active = path === href(it.slug);
           return (
             <li>
-              <a href={href(it.slug)} class="block px-3 py-1.5 rounded-md transition"
+              <a href={href(it.slug)} class={active ? 'block px-3 py-1.5 rounded-md transition sh-sidebar-link is-active' : 'block px-3 py-1.5 rounded-md transition sh-sidebar-link'}
                  style={active ? 'background:color-mix(in srgb, var(--brand) 15%, transparent);color:var(--brand);font-weight:600'
                                : 'color:var(--fg-muted)'}>{it.label}</a>
             </li>
@@ -21,3 +21,7 @@ const path = Astro.url.pathname;
     </div>
   ))}
 </nav>
+
+<style>
+  .sh-sidebar-link:not(.is-active):hover { background: var(--bg-soft); }
+</style>

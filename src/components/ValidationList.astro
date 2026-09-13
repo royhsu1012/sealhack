@@ -1,6 +1,7 @@
 ---
 import data from '../data/validation.json';
 const kindLabel = { claim: '主張', case: '案例', template: '模板', infra: '基礎' };
+const kindTag = { claim: 'tag-brand', case: 'tag-pass', template: 'tag-pending', infra: 'tag-neutral' };
 ---
 <p>重跑全套:<code>{data.rerun}</code></p>
 <div class="sh-table">
@@ -10,7 +11,7 @@ const kindLabel = { claim: '主張', case: '案例', template: '模板', infra: 
       {data.scripts.map((s) => (
         <tr>
           <td><a href={`/validation/${s.file}`}>{s.file}</a></td>
-          <td>{kindLabel[s.kind] ?? s.kind}</td>
+          <td><span class={`tag ${kindTag[s.kind] ?? 'tag-neutral'}`}>{kindLabel[s.kind] ?? s.kind}</span></td>
           <td>{s.validates}</td>
           <td style="text-align:right">{s.runtime_sec ?? '—'}</td>
         </tr>
@@ -19,7 +20,5 @@ const kindLabel = { claim: '主張', case: '案例', template: '模板', infra: 
   </table>
 </div>
 <style>
-  .sh-table { overflow-x: auto; }
-  .sh-table table { width: 100%; font-size: 0.9rem; }
   .sh-table td a { font-family: var(--font-mono); font-size: 0.85rem; }
 </style>

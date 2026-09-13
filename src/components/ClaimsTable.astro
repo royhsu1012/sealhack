@@ -1,6 +1,10 @@
 ---
 import data from '../data/claims.json';
-const badge = (v) => (v === true || v === 'done') ? '✅' : v === 'pending' ? '⏳' : '—';
+const badge = (v) => (v === true || v === 'done')
+  ? { cls: 'tag-pass', text: '✓ 已驗證' }
+  : v === 'pending'
+  ? { cls: 'tag-pending', text: '進行中' }
+  : { cls: 'tag-neutral', text: '—' };
 // 依 id 前綴分兩區:C 主張(保留檔內人工順序 C1a–C12)在前、示範案例在後。
 // 分組靠前綴而非陣列位置,新列不論 append 在哪都自動歸位。
 const claimRows = data.claims.filter((c) => c.id.startsWith('C'));
@@ -25,9 +29,9 @@ const firstDemo = demoRows.length ? claimRows.length : -1; // 示範區起點(�
             {c.statement}
             {c.revision && <div class="sh-rev">修訂:{c.revision}</div>}
           </td>
-          <td class="sh-c">{badge(c.L1)}</td>
-          <td class="sh-c">{badge(c.L2)}</td>
-          <td class="sh-c">{badge(c.L3)}</td>
+          <td class="sh-c"><span class={`tag ${badge(c.L1).cls}`}>{badge(c.L1).text}</span></td>
+          <td class="sh-c"><span class={`tag ${badge(c.L2).cls}`}>{badge(c.L2).text}</span></td>
+          <td class="sh-c"><span class={`tag ${badge(c.L3).cls}`}>{badge(c.L3).text}</span></td>
           <td>
             <div>{c.evidence}</div>
             <div class="sh-scripts">
@@ -43,9 +47,6 @@ const firstDemo = demoRows.length ? claimRows.length : -1; // 示範區起點(�
   </table>
 </div>
 <style>
-  .sh-table { overflow-x: auto; }
-  .sh-table table { width: 100%; font-size: 0.9rem; }
-  .sh-c { text-align: center; white-space: nowrap; }
   .sh-rev { font-size: 0.8rem; color: var(--fg-muted); margin-top: 0.25rem; }
   .sh-scripts { margin-top: 0.35rem; display: flex; flex-wrap: wrap; gap: 0.4rem; }
   .sh-scripts a { font-size: 0.8rem; font-family: var(--font-mono); }

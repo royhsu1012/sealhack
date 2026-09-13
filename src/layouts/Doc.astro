@@ -44,13 +44,13 @@ const toc = headings.filter((h) => h.depth === 2);
         <div class="mt-14 pt-6 border-t grid grid-cols-2 gap-4" style="border-color:var(--border)" data-pagefind-ignore>
           <div>{prev && (
             <a href={href(prev.slug)} class="block p-3 rounded-lg border hover:opacity-80" style="border-color:var(--border)">
-              <div class="text-xs" style="color:var(--fg-muted)">上一頁</div>
+              <span class="card-eyebrow">上一頁</span>
               <div class="font-semibold mt-0.5">{prev.label}</div>
             </a>)}</div>
           <div>
             {next && (
             <a href={href(next.slug)} class="block p-3 rounded-lg border hover:opacity-80 text-right" style="border-color:var(--border)">
-              <div class="text-xs" style="color:var(--fg-muted)">下一頁</div>
+              <span class="card-eyebrow">下一頁</span>
               <div class="font-semibold mt-0.5">{next.label}</div>
             </a>)}
             {done && (

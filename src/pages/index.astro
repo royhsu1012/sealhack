@@ -17,19 +17,23 @@ const stats = [
 ];
 
 const backing = [
-  { k: '學術', v: '8 篇原始論文', d: '每個核心技術對得上原始論文,全數查證。', href: '/claims/' },
-  { k: '大神', v: 'Kaggle Grandmasters', d: 'NVIDIA GM Playbook、Chris Deotte、Abhishek Thakur。', href: '/claims/' },
-  { k: '可跑專案', v: `${nScripts} 支驗證腳本`, d: '每條主張附一支可下載重跑的腳本,不是空口說白話。', href: '/claims/' },
-  { k: '簡單', v: '七步快速版', d: '趕時間先看最短完賽路,約 3–4 週獨立完賽。', href: '/workflow/quickstart/' },
+  { k: '學術', v: '8 篇原始論文', d: '每個核心技術對得上原始論文,全數查證。', href: '/claims/',
+    icon: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>' },
+  { k: '大神', v: 'Kaggle Grandmasters', d: 'NVIDIA GM Playbook、Chris Deotte、Abhishek Thakur。', href: '/claims/',
+    icon: '<circle cx="12" cy="8" r="6"/><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"/>' },
+  { k: '可跑專案', v: `${nScripts} 支驗證腳本`, d: '每條主張附一支可下載重跑的腳本,不是空口說白話。', href: '/claims/',
+    icon: '<polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>' },
+  { k: '簡單', v: '七步快速版', d: '趕時間先看最短完賽路,約 3–4 週獨立完賽。', href: '/workflow/quickstart/',
+    icon: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>' },
 ];
 
 const stages = [
-  ['0', '讀懂比賽', '先搞清楚題目在問什麼、分數怎麼算,再動手。', '/workflow/0-diagnose/'],
-  ['1', '建立驗證', '做一把可信的尺,之後每個改動都用它量。', '/workflow/1-validate/'],
-  ['2', '基準分數', '最簡單的模型先跑一次,知道起點在哪。', '/workflow/2-baseline/'],
-  ['3', '加特徵', '一次加一個想法,量過有效才留下。', '/workflow/3-features/'],
-  ['4', '組合模型', '幾個模型合起來,常比單獨一個更準。', '/workflow/4-ensemble/'],
-  ['5', '交卷', '選兩份提交 + 交前防呆檢查。', '/workflow/4-ensemble/'],
+  ['0', '讀懂比賽', '先搞清楚題目在問什麼、分數怎麼算,再動手。', '/workflow/0-diagnose/', '必做'],
+  ['1', '建立驗證', '做一把可信的尺,之後每個改動都用它量。', '/workflow/1-validate/', '必做'],
+  ['2', '基準分數', '最簡單的模型先跑一次,知道起點在哪。', '/workflow/2-baseline/', '必做'],
+  ['3', '加特徵', '一次加一個想法,量過有效才留下。', '/workflow/3-features/', '佔時最多'],
+  ['4', '組合模型', '幾個模型合起來,常比單獨一個更準。', '/workflow/4-ensemble/', '看資料量'],
+  ['5', '交卷', '選兩份提交 + 交前防呆檢查。', '/workflow/4-ensemble/', '必做'],
 ];
 ---
 <Base title="SealHack">
@@ -51,11 +55,11 @@ const stages = [
         <a href="/workflow/handbook/" class="px-5 py-2.5 rounded-lg font-semibold text-white shadow-lg" style="background:var(--brand);box-shadow:0 8px 24px -8px var(--brand)">開始 →</a>
         <a href="/claims/" class="px-5 py-2.5 rounded-lg font-semibold border hover:opacity-80" style="border-color:var(--border)">驗證證據</a>
       </div>
-      <!-- 數據條 -->
+      <!-- 數據條(v3:Kaggle 風格統計列,數字等寬對齊) -->
       <div class="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-px rounded-xl overflow-hidden border" style="border-color:var(--border);background:var(--border)">
         {stats.map((s) => (
           <div class="px-4 py-5" style="background:var(--bg-card)">
-            <div class="text-2xl sm:text-3xl font-extrabold" style="color:var(--brand)">{s.n}</div>
+            <div class="tabular-nums text-2xl sm:text-3xl font-extrabold" style="color:var(--brand)">{s.n}</div>
             <div class="mt-1 text-xs" style="color:var(--fg-muted)">{s.l}</div>
           </div>
         ))}
@@ -76,8 +80,11 @@ const stages = [
     <div class="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {backing.map((b) => (
         <a href={b.href} class="lift block p-5 rounded-xl border" style="border-color:var(--border);background:var(--bg-card)">
-          <div class="text-xs font-semibold uppercase tracking-wide" style="color:var(--brand)">{b.k}</div>
-          <div class="mt-1 text-lg font-bold">{b.v}</div>
+          <div class="flex items-center gap-2.5">
+            <span class="card-icon" set:html={`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${b.icon}</svg>`} />
+            <span class="card-eyebrow">{b.k}</span>
+          </div>
+          <div class="mt-2.5 text-lg font-bold tracking-tight">{b.v}</div>
           <div class="mt-2 text-sm" style="color:var(--fg-muted)">{b.d}</div>
         </a>
       ))}
@@ -97,11 +104,15 @@ const stages = [
       第一次來?別急著點進單一階段——先花 45 分鐘跟著 <a href="/workflow/handbook/" style="color:var(--brand);font-weight:600">🐣 傻瓜手冊</a> 把六階段走一遍,再回來逐階段深入。
     </p>
     <div class="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {stages.map(([n, t, d, href]) => (
+      {stages.map(([n, t, d, href, tag]) => (
         <a href={href} class="lift block p-5 rounded-xl border" style="border-color:var(--border);background:var(--bg-card)">
-          <div class="flex items-center gap-3">
+          <div class="flex items-center justify-between">
+            <span class="card-eyebrow">階段 {n}</span>
+            <span class={`tag ${tag === '必做' ? 'tag-pass' : tag === '佔時最多' ? 'tag-pending' : 'tag-neutral'}`}>{tag}</span>
+          </div>
+          <div class="mt-2.5 flex items-center gap-3">
             <span class="inline-grid place-items-center w-8 h-8 rounded-lg font-bold text-white shrink-0" style="background:var(--brand)">{n}</span>
-            <span class="font-bold">{t}</span>
+            <span class="font-bold tracking-tight">{t}</span>
           </div>
           <div class="mt-2 text-sm" style="color:var(--fg-muted)">{d}</div>
         </a>

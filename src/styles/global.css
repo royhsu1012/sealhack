@@ -20,6 +20,9 @@
   --aside-note: #3b82f6;
   --aside-tip: #22c55e;
   --aside-caution: #f59e0b;
+  /* 狀態標籤色(v3,Kaggle/LeetCode 風格,2026-09):語意色不再限 Aside——
+     pass/pending 沿用既有 tip/caution token(不重複定義),fail 是唯一新增色 */
+  --status-fail: #ef4444;
 }
 :root.light {
   --bg: #ffffff;
@@ -32,6 +35,7 @@
   --aside-note: #2563eb;
   --aside-tip: #16a34a;
   --aside-caution: #d97706;
+  --status-fail: #dc2626;
 }
 
 html { scroll-behavior: smooth; }
@@ -41,6 +45,11 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
+
+/* 排版節奏 v3(Kaggle/LeetCode 風格,2026-09):標題收緊字距更有「產品感」;
+   數字一律等寬對齊(tabular-nums)——資料表格與統計卡是這次改版的視覺主角 */
+h1, h2, h3 { letter-spacing: -0.01em; }
+.tabular-nums, .sh-table td, .sh-table th { font-variant-numeric: tabular-nums; }
 
 /* prose(文件內文)基本排版 */
 .prose { color: var(--fg); line-height: 1.75; }
@@ -74,6 +83,47 @@ body {
 /* 卡片 hover 微光 */
 .lift { transition: transform .15s ease, border-color .15s ease, background .15s ease; }
 .lift:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--brand) 55%, var(--border)) !important; }
+
+/* 狀態標籤 chip(v3:LeetCode 難度標籤風格)——pass=綠/pending=橘/fail=紅/brand=品牌橘/neutral=灰 */
+.tag {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.15rem 0.55rem; border-radius: 999px;
+  font-size: 0.72rem; font-weight: 700; line-height: 1.5; white-space: nowrap; letter-spacing: 0.01em;
+}
+.tag-pass    { color: var(--aside-tip);    background: color-mix(in srgb, var(--aside-tip) 16%, transparent); }
+.tag-pending { color: var(--aside-caution);background: color-mix(in srgb, var(--aside-caution) 16%, transparent); }
+.tag-fail    { color: var(--status-fail);  background: color-mix(in srgb, var(--status-fail) 16%, transparent); }
+.tag-brand   { color: var(--brand);        background: color-mix(in srgb, var(--brand) 14%, transparent); }
+.tag-neutral { color: var(--fg-muted);     background: var(--bg-soft); }
+
+/* 卡片 eyebrow(v3:Kaggle 競賽卡片風格)——圖示徽章 + 大寫小標 */
+.card-eyebrow {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.68rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.card-icon {
+  display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; flex-shrink: 0;
+  border-radius: 0.5rem; font-size: 0.85rem;
+  background: color-mix(in srgb, var(--brand) 14%, transparent); color: var(--brand);
+}
+
+/* 資料表格(v3:LeetCode 密集列風格)——ClaimsTable/CasesTable/ValidationList 共用外殼,
+   取代原本三個元件各自重複定義的 .sh-table */
+.sh-table { overflow-x: auto; border: 1px solid var(--border); border-radius: 0.75rem; }
+.sh-table table { width: 100%; font-size: 0.88rem; border-collapse: collapse; }
+.sh-table table + table { margin-top: 1.25rem; border-top: 1px solid var(--border); padding-top: 1.25rem; }
+.sh-table caption { text-align: left; font-weight: 700; padding: 0.85rem 1rem 0.35rem; }
+.sh-table th {
+  background: var(--bg-soft); text-align: left; padding: 0.6rem 0.85rem;
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+  color: var(--fg-muted); border-bottom: 1px solid var(--border);
+}
+.sh-table td { padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.sh-table tbody tr:last-child td { border-bottom: none; }
+.sh-table tbody tr { transition: background 0.12s ease; }
+.sh-table tbody tr:hover { background: var(--bg-soft); }
+.sh-c { text-align: center; white-space: nowrap; }
 
 /* 站內搜尋 Pagefind UI —— 跟隨設計 tokens(深/淺色皆適用)*/
 :root {
