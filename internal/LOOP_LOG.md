@@ -472,3 +472,10 @@ claims 頁(為什麼可信)加兩塊,把證據從「給同行看」改成「幫�
 ③**系統性缺口:全站無內文連到 /glossary/**,只能靠側欄(手機需點 ☰)。在 8 頁(handbook+6 workflow 頁+small-n+solution)的術語表結尾各加一條「查完整詞彙表」連結。過程中自查糾正一次:原本在 solution.mdx 寫「CNN/ViT/LLM 查詞彙表」,一查 glossary 根本沒收這些深度學習架構名——改寫成誠實版本(glossary 覆蓋核心 CV/OOF 詞彙;深度學習軌道專有模型名是路標非教材,不逐一收錄)。順手清一處殘留雙 `---`。
 兩輪 build 皆零錯、斷連結 0、S10=0;三次線上部署驗證(curl 直接查 live HTML,非 WebFetch 快取)確認生效。
 **方法論**:掃描邏輯是「逐頁比對術語表 vs 內文實際出現的英文/縮寫詞」找真缺口,不是憑印象猜;找到後先查證(glossary 是否真的有該詞)才寫連結文字,避免對讀者做假承諾。
+### 前端 v3 改版:Kaggle + LeetCode 風格(使用者直接指令)|2026-09-13
+使用者指令「我整體風格要像是kaggle」→「kaggle+leetcode的風格設計 全面修改前端設計」。
+**關鍵決策點**:DESIGN.md §一原則 3 明文「一個強調色,語意色僅 Aside」且標「改版不可 violate」,與 Kaggle(徽章色)/LeetCode(難度標籤綠橘紅)的視覺特徵直接衝突。用 AskUserQuestion 確認範圍與是否放寬配色規則(不自行決定)——使用者選「放寬,全面採用彩色標籤(推薦)」+「全站字體/排版節奏也重新調整」。
+**做法**:先去 kaggle.com/leetcode.com 實際瀏覽蒐集視覺參考(競賽卡片 eyebrow+徽章、難度標籤 pill、密集表格列)。地基(global.css v3 tokens:.tag chip 系統、.card-eyebrow/.card-icon、統一 .sh-table、tabular-nums)與 landing 頁(最高能見度)由主 session 直接寫;其餘 8 個獨立檔案(ClaimsTable/CasesTable/ValidationList/Nav/Sidebar/Footer/Aside/Doc.astro)用 Workflow 平行處理(8 agent,每個給精確規格,零檔案衝突),8/8 成功。
+**結果**:ClaimsTable L1/L2/L3 從裸 emoji 改綠/橘/灰 pill;CasesTable 最佳 LB 加排行榜式徽章;ValidationList 類型欄彩色 chip;landing 六階段卡加 eyebrow+狀態標籤、背書卡加圖示徽章;Nav 加底線 active 態;統一 sh-table 消掉 3 處重複 CSS 定義。DESIGN.md 同步更新(§一原則 3 改寫為「語意色系統」、§二加 --status-fail token、§三加排版節奏說明、§六加三個新元件規則)。
+**驗證**:build 13 頁零錯、check.py 硬錯誤 0/S10=0(無 raw hex)、手機 375px 無橫向捲動、深淺色主題皆截圖/DOM 核對正確、逐檔案 Read 核對(不盡信 agent 摘要)。內容/文案/連結/資料邏輯全未動,純視覺層改版。
+自省:**遇到使用者指令與文件明文「不可 violate」規則衝突時,先問清楚再動手**——這次差點直接照使用者字面指令全面套色,幸好先讀 DESIGN.md 抓到衝突;문件本身「不可 violate」不代表使用者不能授權變更,但變更需要明確詢問,不能沉默覆蓋。
