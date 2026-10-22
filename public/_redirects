@@ -1,4 +1,8 @@
-/maps/learning/ /workflow/quickstart/ 301
-/resources/ /claims/ 301
-/workflow/0-clean/ /workflow/0-diagnose/ 301
-/workflow/5-submit/ /workflow/4-ensemble/ 301
+# 舊 Kaggle 方法論站網址(2026-10 改版為 FIRE 試算器)一律轉向首頁
+/workflow/* / 301
+/cases/* / 301
+/maps/* / 301
+/claims/ / 301
+/glossary/ / 301
+/resources/ / 301
+/validation/* / 301

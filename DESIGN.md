@@ -1,15 +1,15 @@
-# DESIGN.md — sealhack.com 設計系統憲法
+# DESIGN.md — sealhack.com(FIRE 試算器)設計系統憲法
 
 > 目的:**防漂移**。任何前端改動都對照本文件;本文件與實作不符時,修其中之一並記錄(審計輪 S10 會抓)。
 > Token 的唯一事實來源是 `src/styles/global.css`;本文件是它的「為什麼」與驗收標準。
 
 ## 一、設計原則(改版不可violate)
 
-1. **證據感優先**:深色預設、數字與表格是主角——這是資歷證明站,不是行銷頁。
-2. **內容即介面**:前端是 `src/content/docs` 的渲染殼(CLAUDE.md 憲法);設計不得要求改寫內容遷就版面。
+1. **數字是主角**:深色預設;結論卡片、拆解表、圖表承載答案,文案只做一句話結論。
+2. **引擎與介面分離**:所有數字來自 `src/lib/fire.js`;介面只負責讀輸入、呈現結果,不在頁面裡另寫公式。
 3. **語意色系統**(v3,2026-09,使用者核准放寬):品牌橘仍是**唯一的品牌/CTA 強調色**;
    狀態語意色(綠 pass / 橘 pending / 紅 fail)可用於**資料狀態標籤**(`.tag`,見§二/§六),
-   不限 Aside——這是 Kaggle(徽章色)+ LeetCode(難度標籤綠/橘/紅)風格改版的核心決策。
+   用於檢核表與報酬率判讀。
    鐵律不變:語意色只表**狀態**(驗證等級、通過/進行中/反例),不可拿來裝飾或替代品牌色當 CTA。
 4. **克制動效**:只有 `.lift`(hover 上浮 2px + 邊框染色)與透明度過渡;禁止進場動畫、視差、輪播。
 
@@ -25,9 +25,10 @@
 | `--fg-muted` | `#9aa3ad` | `#5b6470` | 次要文字(淺色下對白 5.6:1,AA) |
 | `--brand` | `#ff5a2c` | `#e8481f` | 強調、CTA、行銷數字 |
 | `--aside-note/tip/caution` | 藍 `#3b82f6` / 綠 `#22c55e` / 琥珀 `#f59e0b` | 深一階(`#2563eb`/`#16a34a`/`#d97706`) | Aside 語意色 + `.tag-pass`(=tip)/`.tag-pending`(=caution)共用 |
-| `--status-fail`(v3 新增) | `#ef4444` | `#dc2626` | `.tag-fail`:反例/失敗狀態(用得比 pass/pending 少,別濫用) |
+| `--status-fail` | `#ef4444` | `#dc2626` | `.tag-fail`、現金流圖的負值柱 |
+| `--chart-muted/grid/axis/ref` | 灰階四階 | 灰階四階 | 圖表:資料先用灰,品牌橘只標「資產」這條主線 |
 
-**鐵律**:元件/頁面/版面裡**禁止 raw hex**——一律 `var(--token)` 或 `color-mix(...)`(check.py S10 掃描,唯一豁免:search modal 遮罩 `rgba(0,0,0,.6)`)。新色 = 先在 global.css 定 token(深淺兩套)再用。
+**鐵律**:元件/頁面/版面/腳本裡**禁止 raw hex**——一律 `var(--token)` 或 `color-mix(...)`。新色 = 先在 global.css 定 token(深淺兩套)再用。
 
 ## 三、字體與字階(實測值)
 
@@ -35,65 +36,35 @@
 - 字階:h1 `text-4xl→sm:text-6xl`(36→60px, w800)· h2 `text-2xl→sm:text-3xl`(24→30px, w800)· 正文 16/24 · `.prose` 16/28 · 表格 0.9rem · 小標/eyebrow `text-xs` 大寫字距。
 - CJK 行長:文件頁內文欄 ~46 字/行(理想 40–50),**不要加寬內文欄**。
 - **排版節奏 v3(2026-09)**:h1/h2/h3 收緊 `letter-spacing:-0.01em`(較有產品感);表格/統計數字一律 `.tabular-nums`
-  或 `.sh-table td/th`(已內建等寬數字),對齊感是資料密集頁面(Kaggle/LeetCode 風格)的核心。
+  或 `.sh-table td/th`(已內建等寬數字),對齊感是資料密集頁面的核心。
 
-## 四、間距與形狀節奏
+## 四、版面
 
-- Section 垂直節奏:**64px**(`py-16`/`pb-16`);landing 固定 **3 段**(hero+數據條 / 金句+AutoML+背書 / 六階段)。
-- 卡片:`p-5` + `rounded-xl`(12px)+ `border var(--border)` + `bg var(--bg-card)`;hover 一律 `.lift`。
-- 圓角族:卡片/modal 12px(xl)、按鈕/小元素 8px(lg/md)、pill 全圓。
-- 數據條:`gap-px` + `bg:var(--border)` 做 1px 分隔線(不是每格畫框)。
+- 首頁 = 試算器:`max-w-6xl`,`lg` 以上兩欄 `minmax(0,380px) / minmax(0,1fr)`(左輸入、右結果);`lg` 以下單欄,輸入在上。
+- 卡片:`.panel`(`rounded-[0.9rem]` + `border var(--border)` + `bg var(--bg-card)`),內距 `p-4`(輸入)/ `p-5`(結果)。
+- 方法頁:`max-w-3xl` 單欄 `.prose`;公式用 `<pre><code>` 純文字,不引入數學排版套件。
+- Nav:sticky + `backdrop-blur`;兩個連結(試算器 / 計算方法);`sm` 以下隱藏品牌字樣,只留 S 標誌。
 
-## 五、版面
-
-- Landing:`max-w-4xl`(六階段區 `max-w-5xl`),置中。
-- 文件頁:`max-w-7xl` 三欄 `240px / minmax(0,1fr) / 200px`(側欄 / 內文 / TOC);`lg` 以下側欄與 TOC 隱藏(行動選單補位)。TOC 只列 **H2**。
-- Nav:sticky + `backdrop-blur` + 82% 透明底;高度 56px;頂列連結 4 個(快速版/方法論/證據/案例),`md` 以下收進 ☰。
-- 斷點使用:`sm` 640 / `md` 768 / `lg` 1024,不自訂斷點。
-- 錨點落點:`.prose` 標題 `scroll-margin-top: 5rem`(sticky Nav 56px + 呼吸),點 TOC 不被蓋住。
-
-## 六、元件清單(新增元件前先問「刪掉哪個換它進來」)
+## 五、元件規則
 
 | 元件 | 規則 |
 |---|---|
-| Nav | 圖示按鈕 **40×40**(a11y 觸控下限);搜尋 🔍 = Ctrl/⌘K;主題切換寫 `sh-theme` localStorage |
-| Sidebar / 行動選單 | 資料來源唯一:`src/nav.ts` 的 NAV(3 群組:照順序學 7 步 / 卡住時查 3 / 為什麼可信 2) |
-| 文件頁上/下頁 | 走 `nav.ts` 的 **LEARN_PATH**(7 步主線,與側欄脫鉤);參考/支線頁不顯示;主線末頁出「🎉 完賽 → 實戰成績」卡 |
-| Aside | 三型 note/tip/caution;**每頁 ≤3**(CLAUDE.md 內容規則);標題列 v3 起用 `.tag` pill(色仍走 note/tip/caution 對應) |
-| ClaimsTable / CasesTable / ValidationList | 靜態渲染 `src/data/*.json`;共用 `.sh-table` 外殼(global.css 統一定義,元件不得重複定義 `.sh-table`/`.sh-c`,只留元件獨有規則);狀態/類型欄一律用 `.tag` chip,不用裸 emoji 或純文字 |
-| `.tag`(v3 新增) | 狀態標籤 pill:`tag-pass`(綠)/`tag-pending`(橘)/`tag-fail`(紅)/`tag-brand`(品牌橘)/`tag-neutral`(灰)。用於表格狀態欄、排行榜最佳成績徽章;**不可**當一般裝飾用色 |
-| `.card-eyebrow` / `.card-icon`(v3 新增) | Kaggle 競賽卡片風格:圖示徽章(`.card-icon`,品牌色 14% 底)+ 大寫小標(`.card-eyebrow`)。用於 landing 卡片、Doc 上/下頁標籤;不濫用在正文 |
-| `.prose table` | `display:block; overflow-x:auto`(表格自己是捲動容器);**≤6 欄**(STANDARDS S6) |
-| 搜尋 modal | 懶載入 /pagefind/;`role=dialog aria-modal`;Esc 關閉並還原捲動;色彩走 `--pagefind-ui-*` tokens |
-| Footer | 5 連結;不放 sitemap 式長清單 |
-| 程式碼區塊 | 右上「複製」按鈕:桌面 hover 顯示、觸控裝置恆顯;成功後文字換「已複製 ✓」1.5s(換字,不動畫);tokens 配色 |
-| 行動版 TOC | `<details>` 摺疊「本頁內容」,`lg` 以下顯示;純 HTML 無 JS |
-| 桌面 TOC scroll-spy | IntersectionObserver 將目前章節連結染 `--brand`;無平滑捲動之外的動效 |
-| `<details>` 摺疊 | **密度控制的標準手段**:頁內次要長段落收合(summary=原節標題;內部標題降一級使其退出 TOC,避免跳到隱藏錨點) |
+| 輸入欄 `.inp` + `.inp-unit` | 單位寫在欄位內右側;百分比欄位以 % 輸入(`data-pct`),引擎收小數。數字欄位不顯示上下箭頭 |
+| 動態清單(貸款 / 年金 / 目標) | 每列 = 名稱 + 刪除鈕一行,數字欄位一行(`.inp-unit.compact`),下方一行衍生數字(月付、折算本金、當年金額) |
+| 結論卡片 | 4 張:目標資金、併用所需報酬率(含 `.tag` 判讀)、一次 / 分期累積、最早 FIRE 年份 |
+| `.tag` | 只表狀態:檢核結果、報酬率判讀(≤4% 保守即可 / ≤7% 需股票部位 / >7% 偏高) |
+| `.sh-table` | 所有結果表共用;`min-width:520px`,手機在容器內橫向捲動;第 2 欄數字不換行 |
+| 圖表 | 純 SVG 字串,寬度跟隨容器(resize 重畫),字級固定 11–12px;每個資料點附 `<title>` 懸停說明 |
 
-## 六之二、導覽命名原則(訪客語言)
+## 六、無障礙底線
 
-- 導覽標籤(頂列/側欄/Footer)一律用**訪客第一次看就懂的詞**;圈內詞(主張、登錄表、軌道、L1/L2/L3)只出現在頁面內文,不進導覽。
-- 首頁只推**一個**主要入口(新手手冊);快速版/完整版是路上的深度,不是平行選項。
-- 頁面 h1 可以保留精確術語(頁內有解釋);導覽標籤負責翻譯。
+- 觸控目標 ≥40×40px(主題切換);刪除鈕 30px 但與欄位分開排列;所有清單欄位有 `aria-label`。
+- 結果區 `aria-live="polite"`;圖表 `role="img"` + `aria-label`。
+- 預設深色,`:root.light` 切換;新樣式必須雙主題驗。
 
-## 七、無障礙底線
+## 七、設計驗收清單(改前端後必跑)
 
-- 觸控目標 **≥40×40px**;圖示按鈕必有 `aria-label`。
-- 對比:正文 AA(muted 文字兩主題皆 ≥4.5:1);不移除 focus outline。
-- 主題:預設深色,`:root.light` 切換;兩主題都要能讀(新樣式必須雙主題驗)。
-
-## 八、設計驗收清單(改前端後必跑;審計輪抽驗)
-
-1. `npm run build` 零錯誤;375px 無橫向捲動(`document.scrollWidth ≤ innerWidth`)。
-2. 每個 `table`:自身 `overflow-x:auto` 內捲,無被裁切(查 table 本身,不是 parent)。
-3. 淺色主題抽 2 頁看對比與 token 完整(沒有「深色寫死」的顏色)。
-4. 圖示按鈕 40×40 + aria-label;搜尋 modal Esc 可關。
-5. `check.py` S10 = 0(元件/頁面/版面無 raw hex)。
-6. Landing 仍為 3 段、hero/金句/tagline 未動(動它們需使用者拍板,CLAUDE.md)。
-
-## 九、修改流程
-
-- 改顏色 → 只改 global.css tokens(兩主題一起)。改字階/間距 → 改本文件同步改實作。
-- 新視覺模式(新元件/新動效)→ 先在本文件立條目(含理由與刪換對象)再實作。
-- 本文件 ↔ 實作衝突 = 缺陷:修其一,並在 LOOP_LOG 記一行。
+1. `npm run build` 零錯誤零警告;`npm test` 全過。
+2. 375px 無橫向捲動(`document.documentElement.scrollWidth ≤ 375`);表格在 `.sh-table` 內捲。
+3. 淺色主題截圖檢查對比與 token(無寫死顏色)。
+4. 改任何計算 → 先改 `tests/fire.test.mjs` 的預期值並說明來源,再改 `src/lib/fire.js`。

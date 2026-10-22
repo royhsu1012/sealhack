@@ -1,125 +1,145 @@
 ---
 import Base from '../layouts/Base.astro';
-import claims from '../data/claims.json';
-import validation from '../data/validation.json';
-import cases from '../data/cases.json';
 
-const nClaims = claims.claims.filter((c: any) => c.id.startsWith('C')).length;
-const nScripts = validation.scripts.length;
-const bestLB = Math.max(...cases.titanic.submissions.map((s: any) => s.public_lb));
-
-const stats = [
-  { n: nClaims, l: '條主張,文獻+沙盒雙驗證' },
-  { n: nScripts, l: '支可下載重跑的腳本' },
-  // 13 = claims 頁「學術來源」兩節:8 篇核心技術原始論文 + 5 項實務指南/知名專案(數字更動時同步 backing 學術卡)
-  { n: 13, l: '篇原始論文與知名專案' },
-  { n: bestLB.toFixed(4), l: '鐵達尼真實 public LB' },
-];
-
-const backing = [
-  { k: '學術', v: '8 篇原始論文', d: '每個核心技術對得上原始論文,全數查證。', href: '/claims/',
-    icon: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>' },
-  { k: '大神', v: 'Kaggle Grandmasters', d: 'NVIDIA GM Playbook、Chris Deotte、Abhishek Thakur。', href: '/claims/',
-    icon: '<circle cx="12" cy="8" r="6"/><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"/>' },
-  { k: '可跑專案', v: `${nScripts} 支驗證腳本`, d: '每條主張附一支可下載重跑的腳本,不是空口說白話。', href: '/claims/',
-    icon: '<polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>' },
-  { k: '簡單', v: '七步快速版', d: '趕時間先看最短完賽路,約 3–4 週獨立完賽。', href: '/workflow/quickstart/',
-    icon: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>' },
-];
-
-const stages = [
-  ['0', '讀懂比賽', '先搞清楚題目在問什麼、分數怎麼算,再動手。', '/workflow/0-diagnose/', '必做'],
-  ['1', '建立驗證', '做一把可信的尺,之後每個改動都用它量。', '/workflow/1-validate/', '必做'],
-  ['2', '基準分數', '最簡單的模型先跑一次,知道起點在哪。', '/workflow/2-baseline/', '必做'],
-  ['3', '加特徵', '一次加一個想法,量過有效才留下。', '/workflow/3-features/', '佔時最多'],
-  ['4', '組合模型', '幾個模型合起來,常比單獨一個更準。', '/workflow/4-ensemble/', '看資料量'],
-  ['5', '交卷', '選兩份提交 + 交前防呆檢查。', '/workflow/4-ensemble/', '必做'],
+// 基本參數欄位:id 對應 Inputs 的 key;pct = 介面以 % 輸入、引擎以小數計算
+const basic = [
+  { group: '生活與 FIRE 目標', fields: [
+    { id: 'fireYear', label: '預計開始 FIRE 的年份', unit: '年', step: 1 },
+    { id: 'age', label: '目前年齡', unit: '歲', step: 1 },
+    { id: 'monthlyExpense', label: '今日每月生活費', unit: '萬/月', step: 0.5, hint: '以今年物價計,不含貸款' },
+    { id: 'inflation', label: '每年通膨率', unit: '%', step: 0.1, pct: true },
+    { id: 'swr', label: '安全提領率', unit: '%', step: 0.1, pct: true, hint: 'FIRE 後每年提領資產的比例' },
+  ]},
+  { group: '正職收入與資產', fields: [
+    { id: 'salary', label: '稅後年收入(含年終)', unit: '萬/年', step: 5 },
+    { id: 'salaryGrowth', label: '薪資年成長率', unit: '%', step: 0.5, pct: true },
+    { id: 'salaryCap', label: '稅後年收入上限', unit: '萬/年', step: 10, hint: '留空 = 不設上限' },
+    { id: 'assets', label: '目前可投資資產', unit: '萬', step: 10 },
+    { id: 'emergencyMonths', label: '緊急預備金', unit: '個月', step: 1, hint: '從資產扣除、不投入市場' },
+    { id: 'assumedReturn', label: '你預期的年化報酬率', unit: '%', step: 0.5, pct: true, hint: '用來算最早可 FIRE 的年份' },
+  ]},
 ];
 ---
 <Base title="SealHack">
-  <!-- Hero -->
-  <section class="relative overflow-hidden">
-    <div class="absolute inset-0 -z-10 opacity-60" style="background:radial-gradient(60% 60% at 50% 0%, color-mix(in srgb, var(--brand) 18%, transparent), transparent)"></div>
-    <div class="mx-auto max-w-4xl px-4 pt-20 pb-16 text-center">
-      <div class="inline-block text-xs font-semibold px-3 py-1 rounded-full mb-6 border" style="border-color:var(--border);color:var(--brand)">The simple way to AutoML</div>
-      <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.1]">
-        先學會診斷,<br />再讓 AI 動手
-      </h1>
-      <p class="mt-6 text-lg sm:text-xl" style="color:var(--fg-muted)">
-        The simple way to AutoML｜一套你看得懂、可驗證的 Kaggle 競賽方法論
-      </p>
-      <p class="mt-3 text-base" style="color:var(--fg-muted)">
-        白話說:這是<strong style="color:var(--fg)">教你打 Kaggle 機器學習競賽</strong>的免費教學站——會 Python 就能照著做,45 分鐘交出第一份提交。
-      </p>
-      <div class="mt-9 flex items-center justify-center gap-3">
-        <a href="/workflow/handbook/" class="px-5 py-2.5 rounded-lg font-semibold text-white shadow-lg" style="background:var(--brand);box-shadow:0 8px 24px -8px var(--brand)">開始 →</a>
-        <a href="/claims/" class="px-5 py-2.5 rounded-lg font-semibold border hover:opacity-80" style="border-color:var(--border)">驗證證據</a>
-      </div>
-      <!-- 數據條(v3:Kaggle 風格統計列,數字等寬對齊) -->
-      <div class="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-px rounded-xl overflow-hidden border" style="border-color:var(--border);background:var(--border)">
-        {stats.map((s) => (
-          <div class="px-4 py-5" style="background:var(--bg-card)">
-            <div class="tabular-nums text-2xl sm:text-3xl font-extrabold" style="color:var(--brand)">{s.n}</div>
-            <div class="mt-1 text-xs" style="color:var(--fg-muted)">{s.l}</div>
+  <section class="mx-auto max-w-6xl px-4 pt-10 pb-6">
+    <span class="card-eyebrow">FIRE 財務規劃試算</span>
+    <h1 class="mt-2 text-3xl sm:text-5xl font-extrabold">什麼時候可以財務自由？</h1>
+    <p class="mt-3 max-w-2xl" style="color:var(--fg-muted)">
+      輸入生活費、薪資、貸款與年金,算出 FIRE 需要累積多少資金,以及投資報酬率至少要多少。
+      所有計算都在你的瀏覽器內完成,資料只存在這台裝置。
+    </p>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 grid gap-6 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] items-start">
+    <!-- 輸入 -->
+    <form id="fire-form" class="space-y-5" autocomplete="off" onsubmit="return false">
+      {basic.map((g) => (
+        <fieldset class="panel p-4">
+          <legend class="sr-only">{g.group}</legend>
+          <div class="text-sm font-bold mb-3">{g.group}</div>
+          <div class="grid grid-cols-2 gap-3">
+            {g.fields.map((f) => (
+              <div class="field">
+                <label for={f.id}>{f.label}</label>
+                <div class="inp-unit">
+                  <input id={f.id} name={f.id} class="inp" type="number" inputmode="decimal" step={f.step}
+                    data-key={f.id} data-pct={f.pct ? '1' : undefined} />
+                  <span>{f.unit}</span>
+                </div>
+                {f.hint && <div class="hint">{f.hint}</div>}
+              </div>
+            ))}
           </div>
-        ))}
+        </fieldset>
+      ))}
+
+      <fieldset class="panel p-4">
+        <legend class="sr-only">貸款明細</legend>
+        <div class="flex items-center justify-between mb-1">
+          <div class="text-sm font-bold">貸款明細</div>
+          <button type="button" class="btn-ghost" data-add="loans">＋ 新增貸款</button>
+        </div>
+        <p class="hint mb-3" style="font-size:.72rem;color:var(--fg-muted)">房貸、車貸、信貸等;月付金與 FIRE 時餘額自動計算</p>
+        <div id="list-loans" class="space-y-3"></div>
+      </fieldset>
+
+      <fieldset class="panel p-4">
+        <legend class="sr-only">年金與被動收入</legend>
+        <div class="flex items-center justify-between mb-1">
+          <div class="text-sm font-bold">年金與被動收入</div>
+          <button type="button" class="btn-ghost" data-add="incomes">＋ 新增</button>
+        </div>
+        <p class="hint mb-3" style="font-size:.72rem;color:var(--fg-muted)">勞保、勞退請填官方試算的月領金額(今日幣值);開始年齡留空 = FIRE 時開始</p>
+        <div id="list-incomes" class="space-y-3"></div>
+      </fieldset>
+
+      <fieldset class="panel p-4">
+        <legend class="sr-only">一次性財務目標</legend>
+        <div class="flex items-center justify-between mb-1">
+          <div class="text-sm font-bold">一次性財務目標</div>
+          <button type="button" class="btn-ghost" data-add="goals">＋ 新增目標</button>
+        </div>
+        <p class="hint mb-3" style="font-size:.72rem;color:var(--fg-muted)">換車、子女教育等大額支出;以今日幣值輸入,自動依通膨調整</p>
+        <div id="list-goals" class="space-y-3"></div>
+      </fieldset>
+
+      <div class="flex gap-2">
+        <button type="button" id="reset" class="btn-ghost">恢復範例值</button>
+      </div>
+    </form>
+
+    <!-- 結果 -->
+    <div class="space-y-6 min-w-0" aria-live="polite">
+      <div class="panel p-5">
+        <p id="lead" class="text-base sm:text-lg font-semibold leading-relaxed"></p>
+        <div id="stats" class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"></div>
+      </div>
+
+      <div class="panel p-5">
+        <h2 class="text-lg font-bold">目標資金拆解</h2>
+        <div id="breakdown" class="mt-3 sh-table"></div>
+      </div>
+
+      <div class="panel p-5">
+        <h2 class="text-lg font-bold">逐年可投入金額</h2>
+        <p class="text-sm mt-1" style="color:var(--fg-muted)">稅後收入 − 生活費 − 貸款 − 財務目標;紅色年份要從投資部位提領。</p>
+        <div id="chart-cashflow" class="chart mt-3"></div>
+      </div>
+
+      <div class="panel p-5">
+        <h2 class="text-lg font-bold">資產累積路徑</h2>
+        <p id="traj-note" class="text-sm mt-1" style="color:var(--fg-muted)"></p>
+        <div id="chart-assets" class="chart mt-3"></div>
+      </div>
+
+      <div class="panel p-5">
+        <h2 class="text-lg font-bold">負債與現金流檢核</h2>
+        <div id="checks" class="mt-3 sh-table"></div>
+      </div>
+
+      <div class="panel p-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="text-lg font-bold">敏感度分析</h2>
+          <label class="text-sm flex items-center gap-2" style="color:var(--fg-muted)">變動
+            <select id="sens-key" class="inp" style="width:auto">
+              <option value="fireYear">FIRE 年份</option>
+              <option value="salary">稅後年收入</option>
+              <option value="monthlyExpense">每月生活費</option>
+              <option value="salaryGrowth">薪資成長率</option>
+              <option value="salaryCap">收入上限</option>
+              <option value="inflation">通膨率</option>
+              <option value="swr">安全提領率</option>
+            </select>
+          </label>
+        </div>
+        <p class="text-sm mt-1" style="color:var(--fg-muted)">其餘參數固定為左側輸入值,每次只變動一項。「≤ 0%」代表不靠投資收益也能達標。</p>
+        <div id="sens" class="mt-3 sh-table"></div>
       </div>
     </div>
   </section>
 
-  <!-- 金句 + 這是你能看懂的 AutoML(含背書與差異化) -->
-  <section class="mx-auto max-w-4xl px-4 pb-16">
-    <p class="text-center text-lg leading-relaxed max-w-3xl mx-auto">
-      <strong>幻覺不是最大的危險,「流暢地執行錯誤的方向」才是。</strong>
-      <span style="color:var(--fg-muted)"> AI 能流暢地寫程式碼,但它寫什麼取決於你怎麼問。不會診斷題型的人,會讓 AI 做出一個 CV 漂亮、實戰歸零的方案,而且不會告訴你錯了。</span>
-    </p>
-    <h2 class="mt-16 text-2xl sm:text-3xl font-extrabold text-center">這是一套你能看懂的 AutoML</h2>
-    <p class="mt-4 text-center max-w-2xl mx-auto" style="color:var(--fg-muted)">
-      市面上的「自動機器學習」工具(AutoML)做的事,<strong style="color:var(--fg)">和本站教的是同一套流程</strong>——只是它是黑箱,你不知道它為什麼行、哪裡會錯。本站教你自己動手走一遍,所以你能<strong style="color:var(--fg)">看懂每一步、出錯時知道去哪修、在工具做不到的地方贏過它</strong>。
-    </p>
-    <div class="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {backing.map((b) => (
-        <a href={b.href} class="lift block p-5 rounded-xl border" style="border-color:var(--border);background:var(--bg-card)">
-          <div class="flex items-center gap-2.5">
-            <span class="card-icon" set:html={`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${b.icon}</svg>`} />
-            <span class="card-eyebrow">{b.k}</span>
-          </div>
-          <div class="mt-2.5 text-lg font-bold tracking-tight">{b.v}</div>
-          <div class="mt-2 text-sm" style="color:var(--fg-muted)">{b.d}</div>
-        </a>
-      ))}
-    </div>
-    <p class="mt-10 text-center max-w-2xl mx-auto text-sm" style="color:var(--fg-muted)">
-      {nClaims} 條主張逐一經文獻 + 沙盒驗證、含 1 個官方反例;鐵達尼真提交顯示內部 CV 對真實 LB 樂觀 0.06~0.09——<strong style="color:var(--fg)">正是方法論自己預測到的</strong>。別人的方案教你技巧,本站教你<strong style="color:var(--fg)">怎麼驗證那些技巧</strong>。
-    </p>
-    <div class="text-center mt-6">
-      <a href="/claims/" class="inline-block px-5 py-2.5 rounded-lg font-semibold border hover:opacity-80" style="border-color:var(--border)">看主張登錄表 →</a>
-    </div>
-  </section>
-
-  <!-- 六階段 -->
-  <section class="mx-auto max-w-5xl px-4 py-16">
-    <h2 class="text-2xl sm:text-3xl font-extrabold text-center">完整流程,六個階段</h2>
-    <p class="mt-3 text-center text-sm max-w-xl mx-auto" style="color:var(--fg-muted)">
-      第一次來?別急著點進單一階段——先花 45 分鐘跟著 <a href="/workflow/handbook/" style="color:var(--brand);font-weight:600">🐣 傻瓜手冊</a> 把六階段走一遍,再回來逐階段深入。
-    </p>
-    <div class="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {stages.map(([n, t, d, href, tag]) => (
-        <a href={href} class="lift block p-5 rounded-xl border" style="border-color:var(--border);background:var(--bg-card)">
-          <div class="flex items-center justify-between">
-            <span class="card-eyebrow">階段 {n}</span>
-            <span class={`tag ${tag === '必做' ? 'tag-pass' : tag === '佔時最多' ? 'tag-pending' : 'tag-neutral'}`}>{tag}</span>
-          </div>
-          <div class="mt-2.5 flex items-center gap-3">
-            <span class="inline-grid place-items-center w-8 h-8 rounded-lg font-bold text-white shrink-0" style="background:var(--brand)">{n}</span>
-            <span class="font-bold tracking-tight">{t}</span>
-          </div>
-          <div class="mt-2 text-sm" style="color:var(--fg-muted)">{d}</div>
-        </a>
-      ))}
-    </div>
-    <div class="text-center mt-10">
-      <a href="/workflow/handbook/" class="inline-block px-5 py-2.5 rounded-lg font-semibold text-white" style="background:var(--brand)">🐣 從第一場比賽開始 →</a>
-    </div>
-  </section>
+  <script>
+    import { mount } from '../scripts/fire-app.js';
+    mount();
+  </script>
 </Base>

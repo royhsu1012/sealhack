@@ -1,43 +1,28 @@
-# SealHack
+# SealHack FIRE — 財務自由試算器
 
-機器學習競賽方法論教學網站 —— **先學會診斷,再讓 AI 動手**。**線上版:https://sealhack.com**
+**線上版:https://sealhack.com**
 
-AI vibecoding 之前的方法論層:教你怎麼問對、怎麼驗證。差異化資產是**每一條方法論主張都附一支可重跑的驗證實驗**;登錄 14 條主張(C1a–C12),13 條通過文獻 + 沙盒雙驗證、C11 僅沙盒待補文獻,含官方反例(C3、C12 的 M4),並用鐵達尼真提交拿到第一個真實 Kaggle 排行榜數據點。
+輸入生活費、薪資、貸款與年金,算出 FIRE 需要累積多少資金,以及投資報酬率至少要多少。所有計算在瀏覽器內完成,不上傳任何資料。
 
-## 這個 repo 長怎樣(研究與前端不分離)
+## 算什麼
 
-```text
-src/                前端(Astro + Tailwind v4 自訂設計,深色預設)
-  pages/            index.astro(自訂 landing)· [...slug].astro(渲染 content/docs 每頁)
-  content/docs/     頁面內容:workflow(傻瓜手冊 + 快速版 + 階段頁 + 小樣本)/ claims / cases/titanic / maps/solution / glossary
-  layouts/          Base(shell + Nav + Footer)· Doc(側欄 + 內文 + TOC + 上/下頁)
-  components/       Nav · Sidebar · Footer · Aside · ClaimsTable · ValidationList · CasesTable
-  nav.ts            導覽結構      styles/global.css   Tailwind + 設計 tokens
-  data/*.json       主張 / 案例 / 驗證索引(手維護原始檔)
-validation/         研究(Python 腳本,數字的唯一事實來源);build 時複製進 public/validation/ 供下載
-scripts/            copy-validation.mjs(唯一 build 前置,把研究內嵌網站)
-internal/           MASTER_PLAN / LOOP_LOG(規劃與歷史)
-CLAUDE.md STANDARDS.md   專案憲法與品質標準
-```
+- **目標資金**:FIRE 當年生活費 ÷ 安全提領率 − 勞保 / 勞退年金與被動收入折算 + 尚未還完的貸款餘額
+- **所需報酬率**:一次累積(只靠現有資產)、分期累積(只靠每年正職現金流)、兩者併用
+- **逐年可投入金額**:稅後薪資(含成長率與上限)− 生活費 − 多筆貸款月付 − 一次性財務目標
+- **負債與現金流檢核**:貸款占收入比、緊急預備金、負現金流年份、貸款利率 vs 報酬率
+- **敏感度分析**與**最早可 FIRE 年份**
 
-一條線:`validation/*.py`(研究數字)→ 主張表每列連到對應腳本(可直接下載重跑)→ 數字經 `src/data/*.json` 進元件。
+公式與假設見網站「計算方法」頁(`src/pages/method.astro`)。
 
 ## 開發
 
 ```bash
 npm install
-npm run dev      # 預覽 http://localhost:4321
-npm run build    # = copy-validation → astro build → pagefind 索引 dist(站內搜尋;dev 無索引)
+npm run dev      # http://localhost:4321
+npm test         # 計算引擎測試(node:test)
+npm run build    # 靜態輸出到 dist/
 ```
 
-## 重跑研究(驗證方法論的每條主張)
+技術:Astro 5 + Tailwind CSS v4,純靜態;計算引擎 `src/lib/fire.js` 為無相依的 ES module。
 
-```bash
-pip install -r validation/requirements.txt
-python validation/fetch_data.py     # 下載 Titanic 資料(sha256 校驗)
-python validation/run_all.py         # 一鍵跑全套,印各主張判決
-```
-
-腳本已強制 UTF-8 輸出,Windows 亦可。品質計分板:`python .claude/skills/sealhack-loop/scripts/check.py`。
-
-> 內容正確性優先於一切;方法論修改須引文獻或 L2 實驗(規則見 CLAUDE.md / STANDARDS.md)。
+> 試算結果以固定報酬率與通膨推估,不構成投資或財務建議。
