@@ -1,12 +1,13 @@
 ---
 import Base from '../layouts/Base.astro';
 import ModeSwitch from '../components/ModeSwitch.astro';
-import Answer from '../components/Answer.astro';
+import ReturnAnswer from '../components/ReturnAnswer.astro';
+import TradeoffCard from '../components/TradeoffCard.astro';
 import Knobs from '../components/Knobs.astro';
 import MiniBar from '../components/MiniBar.astro';
 import { SIMPLE } from '../lib/fire.js';
 
-// 簡單版:5 個數字,反推要準備多少錢、報酬率至少多少
+// 簡單版:5 個數字 + 報酬率滑桿
 const knobs = [
   { id: 'age', label: '目前年齡', unit: '歲', min: 20, max: 65, step: 1 },
   { id: 'fireAge', label: '想幾歲退休', unit: '歲', min: 30, max: 75, step: 1 },
@@ -14,35 +15,27 @@ const knobs = [
   { id: 'assets', label: '目前存款與投資', unit: '萬', min: 0, max: 5000, step: 10 },
   { id: 'monthlySaving', label: '每月能存下', unit: '萬', min: 0, max: 30, step: 0.5 },
 ];
-const p = (r: number) => `${Math.round(r * 100)}%`;
 ---
-<Base title="SealHack" description="輸入年齡、想幾歲退休、生活費與存款,反推退休要準備多少錢、投資報酬率至少要多少。">
+<Base title="SealHack" description="輸入年齡、想幾歲退休、生活費與存款,拉動報酬率,看退休要準備多少錢、存不存得到、最早幾年幾個月後能退休。">
   <ModeSwitch />
-  <Answer />
+  <ReturnAnswer />
 
   <section class="mx-auto max-w-6xl px-4 mt-8">
     <form id="fire-form" autocomplete="off" onsubmit="return false">
       <Knobs knobs={knobs} />
     </form>
     <p class="mt-3 text-sm muted">
-      簡單版假設:通膨 {p(SIMPLE.inflation)}、退休後每年提領資產的 {p(SIMPLE.swr)}、每月存款隨通膨增加;不計房貸、勞保勞退與大額支出。
-      <a href="/full/" class="link">要算這些請用完整版</a>
+      簡單版假設:通膨 {Math.round(SIMPLE.inflation * 100)}%、每月存款隨通膨增加、退休後每年提領生活費到 95 歲;不計房貸、勞保勞退與大額支出。
+      <a href="/full/" class="link">要算這些、或設定每年加薪,請用完整版</a>
     </p>
   </section>
 
   <section class="mx-auto max-w-6xl px-4 mt-6 space-y-4 sm:space-y-6">
-    <div class="card p-4 sm:p-6">
-      <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id="save-title" class="text-lg sm:text-xl font-bold">怎麼存到目標</h2>
-        <p id="save-note" class="text-sm muted"></p>
-      </div>
-      <div id="chart-save" class="chart mt-4"></div>
-    </div>
-
+    <TradeoffCard />
     <a href="/full/" class="card next">
       <div>
-        <p class="font-bold">有房貸、勞保勞退或大額支出?</p>
-        <p class="text-sm muted mt-1">完整版會把它們算進去,也會告訴你照預期報酬最早幾歲能財務自由。</p>
+        <p class="font-bold">有房貸、勞保勞退、加薪或大額支出?</p>
+        <p class="text-sm muted mt-1">完整版用月收入與每年加薪算存款,並把貸款、年金與大額支出都算進去。</p>
       </div>
       <span class="next-arrow" aria-hidden="true">→</span>
     </a>

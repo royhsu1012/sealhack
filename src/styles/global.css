@@ -71,13 +71,47 @@ h1, h2, h3 { letter-spacing: -0.015em; }
 /* 答案的兩個大數字 */
 .hero-num { font-weight: 800; line-height: 1; letter-spacing: -0.02em; font-size: clamp(2.25rem, 9vw, 4.75rem); white-space: nowrap; }
 .hero-num small { font-size: 0.4em; font-weight: 800; margin-left: 0.12em; letter-spacing: 0; }
-#hero-sub b { color: var(--ink); font-weight: 700; }
 
-/* 三種累積方式所需報酬率 */
-.r-split { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; margin-top: 0.9rem; padding-top: 0.9rem; border-top: 1px solid var(--line); text-align: center; }
-.r-split dt { font-size: 0.72rem; color: var(--ink-2); }
-.r-split dd { font-size: 1.05rem; font-weight: 800; margin-top: 0.1rem; }
-.r-split div:last-child dd { color: var(--free); }
+/* 夠不夠的標籤 */
+.status { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.35rem 0.8rem; border-radius: 999px; font-weight: 700; color: var(--ink); }
+.status b { font-weight: 800; }
+.status.ok { background: color-mix(in srgb, var(--free) 16%, transparent); }
+.status.ok b { color: var(--free); }
+.status.bad { background: color-mix(in srgb, var(--warn) 16%, transparent); }
+.status.bad b { color: var(--warn); }
+
+/* 報酬率滑桿:軌道依保守 / 股票 / 積極分色,上方標出最低報酬率 */
+.ret { --tw: 18px; position: relative; padding-top: 1.6rem; margin-top: 0.25rem; }
+@media (pointer: coarse) { .ret { --tw: 24px; } }
+input[type=range].ret-range::-webkit-slider-runnable-track {
+  height: 10px; border-radius: 5px;
+  background: linear-gradient(to right,
+    color-mix(in srgb, var(--free) 40%, transparent) 0 var(--z1),
+    color-mix(in srgb, var(--gold) 40%, transparent) var(--z1) var(--z2),
+    color-mix(in srgb, var(--warn) 40%, transparent) var(--z2) 100%);
+}
+input[type=range].ret-range::-moz-range-track {
+  height: 10px; border-radius: 5px;
+  background: linear-gradient(to right,
+    color-mix(in srgb, var(--free) 40%, transparent) 0 var(--z1),
+    color-mix(in srgb, var(--gold) 40%, transparent) var(--z1) var(--z2),
+    color-mix(in srgb, var(--warn) 40%, transparent) var(--z2) 100%);
+}
+input[type=range].ret-range::-moz-range-progress { background: transparent; }
+input[type=range].ret-range::-webkit-slider-thumb { margin-top: -4px; }
+@media (pointer: coarse) { input[type=range].ret-range::-webkit-slider-thumb { margin-top: -7px; } }
+.ret-mark { position: absolute; top: 0; height: 1.6rem; width: 0; left: calc(var(--tw) / 2 + (100% - var(--tw)) * var(--f, 0)); }
+.ret-mark::after { content: ""; position: absolute; left: -6px; bottom: 0; border: 6px solid transparent; border-bottom: 0; border-top-color: var(--ink); }
+.ret-mark-label { position: absolute; bottom: 8px; left: 0; transform: translateX(-50%); font-size: 0.8rem; font-weight: 800; white-space: nowrap; color: var(--ink); }
+.ret-mark[data-edge="start"] .ret-mark-label { transform: translateX(-10px); }
+.ret-mark[data-edge="end"] .ret-mark-label { transform: translateX(calc(-100% + 10px)); }
+.ret-scale { position: relative; height: 1.1rem; }
+.ret-scale span { position: absolute; top: 0; left: calc(var(--tw) / 2 + (100% - var(--tw)) * var(--f)); transform: translateX(-50%); font-size: 0.7rem; color: var(--ink-2); }
+
+/* 最早何時能退休 */
+.when { border-left: 3px solid var(--gold); padding-left: 0.75rem; color: var(--ink); font-size: 1rem; line-height: 1.6; }
+.when b { font-weight: 800; }
+@media (min-width: 640px) { .when { font-size: 1.1rem; } }
 
 /* 前往完整版 */
 .next { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem; }
@@ -192,6 +226,10 @@ details.adv[open] > summary .chev { transform: rotate(90deg); }
 .mini-bar.show { transform: none; visibility: visible; }
 .mini-bar b { font-size: 1rem; white-space: nowrap; }
 .mini-bar small { font-size: 0.8rem; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+@media (max-width: 479.98px) {
+  .mini-bar { flex-direction: column; align-items: flex-start; gap: 0.1rem; padding: 0.6rem 1rem; }
+  .mini-bar b, .mini-bar small { max-width: 100%; }
+}
 @media (min-width: 1024px) { .mini-bar { display: none; } }
 
 /* 方法頁 */

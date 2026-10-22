@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   DEFAULT_INPUTS as D, pmt, loanBalance, computePlan, earliestFireYear, solveRate, futureValue,
   lifePath, fireAgeDrivers, presetInputs, PRESETS, simpleInputs, SIMPLE,
+  fundNeeded, fundAtFire, breakEvenReturn, needBreakdown, earliestFireTime,
 } from '../src/lib/fire.js';
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: got ${a}, want ${b} ± ${tol}`);
@@ -48,8 +49,11 @@ test('範例情境:現金流與檢核', () => {
 });
 
 test('最早 FIRE 年份與敏感度', () => {
+  // 最早年份 = 存得到 ≥ 撐到 95 歲需要(同一報酬率)
   assert.equal(earliestFireYear(D, 0.06), 2040);
-  assert.equal(earliestFireYear(D, 0.08), 2039);
+  assert.equal(earliestFireYear(D, 0.08), 2038);
+  assert.equal(lifePath({ ...D, fireYear: 2040 }, 0.06).depletionAge, null, '2040 退休撐得到 95 歲');
+  assert.equal(lifePath({ ...D, fireYear: 2039 }, 0.06).depletionAge, 92, '早一年退休 92 歲用完');
   near(computePlan({ ...D, fireYear: 2036 }).rCombined, 0.1492, 5e-4, '2036 FIRE');
   near(computePlan({ ...D, salaryCap: 250 }).rCombined, 0.0450, 5e-4, '收入上限 250');
   near(computePlan({ ...D, salaryCap: 200 }).rCombined, 0.0740, 5e-4, '收入上限 200');
@@ -78,11 +82,34 @@ test('一生資產路徑', () => {
   assert.equal(lifePath(D).rows.at(-1).age, 95);
 });
 
+test('最早多久後可以退休(到月)', () => {
+  const t = earliestFireTime(D, 0.06);
+  near(t, 13.11, 0.01, '6% 時約 13 年 1 個月後');
+  assert.ok(t > 13 && t <= 14, '落在最早年份(第 14 年)之前一年內');
+  near(earliestFireTime(D, 0.08), 11.05, 0.01, '8% 時約 11 年');
+  near(earliestFireTime(simpleInputs({ ...D, monthlySaving: 5 }), 0.06), 13.36, 0.01, '簡單版');
+  assert.equal(earliestFireTime({ ...D, assets: 20000 }, 0.06), 0, '資產已經夠:現在就能退休');
+  assert.equal(earliestFireTime(simpleInputs({ ...D, assets: 0, monthlySaving: 0 }), 0.06), null, '永遠不夠');
+});
+
+test('需要準備的拆解', () => {
+  const b = needBreakdown(D, 0.06);
+  near(b.expenses, 2033.37, 1e-2, '到 95 歲的生活費');
+  near(b.pensions, 553.20, 1e-2, '年金折抵');
+  near(b.loans, 235.67, 1e-2, '退休時貸款餘額');
+  near(b.total, b.expenses - b.pensions + b.loans, 1e-9, '合計');
+  near(b.incomes.reduce((s, q) => s + q.pv, 0), b.pensions, 1e-9, '各項年金加總');
+  near(fundNeeded(D, 0.06), 1715.84, 1e-2, '完整版 6% 時需要');
+  near(fundAtFire(D, 0.06), 2273.06, 1e-2, '完整版 6% 時存得到');
+  near(breakEvenReturn(D), 0.046, 5e-4, '完整版最低報酬率');
+});
+
 test('退休年齡驅動因子', () => {
   const d = fireAgeDrivers(D);
-  assert.equal(d.base, 49);
+  assert.equal(d.base, 48);
   const exp = d.rows.find((r) => r.key === 'monthlyExpense');
-  assert.deepEqual([exp.low, exp.high], [47, 52], '生活費 ±1 萬');
+  assert.deepEqual([exp.low, exp.high], [45, 50], '生活費 ±1 萬');
+  assert.ok(!d.rows.some((r) => r.key === 'swr'), '不再用提領率');
 });
 
 test('簡單版', () => {
@@ -96,6 +123,24 @@ test('簡單版', () => {
   assert.equal(simpleInputs(D).salary, 12 * (D.monthlyExpense + SIMPLE.monthlySaving), '未填存款時用預設值');
   assert.equal(computePlan(simpleInputs({ ...D, assets: 0, monthlySaving: 0 })).rCombined, null, '沒資產也不存錢:無解');
   assert.ok(computePlan(simpleInputs({ ...D, assets: 3000 })).rCombined <= 0, '資產已足夠:不需要報酬');
+});
+
+test('報酬率與資金互相影響', () => {
+  const s = simpleInputs({ ...D, monthlySaving: 5 });
+  near(fundNeeded(s, 0.06), 2033.37, 1e-2, '6% 時撐到 95 歲需要');
+  near(fundAtFire(s, 0.06), 2326.52, 1e-2, '6% 時 50 歲存得到');
+  near(fundNeeded(s, 0.04), 2879.44, 1e-2, '報酬越低,需要越多');
+  near(fundAtFire(s, 0.04), 1932.81, 1e-2, '報酬越低,存得越少');
+  const be = breakEvenReturn(s);
+  near(be, 0.0547, 5e-4, '兩者相等的報酬率');
+  near(fundNeeded(s, be), fundAtFire(s, be), 1e-3, '交叉點');
+  assert.equal(lifePath(s, be + 0.001).depletionAge, null, '高於交叉點:撐得到 95 歲');
+  assert.equal(lifePath(s, be - 0.001).depletionAge, 93, '低於交叉點:提早用完');
+  assert.equal(breakEvenReturn(simpleInputs({ ...D, assets: 8000 })), 0, '不靠報酬也夠');
+  assert.equal(breakEvenReturn(simpleInputs({ ...D, assets: 0, monthlySaving: 0 })), null, '沒資產也不存錢');
+  const full = breakEvenReturn(D);
+  assert.equal(lifePath(D, full + 0.001).depletionAge, null, '完整版(含年金、貸款)也與資產路徑一致');
+  assert.ok(lifePath(D, full - 0.001).depletionAge != null);
 });
 
 test('預設情境', () => {

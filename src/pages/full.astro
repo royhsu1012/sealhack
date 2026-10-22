@@ -1,25 +1,24 @@
 ---
 import Base from '../layouts/Base.astro';
 import ModeSwitch from '../components/ModeSwitch.astro';
-import Answer from '../components/Answer.astro';
+import ReturnAnswer from '../components/ReturnAnswer.astro';
+import TradeoffCard from '../components/TradeoffCard.astro';
 import Knobs from '../components/Knobs.astro';
 import MiniBar from '../components/MiniBar.astro';
 import { PRESETS } from '../lib/fire.js';
 
-// 完整版:6 個主要數字 + 進階設定(假設、貸款、年金、大額支出)
+// 完整版:報酬率滑桿 + 6 個主要數字 + 進階設定(假設、貸款、年金、大額支出)
 const knobs = [
   { id: 'age', label: '目前年齡', unit: '歲', min: 20, max: 65, step: 1 },
   { id: 'fireAge', label: '想幾歲退休', unit: '歲', min: 30, max: 75, step: 1 },
   { id: 'monthlyExpense', label: '每月生活費(不含房貸)', unit: '萬', min: 2, max: 20, step: 0.5 },
-  { id: 'salary', label: '稅後年收入', unit: '萬', min: 30, max: 600, step: 5 },
+  { id: 'monthlyIncome', label: '稅後月收入(年終平均攤入)', unit: '萬', min: 2, max: 50, step: 0.5 },
+  { id: 'salaryGrowth', label: '每年加薪', unit: '%', min: 0, max: 10, step: 0.5, pct: true },
   { id: 'assets', label: '目前可投資資產', unit: '萬', min: 0, max: 5000, step: 10 },
-  { id: 'assumedReturn', label: '預期年化報酬率', unit: '%', min: 0, max: 12, step: 0.5, pct: true },
 ];
 const assumptions = [
   { id: 'inflation', label: '通膨率', unit: '%', step: 0.1, pct: true },
-  { id: 'swr', label: '安全提領率', unit: '%', step: 0.1, pct: true, hint: '退休後每年提領資產的比例' },
-  { id: 'salaryGrowth', label: '薪資年成長率', unit: '%', step: 0.5, pct: true },
-  { id: 'salaryCap', label: '年收入上限', unit: '萬', step: 10, hint: '留空 = 不設上限' },
+  { id: 'salaryCap', label: '月收入上限', unit: '萬', step: 1, scale: 12, hint: '加薪到這裡就停;留空 = 不設上限' },
   { id: 'emergencyMonths', label: '緊急預備金', unit: '個月', step: 1, hint: '不投入市場的生活費' },
 ];
 const tabs = [
@@ -29,9 +28,9 @@ const tabs = [
   { id: 'goals', label: '大額支出' },
 ];
 ---
-<Base title="完整版試算" description="加上房貸、勞保勞退、被動收入與大額支出,反推退休要準備多少錢、報酬率至少多少,並看照預期報酬最早幾歲能財務自由。">
+<Base title="完整版試算" description="用月收入與每年加薪,加上房貸、勞保勞退、被動收入與大額支出,拉動報酬率,看退休要準備多少錢、存不存得到、最早幾年幾個月後能退休。">
   <ModeSwitch />
-  <Answer split />
+  <ReturnAnswer />
 
   <!-- 輸入 -->
   <section class="mx-auto max-w-6xl px-4 mt-8">
@@ -63,12 +62,12 @@ const tabs = [
               </button>
             ))}
           </div>
-          <div id="panel-assume" role="tabpanel" aria-labelledby="tab-assume" class="pt-4 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+          <div id="panel-assume" role="tabpanel" aria-labelledby="tab-assume" class="pt-4 grid gap-4 grid-cols-2 sm:grid-cols-3">
             {assumptions.map((f) => (
               <div class="field">
                 <label for={f.id}>{f.label}</label>
                 <div class="inp-unit">
-                  <input id={f.id} class="inp" type="number" inputmode="decimal" step={f.step} data-key={f.id} data-pct={f.pct ? '1' : undefined} />
+                  <input id={f.id} class="inp" type="number" inputmode="decimal" step={f.step} data-key={f.id} data-pct={f.pct ? '1' : undefined} data-scale={f.scale} />
                   <span>{f.unit}</span>
                 </div>
                 {f.hint && <div class="hint">{f.hint}</div>}
@@ -97,6 +96,8 @@ const tabs = [
 
   <!-- 圖像化結果 -->
   <section class="mx-auto max-w-6xl px-4 mt-8 space-y-4 sm:space-y-6">
+    <TradeoffCard />
+
     <div class="card p-4 sm:p-6">
       <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 class="text-lg sm:text-xl font-bold">一生的資產曲線</h2>
@@ -108,12 +109,12 @@ const tabs = [
     <div class="grid gap-4 sm:gap-6 md:grid-cols-2">
       <div class="card p-4 sm:p-6">
         <h2 class="text-lg sm:text-xl font-bold">退休需要準備多少</h2>
-        <p class="text-sm muted mt-1">退休後的生活費本金,扣掉年金能負擔的部分,再加上還沒還完的貸款。</p>
+        <p class="text-sm muted mt-1">退休後到 95 歲的生活費(以你選的報酬率折回退休那年),扣掉年金能負擔的部分,再加上還沒還完的貸款。</p>
         <div id="chart-target" class="chart mt-4"></div>
       </div>
       <div class="card p-4 sm:p-6">
         <h2 class="text-lg sm:text-xl font-bold">每年能存下多少</h2>
-        <p class="text-sm muted mt-1">稅後收入扣掉生活費、貸款與大額支出;紅色是要從投資提領的年份。</p>
+        <p class="text-sm muted mt-1">稅後收入(含每年加薪)扣掉生活費、貸款與大額支出;紅色是要從投資提領的年份。</p>
         <div id="chart-cashflow" class="chart mt-4"></div>
       </div>
     </div>
