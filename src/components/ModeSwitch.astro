@@ -1,9 +1,0 @@
----
-const full = Astro.url.pathname.startsWith('/full');
----
-<div class="mx-auto max-w-6xl px-4 pt-6">
-  <nav class="mode" aria-label="試算版本">
-    <a href="/" aria-current={full ? undefined : 'page'}><b>簡單版</b><small>拉報酬率快速估算</small></a>
-    <a href="/full/" aria-current={full ? 'page' : undefined}><b>完整版</b><small>含加薪、房貸、年金</small></a>
-  </nav>
-</div>

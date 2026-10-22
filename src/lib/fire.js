@@ -49,7 +49,7 @@ export const DEFAULT_INPUTS = {
   ],
   goals: [
     { year: 2029, name: '換車', amount: 80 },
-    { year: 2035, name: '大額支出(例:子女教育)', amount: 100 },
+    { year: 2035, name: '小孩教育', amount: 100 },
   ],
 };
 
@@ -97,28 +97,6 @@ export function presetInputs(id, baseYear) {
   if (fireYearOffset != null) out.fireYear = baseYear + fireYearOffset;
   if (goals) out.goals = goals.map((g) => ({ year: baseYear + g.yearOffset, name: g.name, amount: g.amount }));
   return out;
-}
-
-/** 簡單版的固定假設與預設每月存款 */
-export const SIMPLE = { inflation: 0.02, swr: 0.04, monthlySaving: 5 };
-
-/**
- * 簡單版:只用年齡、退休年齡、每月生活費、目前資產與每月存款(今日幣值,之後隨通膨成長)。
- * 不計貸款、年金、大額支出與緊急預備金;年收入以「生活費 + 存款」表示,與生活費同步成長。
- */
-export function simpleInputs(inp, monthlySaving = inp.monthlySaving ?? SIMPLE.monthlySaving) {
-  return {
-    ...inp,
-    inflation: SIMPLE.inflation,
-    swr: SIMPLE.swr,
-    salary: 12 * (inp.monthlyExpense + monthlySaving),
-    salaryGrowth: SIMPLE.inflation,
-    salaryCap: null,
-    emergencyMonths: 0,
-    loans: [],
-    incomes: [],
-    goals: [],
-  };
 }
 
 /** 本息平均攤還月付金 */
@@ -416,6 +394,36 @@ export function fireAgeDrivers(inp) {
     .filter((s) => Object.values(s.lo).every((v) => v > 0) || s.key === 'salaryGrowth' || s.key === 'assumedReturn')
     .map((s) => ({ key: s.key, label: s.label, low: ageOf({ ...inp, ...s.lo }), high: ageOf({ ...inp, ...s.hi }) }));
   return { base, rows };
+}
+
+/**
+ * 退休人格的兩個軸:存錢力(第一年存下的錢 ÷ 當年收入,≥ 30% 算存很多)× 投資風格(報酬率 < 5% 保守、< 7% 穩健、其餘積極)。
+ */
+export function personaOf(inp) {
+  const first = annualCashflow({ ...inp, fireYear: Math.max(inp.fireYear, inp.baseYear + 1) })[0];
+  const savingRate = first && first.income > 0 ? first.invest / first.income : 0;
+  const style = inp.assumedReturn < 0.05 ? 'safe' : inp.assumedReturn < 0.07 ? 'steady' : 'bold';
+  return { savingRate, saver: savingRate >= 0.3, style };
+}
+
+/**
+ * 想再快一點:每月多存 1 萬、每月少花 5 千、報酬率多 1%,各自讓「最早多久後能退休」提早幾年(含小數)。
+ * base 為原本的時間;任一方無解時 gain 為 null。
+ */
+export function levers(inp, r = inp.assumedReturn, endAge = 95) {
+  const base = earliestFireTime(inp, r, 45, endAge);
+  const cases = [
+    ['saveMore', { ...inp, salary: inp.salary + 12 }, r],
+    ['spendLess', { ...inp, monthlyExpense: Math.max(0, inp.monthlyExpense - 0.5) }, r],
+    ['returnUp', inp, r + 0.01],
+  ];
+  return {
+    base,
+    rows: cases.map(([key, x, rr]) => {
+      const t = earliestFireTime(x, rr, 45, endAge);
+      return { key, t, gain: base != null && t != null ? base - t : null };
+    }),
+  };
 }
 
 /** 敏感度:變動單一參數,回傳各值下的目標資金與所需報酬率 */

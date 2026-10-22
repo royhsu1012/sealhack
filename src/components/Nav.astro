@@ -1,10 +1,10 @@
 ---
 const path = Astro.url.pathname;
 const links = [
-  { label: '試算', href: '/' },
+  { label: '退休測驗', href: '/' },
   { label: '怎麼算的', href: '/method/' },
 ];
-const isActive = (h: string) => (h === '/' ? path === '/' || path.startsWith('/full') : path.startsWith(h));
+const isActive = (h: string) => (h === '/' ? path === '/' : path.startsWith(h));
 ---
 <header class="border-b" style="border-color:var(--line)">
   <div class="mx-auto max-w-6xl px-4 h-14 flex items-center gap-5">

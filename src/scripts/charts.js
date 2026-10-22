@@ -1,78 +1,9 @@
-// 完整版試算的互動層:讀輸入 → 呼叫 src/lib/fire.js → 答案區(共用)+ 圖表。
-import { computePlan, lifePath, fireAgeDrivers, needBreakdown } from '../lib/fire.js';
-import {
-  BASE_YEAR, END_AGE, freshInputs, loadState, saveState, nf, wan, big, pct, esc, num, round, $,
-  knobSet, writeKnobs, niceStep, T, widthOf, textW, legend, tradeoffChart, renderAnswer,
-  onResize, watchMiniBar,
-} from './shared.js';
-
-// 進階設定的數字欄;data-scale 表示畫面上的單位(例如月收入上限 = 年收入上限 ÷ 12)
-function writeAssumptions(inp) {
-  document.querySelectorAll('#fire-form input[data-key]').forEach((el) => {
-    if (document.activeElement === el) return;
-    const v = inp[el.dataset.key];
-    el.value = v == null ? '' : el.dataset.pct ? round(v * 100, 4) : round(v / Number(el.dataset.scale || 1), 2);
-  });
-}
-
-// ---------- 進階清單 ----------
-const LISTS = {
-  loans: {
-    blank: () => ({ name: '貸款', principal: 100, years: 5, rate: 0.03 }),
-    fields: [
-      { key: 'principal', label: '剩餘本金', unit: '萬', step: 10 },
-      { key: 'years', label: '剩餘年限', unit: '年', step: 1 },
-      { key: 'rate', label: '年利率', unit: '%', step: 0.1, pct: true },
-    ],
-  },
-  incomes: {
-    blank: () => ({ name: '被動收入', monthly: 1, startAge: null }),
-    fields: [
-      { key: 'monthly', label: '每月金額', unit: '萬', step: 0.1 },
-      { key: 'startAge', label: '開始領取', unit: '歲', step: 1, nullable: true },
-    ],
-  },
-  goals: {
-    blank: () => ({ year: BASE_YEAR + 5, name: '大額支出', amount: 50 }),
-    fields: [
-      { key: 'year', label: '年份', unit: '年', step: 1 },
-      { key: 'amount', label: '金額', unit: '萬', step: 10 },
-    ],
-  },
-};
-function renderList(kind, inp) {
-  const spec = LISTS[kind];
-  $(`list-${kind}`).innerHTML = inp[kind].map((item, idx) => `
-    <div class="rounded-xl border p-3 space-y-2" style="border-color:var(--line)">
-      <div class="flex gap-2">
-        <input class="inp font-semibold" aria-label="名稱" data-list="${kind}" data-idx="${idx}" data-field="name" type="text" value="${esc(item.name)}" />
-        <button type="button" class="btn-x" aria-label="刪除 ${esc(item.name)}" data-remove="${kind}" data-idx="${idx}">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
-        </button>
-      </div>
-      <div class="grid gap-2" style="grid-template-columns:repeat(${spec.fields.length},minmax(0,1fr))">
-        ${spec.fields.map((f) => `<div class="field"><span class="label">${f.label}</span><div class="inp-unit">
-          <input class="inp" aria-label="${esc(item.name)} ${f.label}" data-list="${kind}" data-idx="${idx}" data-field="${f.key}"
-            ${f.pct ? 'data-pct="1"' : ''} ${f.nullable ? 'data-nullable="1"' : ''} type="number" inputmode="decimal" step="${f.step}"
-            value="${item[f.key] == null ? '' : f.pct ? round(item[f.key] * 100, 4) : item[f.key]}" placeholder="${f.nullable ? '退休時' : ''}" />
-          <span>${f.unit}</span></div></div>`).join('')}
-      </div>
-      <p class="text-xs muted num" data-derived="${kind}-${idx}"></p>
-    </div>`).join('') || '<p class="text-sm muted">目前沒有項目。</p>';
-}
-function readListInput(el, inp) {
-  const { list, idx, field } = el.dataset;
-  const item = inp[list][Number(idx)];
-  if (!item) return;
-  const raw = el.value.trim();
-  if (el.type === 'text') { item[field] = raw; return; }
-  if (raw === '' && el.dataset.nullable) { item[field] = null; return; }
-  const x = num(raw);
-  if (x != null) item[field] = el.dataset.pct ? x / 100 : x;
-}
+// 結果頁的 SVG 圖表(純字串;寬度跟隨容器,由呼叫端傳入 W)
+import { fundNeeded, fundAtFire } from '../lib/fire.js';
+import { END_AGE, R_MAX, nf, wan, big, pct, esc, niceStep, T, textW, legend } from './shared.js';
 
 // 一生資產曲線(need = 以同一報酬率撐到 95 歲需要準備的錢)
-function lifeChart(life, need, plan, inp, W) {
+export function lifeChart(life, need, plan, inp, W) {
   const rows = life.rows;
   const H = W < 560 ? 300 : 380, L = 48, R = W - 16, top = 34, B = H - 62;
   const fireAge = life.fireAge;
@@ -165,7 +96,7 @@ function lifeChart(life, need, plan, inp, W) {
 }
 
 // 需要準備多少:瀑布圖(b = needBreakdown,以報酬率 r 折回退休那年)
-function targetChart(b, r, W) {
+export function targetChart(b, r, W) {
   const H = 260, L = 10, R = W - 10, top = 30, B = H - 44;
   const steps = [
     { label: '生活費', sub: `到 ${END_AGE} 歲,以 ${pct(r)} 折算`, from: 0, to: b.expenses, color: 'var(--ink)' },
@@ -193,7 +124,7 @@ function targetChart(b, r, W) {
 }
 
 // 每年能存下多少
-function cashflowChart(flows, W) {
+export function cashflowChart(flows, W) {
   if (!flows.length) return '<p class="text-sm muted">退休年份需晚於今年。</p>';
   const H = 260, L = 40, R = W - 6, top = 16, B = H - 30;
   const vals = flows.map((f) => f.invest);
@@ -218,7 +149,7 @@ function cashflowChart(flows, W) {
 }
 
 // 什麼最影響退休年齡:龍捲風圖
-function driversChart(d, W) {
+export function driversChart(d, W) {
   if (d.base == null) return '<p class="text-sm muted">以目前條件 45 年內無法退休,先調整生活費或收入。</p>';
   const rows = d.rows.map((r) => {
     const cap = d.base + 15;
@@ -247,138 +178,65 @@ function driversChart(d, W) {
   ${legend([['var(--free)', '往好的方向調,可提早退休'], ['var(--warn)', '往壞的方向調,要延後']])}`;
 }
 
-// ---------- 渲染 ----------
-let last = null;
-const CHARTS = ['chart-trade', 'chart-life', 'chart-target', 'chart-cashflow', 'chart-drivers'];
-function drawCharts() {
-  if (!last) { CHARTS.forEach((id) => { $(id).innerHTML = ''; }); return; }
-  const { plan, life, drivers, inp, r, b, be } = last;
-  $('chart-trade').innerHTML = tradeoffChart(inp, r, be, widthOf('chart-trade'));
-  $('chart-life').innerHTML = lifeChart(life, b.total, plan, inp, widthOf('chart-life'));
-  $('chart-target').innerHTML = targetChart(b, r, widthOf('chart-target'));
-  $('chart-cashflow').innerHTML = cashflowChart(plan.flows, widthOf('chart-cashflow'));
-  $('chart-drivers').innerHTML = driversChart(drivers, widthOf('chart-drivers'));
-}
 
-function check(level, title, body) {
-  return `<li class="flex gap-3"><span class="dot dot-${level}" aria-hidden="true"></span><div><p class="font-semibold">${title}</p><p class="text-sm muted mt-0.5">${body}</p></div></li>`;
-}
-
-function render(inp) {
-  const n = inp.fireYear - inp.baseYear;
-  const r = Math.max(0, inp.assumedReturn);
-  const loanTotal = inp.loans.reduce((s, l) => s + (l.principal > 0 ? l.principal : 0), 0);
-  $('adv-summary').textContent = `通膨 ${pct(inp.inflation)}、貸款 ${inp.loans.length} 筆${loanTotal ? `(${wan(loanTotal)})` : ''}、年金 ${inp.incomes.filter((q) => q.monthly > 0).length} 項、大額支出 ${inp.goals.length} 筆`;
-
-  const a = renderAnswer(inp, r);
-  if (!a) {
-    last = null;
-    $('checks').innerHTML = '';
-    drawCharts();
-    return;
-  }
-  const plan = computePlan(inp);
-  const life = lifePath(inp, r, END_AGE);
-  const b = needBreakdown(inp, r, END_AGE);
-  const drivers = fireAgeDrivers({ ...inp, assumedReturn: r });
-  last = { plan, life, drivers, inp, r, b, be: a.be };
-  $('life-note').textContent = `以每年 ${pct(r)} 報酬推算,退休後每年提領生活費(扣除年金)`;
-
-  // 清單旁的衍生數字
-  inp.loans.forEach((l, i) => {
-    const el = document.querySelector(`[data-derived="loans-${i}"]`);
-    const row = plan.loans.rows.find((r) => r.name === l.name && r.principal === l.principal && r.years === l.years);
-    if (el) el.textContent = row ? `每月 ${nf(2).format(row.payment)} 萬,${row.balanceAtFire > 0.05 ? `退休時還剩 ${wan(row.balanceAtFire, 1)}` : `${row.payoffYear} 年還清`}` : '';
-  });
-  inp.incomes.forEach((q, i) => {
-    const el = document.querySelector(`[data-derived="incomes-${i}"]`);
-    const row = b.incomes.find((x) => x.name === q.name);
-    if (el) el.textContent = row ? `可少準備 ${wan(row.pv, 1)}(以 ${pct(r)} 折算)` : '';
-  });
-  inp.goals.forEach((g, i) => {
-    const el = document.querySelector(`[data-derived="goals-${i}"]`);
-    if (!el) return;
-    const t = g.year - inp.baseYear;
-    el.textContent = t >= 1 && t <= n ? `到時約 ${wan(g.amount * (1 + inp.inflation) ** t, 1)}` : '不在退休前,不計入';
-  });
-
-  // 體檢
-  const c = plan.checks;
-  const items = [];
-  if (c.dti != null) {
-    const lvl = c.dti <= 0.33 ? 'ok' : c.dti <= 0.4 ? 'warn' : 'bad';
-    items.push(check(lvl, `貸款占收入 ${nf(0).format(c.dti * 100)}%`, lvl === 'ok' ? '在 1/3 以內,負擔合理。' : '超過 1/3,收入中斷時壓力大;優先還清高利率的那筆。'));
-  }
-  items.push(check(inp.emergencyMonths >= 6 ? 'ok' : inp.emergencyMonths >= 3 ? 'warn' : 'bad', `緊急預備金 ${nf(0).format(inp.emergencyMonths)} 個月`, inp.emergencyMonths >= 6 ? `保留 ${wan(plan.emergency)},不投入市場。` : '建議至少 6 個月生活費。'));
-  items.push(c.negativeYears.length
-    ? check('warn', `${c.negativeYears.join('、')} 年存款不夠`, '大額支出那年要動用投資部位;提前 2–3 年把錢放進定存或短債。')
-    : check('ok', '每年都有存款', '沒有需要動用投資的年份。'));
-  items.push(life.depletionAge
-    ? check('bad', `${life.depletionAge} 歲資金用完`, `以每年 ${pct(r)} 報酬推算;延後退休、降低生活費,或提高報酬才撐得到 ${END_AGE} 歲。`)
-    : check('ok', `資金撐得到 ${END_AGE} 歲`, `以每年 ${pct(r)} 報酬推算,退休後資產沒有用完。`));
-  $('checks').innerHTML = items.join('');
-
-  drawCharts();
-}
-
-// ---------- 掛載 ----------
-export function mount() {
-  let s = loadState();
-  const form = $('fire-form');
-  const renderLists = () => Object.keys(LISTS).forEach((k) => renderList(k, s.inputs));
-  const markPreset = () => document.querySelectorAll('[data-preset]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.preset === s.preset)));
-  let timer = 0;
-  const update = (delay = 40) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => { writeKnobs(s.inputs); render(s.inputs); saveState(s); }, delay);
-  };
-  const refreshAll = () => { writeKnobs(s.inputs); writeAssumptions(s.inputs); renderLists(); markPreset(); render(s.inputs); saveState(s); };
-
-  refreshAll();
-
-  // 報酬率滑桿在 #ret-form、其餘在 #fire-form,所以掛在 document
-  document.addEventListener('input', (e) => {
-    const el = e.target;
-    if (!(el instanceof HTMLInputElement)) return;
-    if (el.dataset.knob) {
-      const x = num(el.value);
-      if (x == null) return;
-      knobSet(s.inputs, el.dataset.knob, el.dataset.pct ? x / 100 : x);
-    } else if (el.dataset.key) {
-      const raw = el.value.trim();
-      const x = num(raw);
-      const scale = Number(el.dataset.scale || 1);
-      if (el.dataset.key === 'salaryCap' && raw === '') s.inputs.salaryCap = null;
-      else if (x == null) return;
-      else s.inputs[el.dataset.key] = el.dataset.pct ? x / 100 : x * scale;
-    } else if (el.dataset.list) readListInput(el, s.inputs);
-    else return;
-    s.preset = null;
-    markPreset();
-    update();
-  });
-  form.addEventListener('click', (e) => {
-    const btn = e.target.closest('button');
-    if (!btn) return;
-    if (btn.dataset.add) {
-      s.inputs[btn.dataset.add].push(LISTS[btn.dataset.add].blank());
-      renderList(btn.dataset.add, s.inputs);
-    } else if (btn.dataset.remove) {
-      s.inputs[btn.dataset.remove].splice(Number(btn.dataset.idx), 1);
-      renderList(btn.dataset.remove, s.inputs);
-    } else if (btn.dataset.tab) {
-      document.querySelectorAll('[data-tab]').forEach((t) => t.setAttribute('aria-selected', String(t === btn)));
-      document.querySelectorAll('[role=tabpanel]').forEach((p) => { p.hidden = p.id !== `panel-${btn.dataset.tab}`; });
-      return;
-    } else return;
-    s.preset = null;
-    markPreset();
-    update(0);
-  });
-  document.querySelectorAll('[data-preset]').forEach((b) => b.addEventListener('click', () => {
-    s = { inputs: freshInputs(b.dataset.preset, s.inputs.monthlySaving), preset: b.dataset.preset };
-    refreshAll();
-  }));
-  onResize(drawCharts);
-  watchMiniBar();
+/** 報酬率(橫軸)對「撐到 95 歲需要的錢」與「退休時存得到的錢」:兩條線交叉處就是最低報酬率 */
+export function tradeoffChart(inp, rSel, be, W) {
+  const xMax = Math.max(R_MAX, rSel, be != null ? be + 0.01 : 0);
+  const H = W < 560 ? 270 : 320, L = 48, R = W - 14, top = 30, B = H - 32;
+  const N = 48;
+  const rs = Array.from({ length: N + 1 }, (_, k) => (xMax * k) / N);
+  const need = rs.map((r) => fundNeeded(inp, r, END_AGE));
+  const have = rs.map((r) => fundAtFire(inp, r));
+  const needSel = fundNeeded(inp, rSel, END_AGE), haveSel = fundAtFire(inp, rSel);
+  const needBe = be != null ? fundNeeded(inp, be, END_AGE) : 0;
+  const peak = Math.max(have.at(-1), need.at(-1), needSel, haveSel, needBe, 1) * 1.2;
+  const step = niceStep(peak, 4);
+  const vmax = Math.ceil(peak / step) * step;
+  const x = (r) => L + (r / xMax) * (R - L);
+  const y = (v) => top + ((vmax - v) / vmax) * (B - top);
+  const line = (vals) => vals.map((v, k) => `${k ? 'L' : 'M'}${x(rs[k]).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const band = `${line(have)} ${need.map((v, k) => `L${x(rs[k]).toFixed(1)},${y(v).toFixed(1)}`).reverse().join(' ')} Z`;
+  const bx = be == null ? R : x(Math.min(be, xMax));
+  const yTicks = [];
+  for (let v = 0; v <= vmax + 1e-9; v += step) yTicks.push(v);
+  const xStep = [0.01, 0.02, 0.05, 0.1, 0.2].find((s) => ((R - L) * s) / xMax >= 34) ?? 0.2;
+  const xTicks = [];
+  for (let k = 0; k * xStep <= xMax + 1e-9; k++) xTicks.push(k * xStep);
+  const sx = x(rSel);
+  // 交叉點標籤:放在「你選的」虛線另一側;都放不下就放在點的正上方
+  const beLabel = be != null ? `至少 ${pct(be)}` : '';
+  const beX = be != null ? x(Math.min(be, xMax)) : 0;
+  const lw = textW(beLabel, 13);
+  const spanOf = ([px, anchor]) => (anchor === 'start' ? [px, px + lw] : [px - lw, px]);
+  const fits = ([a, b]) => a >= L + 2 && b <= R - 2 && !(sx > a - 4 && sx < b + 4);
+  const away = rSel < (be ?? 0) ? [[beX + 10, 'start'], [beX - 10, 'end']] : [[beX - 10, 'end'], [beX + 10, 'start']];
+  const bePos = [...away, [sx + 6, 'start'], [sx - 6, 'end']].find((c) => fits(spanOf(c)));
+  const selW = textW(`你選的 ${pct(rSel)}`, 12);
+  const selX = Math.min(Math.max(sx, L + selW / 2 + 2), R - selW / 2);
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="報酬率 ${pct(rSel)} 時需要 ${big(needSel)}、存得到 ${big(haveSel)}${be != null && be > 0 ? `;報酬率至少 ${pct(be)} 才夠` : ''}">
+    <defs>
+      <clipPath id="to-plot"><rect x="${L}" y="${top}" width="${R - L}" height="${B - top}"/></clipPath>
+      <clipPath id="to-ok"><rect x="${bx}" y="${top}" width="${Math.max(0, R - bx)}" height="${B - top}"/></clipPath>
+      <clipPath id="to-bad"><rect x="${L}" y="${top}" width="${Math.max(0, bx - L)}" height="${B - top}"/></clipPath>
+    </defs>
+    ${yTicks.map((v) => `<line x1="${L}" x2="${R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/>${T(L - 8, y(v) + 4, v === 0 ? '0' : big(v).replace(' 萬', ''), { anchor: 'end', size: 11 })}`).join('')}
+    ${T(L - 8, top - 14, '萬元', { anchor: 'end', size: 11 })}
+    ${xTicks.map((r) => T(x(r), B + 18, `${Math.round(r * 100)}%`, { anchor: 'middle', size: 11 })).join('')}
+    <path d="${band}" fill="var(--free)" fill-opacity="0.16" clip-path="url(#to-ok)"/>
+    <path d="${band}" fill="var(--warn)" fill-opacity="0.14" clip-path="url(#to-bad)"/>
+    <g clip-path="url(#to-plot)">
+      <path d="${line(need)}" fill="none" stroke="var(--ink)" stroke-width="2.2"/>
+      <path d="${line(have)}" fill="none" stroke="var(--free)" stroke-width="2.6"/>
+    </g>
+    <line x1="${L}" x2="${R}" y1="${B}" y2="${B}" stroke="var(--line)"/>
+    <line x1="${sx}" x2="${sx}" y1="${top - 4}" y2="${B}" stroke="var(--ink-2)" stroke-dasharray="4 4"/>
+    ${T(selX, top - 10, `你選的 ${pct(rSel)}`, { anchor: 'middle', size: 12, fill: 'var(--ink)', weight: 700 })}
+    ${needSel <= vmax ? `<circle cx="${sx}" cy="${y(needSel)}" r="5" fill="var(--ink)"><title>報酬率 ${pct(rSel)}:撐到 ${END_AGE} 歲需要 ${big(needSel)}</title></circle>` : ''}
+    <circle cx="${sx}" cy="${y(haveSel)}" r="5" fill="var(--free)"><title>報酬率 ${pct(rSel)}:退休時存得到 ${big(haveSel)}</title></circle>
+    ${be != null && be > 0 && be <= xMax ? `<circle cx="${beX}" cy="${y(needBe)}" r="6" fill="var(--gold)" stroke="var(--surface)" stroke-width="2"/>
+      ${bePos
+        ? T(bePos[0], y(needBe) - 10, beLabel, { anchor: bePos[1], size: 13, fill: 'var(--ink)', weight: 800, halo: true })
+        : T(beX, y(needBe) - 16, beLabel, { anchor: 'middle', size: 13, fill: 'var(--ink)', weight: 800, halo: true })}` : ''}
+  </svg>
+  ${legend([['var(--ink)', `撐到 ${END_AGE} 歲需要的錢`], ['var(--free)', '退休時存得到的錢'], ['var(--gold)', '交叉點:最低報酬率']])}`;
 }

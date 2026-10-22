@@ -3,11 +3,16 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   DEFAULT_INPUTS as D, pmt, loanBalance, computePlan, earliestFireYear, solveRate, futureValue,
-  lifePath, fireAgeDrivers, presetInputs, PRESETS, simpleInputs, SIMPLE,
-  fundNeeded, fundAtFire, breakEvenReturn, needBreakdown, earliestFireTime,
+  lifePath, fireAgeDrivers, presetInputs, PRESETS,
+  fundNeeded, fundAtFire, breakEvenReturn, needBreakdown, earliestFireTime, personaOf, levers,
 } from '../src/lib/fire.js';
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: got ${a}, want ${b} ± ${tol}`);
+// 只看存款的情境:沒有貸款、年金、大額支出與預備金;每月存 s 萬,收入與生活費都隨 2% 通膨成長
+const plain = (s, extra = {}) => ({
+  ...D, inflation: 0.02, salary: 12 * (D.monthlyExpense + s), salaryGrowth: 0.02, salaryCap: null,
+  emergencyMonths: 0, loans: [], incomes: [], goals: [], ...extra,
+});
 
 test('貸款月付金與餘額', () => {
   near(pmt(800, 0.023 / 12, 240), 4.1617, 1e-3, '房貸月付金');
@@ -87,9 +92,9 @@ test('最早多久後可以退休(到月)', () => {
   near(t, 13.11, 0.01, '6% 時約 13 年 1 個月後');
   assert.ok(t > 13 && t <= 14, '落在最早年份(第 14 年)之前一年內');
   near(earliestFireTime(D, 0.08), 11.05, 0.01, '8% 時約 11 年');
-  near(earliestFireTime(simpleInputs({ ...D, monthlySaving: 5 }), 0.06), 13.36, 0.01, '簡單版');
+  near(earliestFireTime(plain(5), 0.06), 13.36, 0.01, '簡單版');
   assert.equal(earliestFireTime({ ...D, assets: 20000 }, 0.06), 0, '資產已經夠:現在就能退休');
-  assert.equal(earliestFireTime(simpleInputs({ ...D, assets: 0, monthlySaving: 0 }), 0.06), null, '永遠不夠');
+  assert.equal(earliestFireTime(plain(0, { assets: 0 }), 0.06), null, '永遠不夠');
 });
 
 test('需要準備的拆解', () => {
@@ -112,21 +117,20 @@ test('退休年齡驅動因子', () => {
   assert.ok(!d.rows.some((r) => r.key === 'swr'), '不再用提領率');
 });
 
-test('簡單版', () => {
-  const s = computePlan(simpleInputs({ ...D, monthlySaving: 5 }));
+test('只看存款的情境', () => {
+  const s = computePlan(plain(5));
   near(s.target, 2422.563, 1e-2, '只算生活費本金,不扣年金、不加貸款');
   near(s.start, 300, 1e-9, '不扣緊急預備金');
   near(s.flows[0].invest, 60 * 1.02, 1e-9, '第一年存款隨通膨');
   near(s.flows.at(-1).invest, 60 * 1.02 ** 15, 1e-9, '最後一年存款');
   near(s.rCombined, 0.0643, 5e-4, '所需報酬率');
   near(s.trajectory.at(-1).principal, 1358.36, 1e-2, '累計存進的本金');
-  assert.equal(simpleInputs(D).salary, 12 * (D.monthlyExpense + SIMPLE.monthlySaving), '未填存款時用預設值');
-  assert.equal(computePlan(simpleInputs({ ...D, assets: 0, monthlySaving: 0 })).rCombined, null, '沒資產也不存錢:無解');
-  assert.ok(computePlan(simpleInputs({ ...D, assets: 3000 })).rCombined <= 0, '資產已足夠:不需要報酬');
+  assert.equal(computePlan(plain(0, { assets: 0 })).rCombined, null, '沒資產也不存錢:無解');
+  assert.ok(computePlan(plain(5, { assets: 3000 })).rCombined <= 0, '資產已足夠:不需要報酬');
 });
 
 test('報酬率與資金互相影響', () => {
-  const s = simpleInputs({ ...D, monthlySaving: 5 });
+  const s = plain(5);
   near(fundNeeded(s, 0.06), 2033.37, 1e-2, '6% 時撐到 95 歲需要');
   near(fundAtFire(s, 0.06), 2326.52, 1e-2, '6% 時 50 歲存得到');
   near(fundNeeded(s, 0.04), 2879.44, 1e-2, '報酬越低,需要越多');
@@ -136,11 +140,28 @@ test('報酬率與資金互相影響', () => {
   near(fundNeeded(s, be), fundAtFire(s, be), 1e-3, '交叉點');
   assert.equal(lifePath(s, be + 0.001).depletionAge, null, '高於交叉點:撐得到 95 歲');
   assert.equal(lifePath(s, be - 0.001).depletionAge, 93, '低於交叉點:提早用完');
-  assert.equal(breakEvenReturn(simpleInputs({ ...D, assets: 8000 })), 0, '不靠報酬也夠');
-  assert.equal(breakEvenReturn(simpleInputs({ ...D, assets: 0, monthlySaving: 0 })), null, '沒資產也不存錢');
+  assert.equal(breakEvenReturn(plain(5, { assets: 8000 })), 0, '不靠報酬也夠');
+  assert.equal(breakEvenReturn(plain(0, { assets: 0 })), null, '沒資產也不存錢');
   const full = breakEvenReturn(D);
   assert.equal(lifePath(D, full + 0.001).depletionAge, null, '完整版(含年金、貸款)也與資產路徑一致');
   assert.ok(lifePath(D, full - 0.001).depletionAge != null);
+});
+
+test('退休人格與想再快一點', () => {
+  const p = personaOf(D);
+  near(p.savingRate, 0.2629, 1e-3, '第一年存下收入的 26%');
+  assert.equal(p.saver, false);
+  assert.equal(p.style, 'steady');
+  assert.equal(personaOf({ ...D, salary: 300 }).saver, true, '收入高、存得多');
+  assert.equal(personaOf({ ...D, assumedReturn: 0.04 }).style, 'safe');
+  assert.equal(personaOf({ ...D, assumedReturn: 0.08 }).style, 'bold');
+  const l = levers(D, 0.06);
+  near(l.base, 13.11, 0.01, '原本 13 年 1 個月');
+  const g = Object.fromEntries(l.rows.map((x) => [x.key, x.gain]));
+  near(g.saveMore, 0.94, 0.01, '每月多存 1 萬');
+  near(g.spendLess, 1.08, 0.01, '每月少花 5 千');
+  near(g.returnUp, 1.11, 0.01, '報酬率多 1%');
+  assert.ok(Object.values(g).every((v) => v > 0), '都會提早');
 });
 
 test('預設情境', () => {

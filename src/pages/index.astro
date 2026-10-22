@@ -1,50 +1,212 @@
 ---
 import Base from '../layouts/Base.astro';
-import ModeSwitch from '../components/ModeSwitch.astro';
-import ReturnAnswer from '../components/ReturnAnswer.astro';
-import TradeoffCard from '../components/TradeoffCard.astro';
-import Knobs from '../components/Knobs.astro';
 import MiniBar from '../components/MiniBar.astro';
-import { SIMPLE } from '../lib/fire.js';
+import { QUESTIONS } from '../scripts/quiz-config.js';
+import { seal } from '../scripts/seal.js';
 
-// 簡單版:5 個數字 + 報酬率滑桿
-const knobs = [
-  { id: 'age', label: '目前年齡', unit: '歲', min: 20, max: 65, step: 1 },
-  { id: 'fireAge', label: '想幾歲退休', unit: '歲', min: 30, max: 75, step: 1 },
-  { id: 'monthlyExpense', label: '退休後每月生活費', unit: '萬', min: 2, max: 20, step: 0.5 },
-  { id: 'assets', label: '目前存款與投資', unit: '萬', min: 0, max: 5000, step: 10 },
-  { id: 'monthlySaving', label: '每月能存下', unit: '萬', min: 0, max: 30, step: 0.5 },
+const N = QUESTIONS.length;
+const R_MAX = 12;
+const ticks = [0, 2, 4, 6, 8, 10, 12];
+const zones = [
+  ['var(--free)', '4% 以下:保守'],
+  ['var(--gold)', '4–7%:穩健'],
+  ['var(--warn)', '7% 以上:積極'],
 ];
 ---
-<Base title="SealHack" description="輸入年齡、想幾歲退休、生活費與存款,拉動報酬率,看退休要準備多少錢、存不存得到、最早幾年幾個月後能退休。">
-  <ModeSwitch />
-  <ReturnAnswer />
+<Base title="SealHack" description="回答 9 個小問題,看看你最快什麼時候可以退休、是哪一型的退休海豹。所有計算都在你的瀏覽器裡完成。">
+  <script is:inline>
+    (function () {
+      var p = 'intro';
+      try { var s = JSON.parse(localStorage.getItem('fire-inputs-v2') || 'null'); if (s && s.done) p = 'result'; } catch (e) {}
+      document.documentElement.dataset.phase = p;
+    })();
+  </script>
 
-  <section class="mx-auto max-w-6xl px-4 mt-8">
-    <form id="fire-form" autocomplete="off" onsubmit="return false">
-      <Knobs knobs={knobs} />
-    </form>
-    <p class="mt-3 text-sm muted">
-      簡單版假設:通膨 {Math.round(SIMPLE.inflation * 100)}%、每月存款隨通膨增加、退休後每年提領生活費到 95 歲;不計房貸、勞保勞退與大額支出。
-      <a href="/full/" class="link">要算這些、或設定每年加薪,請用完整版</a>
+  <!-- 開場 -->
+  <section id="intro" class="phase intro">
+    <div class="intro-seal" set:html={seal('wave')} />
+    <p class="pill">FIRE 退休測驗</p>
+    <h1 class="intro-title">你最快什麼時候<br />可以退休?</h1>
+    <p class="intro-sub">回答 {N} 個小問題,看看你是哪一型的退休海豹。<br />約 1 分鐘,資料只存在你的瀏覽器。</p>
+    <button type="button" class="btn-big" id="start">開始測驗</button>
+    <p class="intro-links">
+      <button type="button" class="link-btn" id="to-result" hidden>看我上次的結果</button>
+      <button type="button" class="link-btn" id="demo">先看範例結果</button>
     </p>
   </section>
 
-  <section class="mx-auto max-w-6xl px-4 mt-6 space-y-4 sm:space-y-6">
-    <TradeoffCard />
-    <a href="/full/" class="card next">
-      <div>
-        <p class="font-bold">有房貸、勞保勞退、加薪或大額支出?</p>
-        <p class="text-sm muted mt-1">完整版用月收入與每年加薪算存款,並把貸款、年金與大額支出都算進去。</p>
+  <!-- 題目卡 -->
+  <section id="quiz" class="phase quiz">
+    <div class="quiz-top">
+      <button type="button" class="icon-btn" id="q-back" aria-label="上一題">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <div class="quiz-progress" aria-hidden="true"><span id="q-bar"></span></div>
+      <span class="quiz-count num" id="q-count" aria-live="polite">1 / {N}</span>
+    </div>
+
+    <form id="quiz-form" autocomplete="off" onsubmit="return false">
+      {QUESTIONS.map((q, i) => (
+        <article class="q-card" data-i={i} hidden={i !== 0}>
+          <p class="pill">第 {i + 1} 題</p>
+          <h2 class="q-title" tabindex="-1">{q.title}</h2>
+          <p class="q-hint">{q.hint}</p>
+
+          {q.slider && (
+            <div class="q-slider">
+              <p class="q-value num"><output data-knob={q.slider.key}></output><small>{q.slider.unit}</small></p>
+              <input type="range" min={q.slider.min} max={q.slider.max} step={q.slider.step} data-knob={q.slider.key} aria-label={q.title} />
+              <p class="q-ends num" aria-hidden="true"><span>{q.slider.min}</span><span>{q.slider.max}</span></p>
+              {q.feedback && <p class="q-feedback" id="q-feedback"></p>}
+            </div>
+          )}
+
+          {q.choices && (
+            <div class={`q-choices ${q.id === 'dream' ? 'q-choices--row' : q.multi ? 'q-choices--grid' : ''}`} role="group" aria-label={q.title}>
+              {q.choices.map((c) => (
+                <button type="button" class="q-choice" data-v={String(c.v)} aria-pressed="false">
+                  <b>{c.label}</b>{c.sub && <small>{c.sub}</small>}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {(q.more || q.list) && (
+            <details class="q-more">
+              <summary>細項<span>可以不填,會用預設值</span></summary>
+              <div class="q-more-body">
+                {q.more?.map((m) => m.field ? (
+                  <div class="field">
+                    <label for={`f-${m.field}`}>{m.label}</label>
+                    <div class="inp-unit">
+                      <input id={`f-${m.field}`} class="inp" type="number" inputmode="decimal" data-key={m.field} data-scale={m.scale} />
+                      <span>{m.unit}</span>
+                    </div>
+                    {m.hint && <div class="hint">{m.hint}</div>}
+                  </div>
+                ) : (
+                  <div class="knob">
+                    <div class="knob-head">
+                      <label class="knob-label" for={`d-${q.id}-${m.key}`}>{m.label}</label>
+                      <div class="knob-value">
+                        <input id={`d-${q.id}-${m.key}`} type="number" inputmode="decimal" step={m.step} data-knob={m.key} data-pct={m.pct ? '1' : undefined} />
+                        <span>{m.unit}</span>
+                      </div>
+                    </div>
+                    <input type="range" min={m.min} max={m.max} step={m.step} data-knob={m.key} data-pct={m.pct ? '1' : undefined} aria-label={m.label} />
+                  </div>
+                ))}
+                {q.list && (
+                  <div class="grid gap-3">
+                    <div id={`list-${q.list}`} class="grid gap-3"></div>
+                    <button type="button" class="btn" data-add={q.list}>新增一筆</button>
+                  </div>
+                )}
+              </div>
+            </details>
+          )}
+        </article>
+      ))}
+      <button type="button" class="btn-big quiz-next" id="q-next">下一題</button>
+    </form>
+  </section>
+
+  <!-- 結果 -->
+  <section id="result" class="phase result">
+    <div class="persona" id="persona">
+      <div class="persona-art" id="r-art"></div>
+      <p class="persona-pre">你是</p>
+      <h1 class="persona-name" id="r-name"></h1>
+      <p class="persona-tag" id="r-tag"></p>
+      <p class="persona-chips"><span id="r-save"></span><span id="r-style"></span></p>
+    </div>
+
+    <div id="answer" class="card result-when" aria-live="polite">
+      <p class="muted" id="r-kicker"></p>
+      <p class="date-big num" id="r-date"></p>
+      <p class="result-span" id="r-span"></p>
+    </div>
+
+    <div class="card result-dream" id="r-dream"></div>
+
+    <div class="card">
+      <h2 class="card-title">想再快一點?</h2>
+      <ul class="levers" id="r-levers"></ul>
+    </div>
+
+    <form class="card" id="ret-form" autocomplete="off" onsubmit="return false">
+      <div class="knob-head">
+        <label class="card-title" for="r-return">報酬率拉拉看</label>
+        <div class="knob-value">
+          <input id="r-return" type="number" inputmode="decimal" step="0.1" data-knob="assumedReturn" data-pct="1" />
+          <span>%</span>
+        </div>
       </div>
-      <span class="next-arrow" aria-hidden="true">→</span>
-    </a>
+      <div class="ret" style={`--z1:${(4 / R_MAX) * 100}%;--z2:${(7 / R_MAX) * 100}%`}>
+        <div class="ret-mark" id="ret-mark" hidden><span id="ret-mark-label" class="ret-mark-label"></span></div>
+        <input class="ret-range" type="range" min="0" max={R_MAX} step="0.1" data-knob="assumedReturn" data-pct="1" aria-label="每年投資報酬率" />
+        <div class="ret-scale" aria-hidden="true">
+          {ticks.map((v) => <span style={`--f:${v / R_MAX}`}>{v}%</span>)}
+        </div>
+      </div>
+      <p class="legend">
+        {zones.map(([c, s]) => <span><span style={`color:${c}`}>■</span> {s}</span>)}
+      </p>
+      <p class="text-xs muted mt-2" id="ret-note"></p>
+    </form>
+
+    <div class="card">
+      <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <h2 class="card-title">你的一生資產</h2>
+        <p id="life-note" class="text-sm muted"></p>
+      </div>
+      <div id="chart-life" class="chart mt-4"></div>
+    </div>
+
+    <div class="result-actions">
+      <button type="button" class="btn-big" id="r-share">分享結果</button>
+      <button type="button" class="btn-ghost" id="r-edit">修改答案</button>
+    </div>
+    <p class="toast" id="r-toast" role="status"></p>
+
+    <details class="card more" id="more">
+      <summary>
+        <span class="card-title">更多分析</span>
+        <span class="text-sm muted">報酬率交叉圖、要準備多少、每年存款、影響因素、財務體檢</span>
+      </summary>
+      <div class="more-body">
+        <section>
+          <h3>報酬率越高,需要的錢越少、存到的錢越多</h3>
+          <p class="text-sm muted">兩條線交叉的地方,就是理想年齡退休最低要有的報酬率。</p>
+          <div id="chart-trade" class="chart mt-3"></div>
+        </section>
+        <section>
+          <h3>理想年齡退休,需要準備多少</h3>
+          <p class="text-sm muted">到 95 歲的生活費(以你的報酬率折回退休那年),扣掉年金,再加上還沒還完的貸款。</p>
+          <div id="chart-target" class="chart mt-3"></div>
+        </section>
+        <section>
+          <h3>每年能存下多少</h3>
+          <p class="text-sm muted">收入(含加薪)扣掉生活費、貸款與大額支出;紅色是要動用存款的年份。</p>
+          <div id="chart-cashflow" class="chart mt-3"></div>
+        </section>
+        <section>
+          <h3>什麼最影響退休年齡</h3>
+          <p class="text-sm muted">每個條件往好、往壞各調一點,看最快退休的年齡差幾歲。</p>
+          <div id="chart-drivers" class="chart mt-3"></div>
+        </section>
+        <section>
+          <h3>財務體檢</h3>
+          <ul id="checks" class="mt-3 space-y-4"></ul>
+        </section>
+      </div>
+    </details>
   </section>
 
   <MiniBar />
 
   <script>
-    import { mount } from '../scripts/simple-app.js';
+    import { mount } from '../scripts/quiz-app.js';
     mount();
   </script>
 </Base>

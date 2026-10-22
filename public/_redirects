@@ -6,3 +6,6 @@
 /glossary/ / 301
 /resources/ / 301
 /validation/* / 301
+# 2026-10 試算器合併成單一測驗,舊的完整版網址轉回首頁
+/full/ / 301
+/full / 301
