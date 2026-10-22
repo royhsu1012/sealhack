@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   DEFAULT_INPUTS as D, pmt, loanBalance, computePlan, earliestFireYear, solveRate, futureValue,
-  lifePath, fireAgeDrivers, presetInputs, PRESETS,
+  lifePath, fireAgeDrivers, presetInputs, PRESETS, simpleInputs, SIMPLE,
 } from '../src/lib/fire.js';
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: got ${a}, want ${b} ± ${tol}`);
@@ -83,6 +83,19 @@ test('退休年齡驅動因子', () => {
   assert.equal(d.base, 49);
   const exp = d.rows.find((r) => r.key === 'monthlyExpense');
   assert.deepEqual([exp.low, exp.high], [47, 52], '生活費 ±1 萬');
+});
+
+test('簡單版', () => {
+  const s = computePlan(simpleInputs({ ...D, monthlySaving: 5 }));
+  near(s.target, 2422.563, 1e-2, '只算生活費本金,不扣年金、不加貸款');
+  near(s.start, 300, 1e-9, '不扣緊急預備金');
+  near(s.flows[0].invest, 60 * 1.02, 1e-9, '第一年存款隨通膨');
+  near(s.flows.at(-1).invest, 60 * 1.02 ** 15, 1e-9, '最後一年存款');
+  near(s.rCombined, 0.0643, 5e-4, '所需報酬率');
+  near(s.trajectory.at(-1).principal, 1358.36, 1e-2, '累計存進的本金');
+  assert.equal(simpleInputs(D).salary, 12 * (D.monthlyExpense + SIMPLE.monthlySaving), '未填存款時用預設值');
+  assert.equal(computePlan(simpleInputs({ ...D, assets: 0, monthlySaving: 0 })).rCombined, null, '沒資產也不存錢:無解');
+  assert.ok(computePlan(simpleInputs({ ...D, assets: 3000 })).rCombined <= 0, '資產已足夠:不需要報酬');
 });
 
 test('預設情境', () => {

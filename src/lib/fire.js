@@ -99,6 +99,28 @@ export function presetInputs(id, baseYear) {
   return out;
 }
 
+/** 簡單版的固定假設與預設每月存款 */
+export const SIMPLE = { inflation: 0.02, swr: 0.04, monthlySaving: 5 };
+
+/**
+ * 簡單版:只用年齡、退休年齡、每月生活費、目前資產與每月存款(今日幣值,之後隨通膨成長)。
+ * 不計貸款、年金、大額支出與緊急預備金;年收入以「生活費 + 存款」表示,與生活費同步成長。
+ */
+export function simpleInputs(inp, monthlySaving = inp.monthlySaving ?? SIMPLE.monthlySaving) {
+  return {
+    ...inp,
+    inflation: SIMPLE.inflation,
+    swr: SIMPLE.swr,
+    salary: 12 * (inp.monthlyExpense + monthlySaving),
+    salaryGrowth: SIMPLE.inflation,
+    salaryCap: null,
+    emergencyMonths: 0,
+    loans: [],
+    incomes: [],
+    goals: [],
+  };
+}
+
 /** 本息平均攤還月付金 */
 export function pmt(principal, monthlyRate, months) {
   if (months <= 0 || principal <= 0) return 0;

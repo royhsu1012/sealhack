@@ -1,154 +1,57 @@
 ---
 import Base from '../layouts/Base.astro';
-import { PRESETS } from '../lib/fire.js';
+import ModeSwitch from '../components/ModeSwitch.astro';
+import Answer from '../components/Answer.astro';
+import Knobs from '../components/Knobs.astro';
+import MiniBar from '../components/MiniBar.astro';
+import { SIMPLE } from '../lib/fire.js';
 
-// 主畫面只放 6 個關鍵數字;其餘參數收在「進階設定」
+// 簡單版:5 個數字,反推要準備多少錢、報酬率至少多少
 const knobs = [
   { id: 'age', label: '目前年齡', unit: '歲', min: 20, max: 65, step: 1 },
   { id: 'fireAge', label: '想幾歲退休', unit: '歲', min: 30, max: 75, step: 1 },
-  { id: 'monthlyExpense', label: '每月生活費(不含房貸)', unit: '萬', min: 2, max: 20, step: 0.5 },
-  { id: 'salary', label: '稅後年收入', unit: '萬', min: 30, max: 600, step: 5 },
-  { id: 'assets', label: '目前可投資資產', unit: '萬', min: 0, max: 5000, step: 10 },
-  { id: 'assumedReturn', label: '預期年化報酬率', unit: '%', min: 0, max: 12, step: 0.5, pct: true },
+  { id: 'monthlyExpense', label: '退休後每月生活費', unit: '萬', min: 2, max: 20, step: 0.5 },
+  { id: 'assets', label: '目前存款與投資', unit: '萬', min: 0, max: 5000, step: 10 },
+  { id: 'monthlySaving', label: '每月能存下', unit: '萬', min: 0, max: 30, step: 0.5 },
 ];
-const assumptions = [
-  { id: 'inflation', label: '通膨率', unit: '%', step: 0.1, pct: true },
-  { id: 'swr', label: '安全提領率', unit: '%', step: 0.1, pct: true, hint: '退休後每年提領資產的比例' },
-  { id: 'salaryGrowth', label: '薪資年成長率', unit: '%', step: 0.5, pct: true },
-  { id: 'salaryCap', label: '年收入上限', unit: '萬', step: 10, hint: '留空 = 不設上限' },
-  { id: 'emergencyMonths', label: '緊急預備金', unit: '個月', step: 1, hint: '不投入市場的生活費' },
-];
-const tabs = [
-  { id: 'assume', label: '假設' },
-  { id: 'loans', label: '貸款' },
-  { id: 'incomes', label: '勞保、勞退與被動收入' },
-  { id: 'goals', label: '大額支出' },
-];
+const p = (r: number) => `${Math.round(r * 100)}%`;
 ---
-<Base title="SealHack">
-  <!-- 答案 -->
-  <section class="mx-auto max-w-6xl px-4 pt-10 sm:pt-14 grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-end">
-    <div aria-live="polite">
-      <p id="hero-kicker" class="text-lg muted"></p>
-      <h1 class="mt-1 font-extrabold leading-none num" style="font-size:clamp(4rem,12vw,8.5rem)" id="hero-age"></h1>
-      <p id="hero-line" class="mt-3 text-2xl sm:text-3xl font-bold"></p>
-      <p id="hero-sub" class="mt-4 text-base sm:text-lg max-w-xl muted"></p>
-    </div>
-    <div class="card p-5">
-      <p id="gauge-title" class="font-bold"></p>
-      <div id="gauge" class="chart mt-2"></div>
-    </div>
-  </section>
+<Base title="SealHack" description="輸入年齡、想幾歲退休、生活費與存款,反推退休要準備多少錢、投資報酬率至少要多少。">
+  <ModeSwitch />
+  <Answer />
 
-  <!-- 輸入 -->
-  <section class="mx-auto max-w-6xl px-4 mt-10">
-    <div class="flex items-center gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
-      <span class="text-sm muted mr-1 whitespace-nowrap">從情境開始</span>
-      {PRESETS.map((p) => (
-        <button type="button" class="chip shrink-0" data-preset={p.id} aria-pressed="false">
-          <b>{p.label}</b><small>{p.note}</small>
-        </button>
-      ))}
-    </div>
-
-    <form id="fire-form" class="mt-4 space-y-4" autocomplete="off" onsubmit="return false">
-      <div class="card p-5 grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
-        {knobs.map((k) => (
-          <div class="knob">
-            <div class="knob-head">
-              <label class="knob-label" for={`${k.id}-num`}>{k.label}</label>
-              <div class="knob-value">
-                <input id={`${k.id}-num`} type="number" inputmode="decimal" step={k.step} data-knob={k.id} data-pct={k.pct ? '1' : undefined} />
-                <span>{k.unit}</span>
-              </div>
-            </div>
-            <input type="range" min={k.min} max={k.max} step={k.step} data-knob={k.id} data-pct={k.pct ? '1' : undefined} aria-label={k.label} />
-          </div>
-        ))}
-      </div>
-
-      <details class="adv card" id="adv">
-        <summary class="p-5 flex items-center gap-3">
-          <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
-          <span class="font-bold whitespace-nowrap">進階設定</span>
-          <span class="text-sm muted hidden sm:inline" id="adv-summary"></span>
-        </summary>
-        <div class="px-5 pb-5">
-          <div class="tabs" role="tablist">
-            {tabs.map((t, i) => (
-              <button type="button" class="tab" role="tab" id={`tab-${t.id}`} aria-controls={`panel-${t.id}`} aria-selected={i === 0 ? 'true' : 'false'} data-tab={t.id}>{t.label}</button>
-            ))}
-          </div>
-          <div id="panel-assume" role="tabpanel" aria-labelledby="tab-assume" class="pt-4 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-            {assumptions.map((f) => (
-              <div class="field">
-                <label for={f.id}>{f.label}</label>
-                <div class="inp-unit">
-                  <input id={f.id} class="inp" type="number" inputmode="decimal" step={f.step} data-key={f.id} data-pct={f.pct ? '1' : undefined} />
-                  <span>{f.unit}</span>
-                </div>
-                {f.hint && <div class="hint">{f.hint}</div>}
-              </div>
-            ))}
-          </div>
-          <div id="panel-loans" role="tabpanel" aria-labelledby="tab-loans" class="pt-4" hidden>
-            <p class="text-sm muted">房貸、車貸、信貸都可以加。退休那年還沒還完的部分,會算進退休所需資金。</p>
-            <div id="list-loans" class="mt-3 grid gap-3 lg:grid-cols-2"></div>
-            <button type="button" class="btn mt-3" data-add="loans">新增一筆貸款</button>
-          </div>
-          <div id="panel-incomes" role="tabpanel" aria-labelledby="tab-incomes" class="pt-4" hidden>
-            <p class="text-sm muted">填勞保局、勞退試算的每月金額(今日幣值)。開始年齡留空代表退休當年就開始領,例如租金。</p>
-            <div id="list-incomes" class="mt-3 grid gap-3 lg:grid-cols-2"></div>
-            <button type="button" class="btn mt-3" data-add="incomes">新增一項收入</button>
-          </div>
-          <div id="panel-goals" role="tabpanel" aria-labelledby="tab-goals" class="pt-4" hidden>
-            <p class="text-sm muted">換車、子女教育等一次性支出,以今日幣值輸入,會依通膨調整並從當年的存款扣除。</p>
-            <div id="list-goals" class="mt-3 grid gap-3 lg:grid-cols-2"></div>
-            <button type="button" class="btn mt-3" data-add="goals">新增一筆支出</button>
-          </div>
-        </div>
-      </details>
+  <section class="mx-auto max-w-6xl px-4 mt-8">
+    <form id="fire-form" autocomplete="off" onsubmit="return false">
+      <Knobs knobs={knobs} />
     </form>
+    <p class="mt-3 text-sm muted">
+      簡單版假設:通膨 {p(SIMPLE.inflation)}、退休後每年提領資產的 {p(SIMPLE.swr)}、每月存款隨通膨增加;不計房貸、勞保勞退與大額支出。
+      <a href="/full/" class="link">要算這些請用完整版</a>
+    </p>
   </section>
 
-  <!-- 圖像化結果 -->
-  <section class="mx-auto max-w-6xl px-4 mt-8 space-y-6">
-    <div class="card p-5 sm:p-6">
-      <div class="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 class="text-xl font-bold">一生的資產曲線</h2>
-        <p id="life-note" class="text-sm muted"></p>
+  <section class="mx-auto max-w-6xl px-4 mt-6 space-y-4 sm:space-y-6">
+    <div class="card p-4 sm:p-6">
+      <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <h2 id="save-title" class="text-lg sm:text-xl font-bold">怎麼存到目標</h2>
+        <p id="save-note" class="text-sm muted"></p>
       </div>
-      <div id="chart-life" class="chart mt-4"></div>
+      <div id="chart-save" class="chart mt-4"></div>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-2">
-      <div class="card p-5 sm:p-6">
-        <h2 class="text-xl font-bold">退休需要準備多少</h2>
-        <p class="text-sm muted mt-1">退休後的生活費本金,扣掉年金能負擔的部分,再加上還沒還完的貸款。</p>
-        <div id="chart-target" class="chart mt-4"></div>
+    <a href="/full/" class="card next">
+      <div>
+        <p class="font-bold">有房貸、勞保勞退或大額支出?</p>
+        <p class="text-sm muted mt-1">完整版會把它們算進去,也會告訴你照預期報酬最早幾歲能財務自由。</p>
       </div>
-      <div class="card p-5 sm:p-6">
-        <h2 class="text-xl font-bold">每年能存下多少</h2>
-        <p class="text-sm muted mt-1">稅後收入扣掉生活費、貸款與大額支出;紅色是要從投資提領的年份。</p>
-        <div id="chart-cashflow" class="chart mt-4"></div>
-      </div>
-    </div>
-
-    <div class="grid gap-6 lg:grid-cols-2">
-      <div class="card p-5 sm:p-6">
-        <h2 class="text-xl font-bold">什麼最影響退休年齡</h2>
-        <p class="text-sm muted mt-1">每個條件往好、往壞各調一點,看最早可退休的年齡會差幾歲。</p>
-        <div id="chart-drivers" class="chart mt-4"></div>
-      </div>
-      <div class="card p-5 sm:p-6">
-        <h2 class="text-xl font-bold">財務體檢</h2>
-        <ul id="checks" class="mt-4 space-y-4"></ul>
-      </div>
-    </div>
+      <span class="next-arrow" aria-hidden="true">→</span>
+    </a>
   </section>
+
+  <MiniBar />
 
   <script>
-    import { mount } from '../scripts/fire-app.js';
+    import { mount } from '../scripts/simple-app.js';
     mount();
   </script>
 </Base>

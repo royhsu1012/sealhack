@@ -1,0 +1,20 @@
+---
+// 主滑桿:每個數字都有滑桿與可直接輸入的數字欄(data-knob 由 shared.js 讀寫)
+interface Knob { id: string; label: string; unit: string; min: number; max: number; step: number; pct?: boolean }
+interface Props { knobs: Knob[] }
+const { knobs } = Astro.props;
+---
+<div class="card p-4 sm:p-5 grid gap-x-8 gap-y-4 sm:gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+  {knobs.map((k) => (
+    <div class="knob">
+      <div class="knob-head">
+        <label class="knob-label" for={`${k.id}-num`}>{k.label}</label>
+        <div class="knob-value">
+          <input id={`${k.id}-num`} type="number" inputmode="decimal" step={k.step} data-knob={k.id} data-pct={k.pct ? '1' : undefined} />
+          <span>{k.unit}</span>
+        </div>
+      </div>
+      <input type="range" min={k.min} max={k.max} step={k.step} data-knob={k.id} data-pct={k.pct ? '1' : undefined} aria-label={k.label} />
+    </div>
+  ))}
+</div>
