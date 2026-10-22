@@ -215,6 +215,19 @@ h1, h2, h3 { letter-spacing: -0.015em; }
 .dream-a.ok span { background: var(--free); }
 .dream-a.bad span { background: var(--warn); }
 .dream-sub { margin-top: 0.35rem; color: var(--ink-2); font-size: 0.9rem; }
+/* 一生資產圖下方:樂觀 / 基本 / 悲觀各自最快何時退休(線條樣式對應圖上的線) */
+.scen { margin-top: 0.9rem; display: grid; gap: 0.5rem; }
+.scen li {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 0.6rem; row-gap: 0.1rem;
+  padding: 0.6rem 0.85rem; border-radius: 0.9rem; background: var(--surface-2);
+}
+.scen-line { width: 1.6rem; height: 0; border-top: 3px dashed; }
+.scen-optimistic .scen-line { border-color: var(--free); }
+.scen-base .scen-line { border-top-style: solid; border-color: var(--ink); }
+.scen-pessimistic .scen-line { border-color: var(--warn); }
+.scen-name, .scen-when { font-weight: 800; }
+.scen-when { text-align: right; white-space: nowrap; }
+.scen-sub { grid-column: 2 / -1; font-size: 0.75rem; color: var(--ink-2); }
 .levers { margin-top: 0.75rem; display: grid; gap: 0.5rem; }
 .levers li { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border-radius: 1rem; background: var(--surface-2); }
 .levers b { color: var(--free); font-weight: 800; white-space: nowrap; }

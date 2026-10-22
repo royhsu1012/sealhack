@@ -14,17 +14,19 @@
 一個像 MBTI 的退休測驗(2026-10-23 起取代簡單版 / 完整版,`/full/` 301 回首頁):
 開場 → 9 張題目卡(點選項就跳下一題;「細項」可不填、用預設值)→ 結果。
 結果:退休人格(存錢力 × 投資風格 → 6 種海豹)、照報酬率 r 最快幾年幾月退休、理想年齡來不來得及(撐到 95 歲要準備多少 vs 存得到多少)、
-「想再快一點」、報酬率滑桿(標出理想年齡的最低報酬率)、一生資產曲線;其餘圖表收在「更多分析」。退休前後都用同一個 r。
+「想再快一點」、報酬率滑桿(標出理想年齡的最低報酬率)、一生資產(樂觀 / 基本 / 悲觀三條線,看累積快慢與撐不撐得住);
+其餘圖表收在「更多分析」。
+退休前後都用同一個 r。
 原始公式來自《FIRE 財務規劃計畫書》(Claude Docs)。2026-10-23 起網站改用「需要準備 = 以 r 撐到 95 歲」取代 4% 提領率(使用者決定),
 計畫書尚未同步;`computePlan` 仍保留計畫書的 4% 模型與範例數字(測試用)。網站的「計算方法」頁是目前的公開版。
 
 ## 結構
 ```text
 src/lib/fire.js            計算引擎(純函式,無 DOM;唯一事實來源):needBreakdown / fundNeeded / fundAtFire /
-                           breakEvenReturn / earliestFireTime / personaOf / levers
+                           breakEvenReturn / earliestFireTime / personaOf / levers / scenarios(SCENARIOS:樂觀 / 悲觀)
 src/scripts/quiz-config.js 題目卡內容與選項預設值(貸款、大額支出、年金)
 src/scripts/quiz-app.js    測驗互動層:開場 / 題目卡 / 結果三階段(<html data-phase>)
-src/scripts/charts.js      結果頁 SVG 圖表(一生資產、交叉圖、瀑布圖、每年存款、影響因素)
+src/scripts/charts.js      結果頁 SVG 圖表(一生資產樂觀到悲觀、交叉圖、瀑布圖、每年存款、影響因素)
 src/scripts/seal.js        海豹吉祥物 SVG 與 6 種退休人格
 src/scripts/shared.js      localStorage 狀態、格式化、滑桿、圖表小工具、底部結果列
 src/pages/index.astro      測驗頁(開場 → 題目卡 → 結果)
@@ -54,6 +56,7 @@ Workers Builds 的 build 指令若仍是舊的(含 pagefind / copy-validation),�
 - 320 / 375 / 768 / 1280px 無橫向捲動;淺 / 深色都可讀(淺色預設)。
 - 「先看範例結果」(單身有房:35 歲、50 歲退休、月花 6 萬、月收 15 萬、加薪 3%、資產 300 萬、房貸 + 車貸、報酬 6%)顯示:
   悠哉海豹、最快 13 年 1 個月後(約 48 歲)、50 歲來得及且多出 557 萬(需要 1,716 萬・存得到 2,273 萬)、最低報酬率 4.6%。
+  一生資產:樂觀最快 2037 年 3 月(早 2 年 8 個月)、悲觀最快晚 6 年;50 歲退休時樂觀、基本撐過 95 歲,悲觀 68 歲用完。
   (「幾年幾月」從今天起算,日期會隨時間變。)
 - 一路按「下一題」不改答案(沒有貸款、沒有大筆支出)→ 勤勞海豹。
 

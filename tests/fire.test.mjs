@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
   DEFAULT_INPUTS as D, pmt, loanBalance, computePlan, earliestFireYear, solveRate, futureValue,
   lifePath, fireAgeDrivers, presetInputs, PRESETS,
-  fundNeeded, fundAtFire, breakEvenReturn, needBreakdown, earliestFireTime, personaOf, levers,
+  fundNeeded, fundAtFire, breakEvenReturn, needBreakdown, earliestFireTime, personaOf, levers, scenarios,
 } from '../src/lib/fire.js';
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: got ${a}, want ${b} ± ${tol}`);
@@ -162,6 +162,22 @@ test('退休人格與想再快一點', () => {
   near(g.spendLess, 1.08, 0.01, '每月少花 5 千');
   near(g.returnUp, 1.11, 0.01, '報酬率多 1%');
   assert.ok(Object.values(g).every((v) => v > 0), '都會提早');
+});
+
+test('樂觀到悲觀情境', () => {
+  const s = Object.fromEntries(scenarios(D, 0.06).map((x) => [x.key, x]));
+  near(s.optimistic.r, 0.08, 1e-9, '樂觀:報酬 +2%');
+  near(s.optimistic.inflation, 0.015, 1e-9, '樂觀:通膨 −0.5%');
+  near(s.pessimistic.r, 0.04, 1e-9, '悲觀:報酬 −2%');
+  near(s.pessimistic.inflation, 0.03, 1e-9, '悲觀:通膨 +1%');
+  near(s.optimistic.delay, -2.69, 0.01, '樂觀提早約 2 年 8 個月');
+  near(s.pessimistic.delay, 5.98, 0.01, '悲觀晚約 6 年');
+  assert.equal(s.optimistic.ok, true, '樂觀:50 歲夠');
+  assert.equal(s.pessimistic.ok, false, '悲觀:50 歲不夠');
+  assert.equal(lifePath(s.pessimistic.inp, s.pessimistic.r).depletionAge, 68, '悲觀:50 歲退休的話 68 歲用完');
+  assert.equal(lifePath(s.optimistic.inp, s.optimistic.r).depletionAge, null, '樂觀:撐得到 95 歲');
+  assert.ok(lifePath(s.optimistic.inp, s.optimistic.r).rows[15].balance > lifePath(D, 0.06).rows[15].balance, '樂觀累積得比較快');
+  assert.equal(scenarios({ ...D, inflation: 0.002 }, 0.01).find((x) => x.key === 'pessimistic').r, 0, '報酬率最低為 0');
 });
 
 test('預設情境', () => {

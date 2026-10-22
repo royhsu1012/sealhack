@@ -426,6 +426,33 @@ export function levers(inp, r = inp.assumedReturn, endAge = 95) {
   };
 }
 
+/** 樂觀 / 悲觀情境:報酬率、通膨各加減幾個百分點(基本 = 使用者選的報酬率與通膨) */
+export const SCENARIOS = [
+  { key: 'optimistic', dr: 0.02, di: -0.005 },
+  { key: 'pessimistic', dr: -0.02, di: 0.01 },
+];
+
+/**
+ * 樂觀到悲觀:回傳每個情境套用後的輸入與報酬率(最低為 0)、最快多久能退休、比基本情況早或晚多少(delay > 0 = 晚),
+ * 以及理想退休年齡(fireYear)夠不夠。頁面用 inp / r 畫出各情境的一生資產路徑。
+ */
+export function scenarios(inp, r = inp.assumedReturn, endAge = 95) {
+  const base = earliestFireTime(inp, r, 45, endAge);
+  const n = inp.fireYear - inp.baseYear;
+  return SCENARIOS.map((s) => {
+    const x = { ...inp, inflation: Math.max(0, inp.inflation + s.di) };
+    const rr = Math.max(0, r + s.dr);
+    const t = earliestFireTime(x, rr, 45, endAge);
+    const need = n >= 1 ? fundNeeded(x, rr, endAge) : null;
+    const have = n >= 1 ? fundAtFire(x, rr) : null;
+    return {
+      key: s.key, inp: x, r: rr, inflation: x.inflation, t,
+      delay: base != null && t != null ? t - base : null,
+      need, have, ok: need == null ? null : have >= need,
+    };
+  });
+}
+
 /** 敏感度:變動單一參數,回傳各值下的目標資金與所需報酬率 */
 export function sensitivity(inp, key, values) {
   return values.map((v) => {

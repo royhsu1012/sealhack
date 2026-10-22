@@ -1,13 +1,13 @@
 // 退休測驗:開場 → 一題一張卡 → 退休人格與結果。所有計算交給 src/lib/fire.js。
 import {
   computePlan, lifePath, fireAgeDrivers, needBreakdown, fundNeeded, fundAtFire,
-  breakEvenReturn, earliestFireTime, personaOf, levers, pmt,
+  breakEvenReturn, earliestFireTime, personaOf, levers, scenarios, pmt,
 } from '../lib/fire.js';
 import {
   BASE_YEAR, END_AGE, R_MAX, freshState, loadState, saveState, nf, wan, big, pct, esc, num, round, $,
   spanText, whenParts, knobGet, knobSet, writeKnobs, widthOf, onResize, setMiniBar, watchMiniBar,
 } from './shared.js';
-import { lifeChart, targetChart, cashflowChart, driversChart, tradeoffChart } from './charts.js';
+import { scenarioChart, targetChart, cashflowChart, driversChart, tradeoffChart } from './charts.js';
 import { QUESTIONS, LOAN_DEFAULTS, GOAL_DEFAULTS, PENSION_DEFAULTS } from './quiz-config.js';
 import { seal, PERSONAS } from './seal.js';
 
@@ -194,6 +194,9 @@ let last = null;
 const STYLE = { safe: '保守', steady: '穩健', bold: '積極' };
 const LEVER = { saveMore: '每月多存 1 萬', spendLess: '每月少花 5 千', returnUp: '報酬率多 1%' };
 
+const pctS = (r) => pct(r).replace('.0%', '%');
+const SCEN = { optimistic: '樂觀', base: '基本', pessimistic: '悲觀' };
+
 function placeMark(be) {
   const mark = $('ret-mark');
   if (be == null) { mark.hidden = true; return; }
@@ -208,13 +211,35 @@ function check(level, title, body) {
   return `<li class="flex gap-3"><span class="dot dot-${level}" aria-hidden="true"></span><div><p class="font-semibold">${title}</p><p class="text-sm muted mt-0.5">${body}</p></div></li>`;
 }
 
+// 一生資產:樂觀 / 基本 / 悲觀三條路徑 + 各自最快何時能退休
 function drawLife() {
   if (!last) return;
-  const { inp, r, n, fireAge } = last;
-  if (n < 1) { $('chart-life').innerHTML = '<p class="text-sm muted">理想退休年齡要大於現在的年齡。</p>'; return; }
-  const plan = computePlan(inp);
-  $('chart-life').innerHTML = lifeChart(lifePath(inp, r, END_AGE), fundNeeded(inp, r, END_AGE), plan, inp, widthOf('chart-life'));
-  $('life-note').textContent = `以每年 ${pct(r)} 報酬、${fireAge} 歲退休推算`;
+  const { inp, r, n, fireAge, t } = last;
+  if (n < 1) {
+    $('chart-life').innerHTML = '<p class="text-sm muted">理想退休年齡要大於現在的年齡。</p>';
+    $('r-scen').innerHTML = '';
+    return;
+  }
+  const sc = Object.fromEntries(scenarios(inp, r, END_AGE).map((x) => [x.key, x]));
+  const rows = [
+    { key: 'optimistic', inp: sc.optimistic.inp, r: sc.optimistic.r, t: sc.optimistic.t },
+    { key: 'base', inp, r, t },
+    { key: 'pessimistic', inp: sc.pessimistic.inp, r: sc.pessimistic.r, t: sc.pessimistic.t },
+  ];
+  const paths = rows.map((x) => ({ key: x.key, label: SCEN[x.key], life: lifePath(x.inp, x.r, END_AGE) }));
+  $('chart-life').innerHTML = scenarioChart(paths, fundNeeded(inp, r, END_AGE), computePlan(inp).loans.balanceAtFire, widthOf('chart-life'));
+  $('life-note').textContent = `都在 ${fireAge} 歲退休;中間是你選的報酬率,上下是樂觀與悲觀。`;
+  $('r-scen').innerHTML = rows.map((x) => {
+    const w = x.t == null ? null : whenParts(x.t, x.inp.age);
+    const when = x.t == null ? '45 年內存不夠' : w.now ? '現在就能退休' : `最快 ${w.year} 年 ${w.month} 月`;
+    const depl = paths.find((p) => p.key === x.key).life.depletionAge;
+    return `<li class="scen-${x.key}">
+      <span class="scen-line" aria-hidden="true"></span>
+      <b class="scen-name">${SCEN[x.key]}</b>
+      <b class="scen-when num">${when}</b>
+      <small class="scen-sub">報酬 ${pctS(x.r)}・通膨 ${pctS(x.inp.inflation)}・${fireAge} 歲退休${depl ? `${depl} 歲用完` : `撐過 ${END_AGE} 歲`}</small>
+    </li>`;
+  }).join('');
 }
 
 function drawMore() {
