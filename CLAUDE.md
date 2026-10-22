@@ -20,11 +20,11 @@
 ```text
 src/lib/fire.js          計算引擎(純函式,無 DOM;唯一事實來源)
 src/scripts/fire-app.js  互動層:讀表單 → 呼叫引擎 → 渲染結果與 SVG 圖表;輸入存 localStorage
-src/pages/index.astro    試算器(左輸入、右結果)
+src/pages/index.astro    試算器:答案(最早退休年齡 + 報酬率量表)→ 情境 + 6 個滑桿 → 進階設定(收合)→ 圖表
 src/pages/method.astro   計算方法:公式、假設與限制
 src/layouts/Base.astro   shell + Nav + Footer
 src/components/          Nav / Footer
-src/styles/global.css    Tailwind v4 + 設計 tokens(深色預設)
+src/styles/global.css    Tailwind v4 + 設計 tokens(淺色預設,可切深色)
 tests/fire.test.mjs      引擎測試,數字對齊計畫書範例情境
 public/_redirects        舊站網址 301 → 首頁
 ```
@@ -35,7 +35,7 @@ public/_redirects        舊站網址 301 → 首頁
 - **計算只寫在 `src/lib/fire.js`**:頁面不得另寫公式。改公式 = 同步改 `tests/fire.test.mjs`、`method.astro` 與計畫書。
 - 金額單位一律新台幣萬元;比率在引擎內為小數、介面以 % 顯示。
 - 結果文案不得出現投資建議或保證語氣;頁尾保留「不構成投資建議」聲明。
-- Astro + Tailwind v4,zh-TW,深色預設;tokens 只在 global.css 定義(見 DESIGN.md)。
+- Astro + Tailwind v4,zh-TW,淺色預設;tokens 只在 global.css 定義(見 DESIGN.md)。
 
 ## 部署
 Cloudflare Workers 靜態資產(Worker 名 `sealhack`):push `astro-site` → Workers Builds 自動建置上線。
@@ -44,5 +44,9 @@ Workers Builds 的 build 指令若仍是舊的(含 pagefind / copy-validation),�
 
 ## 驗收
 - `npm run build` 零錯誤零警告;`npm test` 全過。
-- 375px 無橫向捲動;深 / 淺色都可讀。
-- 範例情境顯示:目標資金 1,937 萬、併用所需報酬率 4.0%、以 6% 報酬最早 2040 年 FIRE。
+- 375px 無橫向捲動;淺 / 深色都可讀(淺色預設)。
+- 預設情境「單身有房」顯示:最早 49 歲(2040)財務自由、50 歲退休需 1,937 萬、需要 4.0%、資金撐到 95 歲。
+
+## 介面原則(2026-10 第二版)
+- 打開就有答案:預設情境直接出結果;主畫面只調 6 個數字,其餘收在「進階設定」。
+- 結果以圖為主:報酬率量表、一生資產曲線、退休所需瀑布圖、每年存款柱狀圖、影響退休年齡龍捲風圖、財務體檢;不放大型表格。

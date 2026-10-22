@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   DEFAULT_INPUTS as D, pmt, loanBalance, computePlan, earliestFireYear, solveRate, futureValue,
+  lifePath, fireAgeDrivers, presetInputs, PRESETS,
 } from '../src/lib/fire.js';
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: got ${a}, want ${b} ± ${tol}`);
@@ -64,4 +65,35 @@ test('邊界情況', () => {
   const zeroYear = computePlan({ ...D, fireYear: D.baseYear });
   assert.equal(zeroYear.rCombined, null);
   assert.equal(computePlan({ ...D, assets: 30 }).rLump, null, '資產不足緊急預備金時一次累積無解');
+});
+
+test('一生資產路徑', () => {
+  const p = computePlan(D);
+  // 以所需報酬率累積,FIRE 時還清貸款後剩下的正好是生活費本金扣年金
+  const atReq = lifePath(D, p.rCombined);
+  near(atReq.balanceAtFire, p.target - p.loans.balanceAtFire, 0.5, 'FIRE 時資產(還清貸款後)');
+  assert.equal(lifePath(D, 0.06).depletionAge, null, '預期 6% 到 95 歲都不會用完');
+  assert.equal(lifePath(D, 0.04).depletionAge, 84, '名目 4% 時 84 歲用完');
+  assert.equal(lifePath(D, 0.0).depletionAge != null, true, '零報酬會用完');
+  assert.equal(lifePath(D).rows.at(-1).age, 95);
+});
+
+test('退休年齡驅動因子', () => {
+  const d = fireAgeDrivers(D);
+  assert.equal(d.base, 49);
+  const exp = d.rows.find((r) => r.key === 'monthlyExpense');
+  assert.deepEqual([exp.low, exp.high], [47, 52], '生活費 ±1 萬');
+});
+
+test('預設情境', () => {
+  assert.deepEqual(presetInputs('example', 2026), { ...D, goals: D.goals }, '範例情境等於 DEFAULT_INPUTS');
+  const shifted = presetInputs('example', 2028);
+  assert.equal(shifted.fireYear, 2043);
+  assert.equal(shifted.goals[0].year, 2031);
+  for (const p of PRESETS) {
+    const inp = presetInputs(p.id, 2026);
+    assert.ok(computePlan(inp).target > 0, `${p.id} 目標資金為正`);
+  }
+  const fam = presetInputs('family', 2026);
+  assert.equal(fam.goals[0].year, 2034);
 });

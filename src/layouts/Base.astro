@@ -27,11 +27,11 @@ const fullTitle = title === 'SealHack' ? 'SealHack — FIRE 財務規劃試算' 
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet" />
     <script is:inline>
-      // 主題:預設深色,尊重使用者選擇
-      let t = null; try { t = localStorage.getItem('sh-theme'); } catch (e) {}
-      if (t === 'light') document.documentElement.classList.add('light');
+      // 主題:預設淺色;使用者選過深色則記住
+      let t = null; try { t = localStorage.getItem('fire-theme'); } catch (e) {}
+      if (t === 'dark') document.documentElement.classList.add('dark');
     </script>
   </head>
   <body class="min-h-screen flex flex-col">

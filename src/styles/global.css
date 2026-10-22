@@ -1,177 +1,149 @@
 @import "tailwindcss";
 
-/* ---- SealHack FIRE 設計 tokens(沿用原 SealHack 設計系統) ---- */
+/* ---- SealHack FIRE 設計 tokens(2026-10 改版:淺色預設,海軍藍墨色 + 自由綠 + 退休金) ----
+   語意:--work = 工作期(灰藍)、--free = 自由期(綠,也是唯一強調色)、--gold = 退休時間點、--warn = 警示 */
 @theme {
-  --color-brand: #e8481f;
-  --color-brand-dark: #c93a15;
-  --font-sans: "Inter", ui-sans-serif, system-ui, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --font-sans: "Manrope", "Noto Sans TC", ui-sans-serif, system-ui, "PingFang TC", "Microsoft JhengHei", sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
 }
 
-/* 深色為預設(產品感);淺色用 .light 切換 */
 :root {
-  --bg: #0b0c0e;
-  --bg-soft: #14161a;
-  --bg-card: #16181d;
-  --border: #262a31;
-  --fg: #e8eaed;
-  --fg-muted: #9aa3ad;
-  --brand: #ff5a2c;
-  --aside-note: #3b82f6;
-  --aside-tip: #22c55e;
-  --aside-caution: #f59e0b;
-  /* 狀態標籤色(v3,Kaggle/LeetCode 風格,2026-09):語意色不再限 Aside——
-     pass/pending 沿用既有 tip/caution token(不重複定義),fail 是唯一新增色 */
-  --status-fail: #ef4444;
-  /* 圖表(2026-10 新增):資料先用灰,品牌橘只標重點;負值用 fail 色 */
-  --chart-muted: #4b5260;
-  --chart-grid: #1f232a;
-  --chart-axis: #3a404a;
-  --chart-ref: #7a838e;
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --line: #dfe4eb;
+  --ink: #14233a;
+  --ink-2: #5b677b;
+  --work: #9aa6b9;
+  --free: #1d8a6c;
+  --gold: #c99212;
+  --warn: #c4573a;
+  --grid: #e9edf2;
+  --brand: var(--free);
+  color-scheme: light;
 }
-:root.light {
-  --bg: #ffffff;
-  --bg-soft: #f6f7f9;
-  --bg-card: #ffffff;
-  --border: #e5e7eb;
-  --fg: #16181d;
-  --fg-muted: #5b6470;
-  --brand: #e8481f;
-  --aside-note: #2563eb;
-  --aside-tip: #16a34a;
-  --aside-caution: #d97706;
-  --status-fail: #dc2626;
-  --chart-muted: #b8bec7;
-  --chart-grid: #eef0f3;
-  --chart-axis: #c9ced6;
-  --chart-ref: #6b7480;
+:root.dark {
+  --bg: #0e1624;
+  --surface: #152034;
+  --surface-2: #1b2840;
+  --line: #26354e;
+  --ink: #e7edf6;
+  --ink-2: #9aa9bf;
+  --work: #5f6e88;
+  --free: #3cc59b;
+  --gold: #f0c04a;
+  --warn: #ec7c5d;
+  --grid: #1f2c43;
+  color-scheme: dark;
 }
 
 html { scroll-behavior: smooth; }
 body {
   background: var(--bg);
-  color: var(--fg);
+  color: var(--ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
+h1, h2, h3 { letter-spacing: -0.015em; }
+.num { font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 2px solid var(--free); outline-offset: 2px; border-radius: 4px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 
-/* 排版節奏 v3(Kaggle/LeetCode 風格,2026-09):標題收緊字距更有「產品感」;
-   數字一律等寬對齊(tabular-nums)——資料表格與統計卡是這次改版的視覺主角 */
-h1, h2, h3 { letter-spacing: -0.01em; }
-.tabular-nums, .sh-table td, .sh-table th { font-variant-numeric: tabular-nums; }
+/* 區塊 */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 1.1rem; }
+.muted { color: var(--ink-2); }
 
-/* prose(文件內文)基本排版 */
-.prose { color: var(--fg); line-height: 1.75; }
-.prose h2 { font-size: 1.6rem; font-weight: 700; margin: 2.2rem 0 0.9rem; scroll-margin-top: 5rem; }
-.prose h3 { font-size: 1.25rem; font-weight: 650; margin: 1.6rem 0 0.6rem; scroll-margin-top: 5rem; }
-.prose h4 { font-size: 1.05rem; font-weight: 650; margin: 1.2rem 0 0.5rem; }
-.prose p, .prose ul, .prose ol, .prose blockquote { margin: 0.85rem 0; }
-.prose ul { list-style: disc; padding-left: 1.4rem; }
-.prose ol { list-style: decimal; padding-left: 1.4rem; }
-.prose li { margin: 0.3rem 0; }
-.prose a { color: var(--brand); text-decoration: underline; text-underline-offset: 2px; }
-.prose a:hover { opacity: 0.8; }
-.prose strong { color: var(--fg); font-weight: 700; }
-.prose code:not(pre code) {
-  background: var(--bg-soft); border: 1px solid var(--border);
-  padding: 0.1rem 0.35rem; border-radius: 0.3rem; font-size: 0.85em; font-family: var(--font-mono);
+/* 主滑桿 */
+.knob { display: flex; flex-direction: column; gap: 0.35rem; }
+.knob-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.knob-label { font-size: 0.85rem; color: var(--ink-2); font-weight: 600; }
+.knob-value { display: flex; align-items: baseline; gap: 0.25rem; }
+.knob-value input {
+  width: 4.6rem; text-align: right; background: transparent; border: none; border-bottom: 1px dashed var(--line);
+  color: var(--ink); font: 700 1.35rem/1.2 var(--font-sans); font-variant-numeric: tabular-nums; padding: 0;
 }
-.prose pre {
-  background: #0d1017 !important; border: 1px solid var(--border);
-  border-radius: 0.6rem; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-size: 0.85rem;
+.knob-value input:focus { outline: none; border-bottom-color: var(--free); }
+.knob-value span { font-size: 0.8rem; color: var(--ink-2); }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 1.6rem; background: transparent; cursor: pointer; }
+input[type=range]::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 4px;
+  background: linear-gradient(to right, var(--ink) 0, var(--ink) var(--fill, 50%), var(--line) var(--fill, 50%));
 }
-.prose blockquote {
-  border-left: 3px solid var(--brand); padding: 0.3rem 0 0.3rem 1rem;
-  color: var(--fg-muted); background: var(--bg-soft); border-radius: 0 0.4rem 0.4rem 0;
+input[type=range]::-moz-range-track { height: 4px; border-radius: 4px; background: var(--line); }
+input[type=range]::-moz-range-progress { height: 4px; border-radius: 4px; background: var(--ink); }
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px; margin-top: -7px; border-radius: 50%;
+  background: var(--surface); border: 2px solid var(--ink); box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 25%, transparent);
 }
-.prose table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; display: block; overflow-x: auto; }
-.prose th, .prose td { border: 1px solid var(--border); padding: 0.5rem 0.7rem; text-align: left; }
-.prose th { background: var(--bg-soft); font-weight: 650; }
-.prose hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--surface); border: 2px solid var(--ink); }
 
-/* 卡片 hover 微光 */
-.lift { transition: transform .15s ease, border-color .15s ease, background .15s ease; }
-.lift:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--brand) 55%, var(--border)) !important; }
-
-/* 狀態標籤 chip(v3:LeetCode 難度標籤風格)——pass=綠/pending=橘/fail=紅/brand=品牌橘/neutral=灰 */
-.tag {
-  display: inline-flex; align-items: center; gap: 0.3rem;
-  padding: 0.15rem 0.55rem; border-radius: 999px;
-  font-size: 0.72rem; font-weight: 700; line-height: 1.5; white-space: nowrap; letter-spacing: 0.01em;
+/* 情境按鈕 */
+.chip {
+  display: inline-flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; text-align: left;
+  padding: 0.55rem 0.85rem; border-radius: 0.8rem; border: 1px solid var(--line); background: var(--surface);
+  cursor: pointer; transition: border-color .15s ease, background .15s ease;
 }
-.tag-pass    { color: var(--aside-tip);    background: color-mix(in srgb, var(--aside-tip) 16%, transparent); }
-.tag-pending { color: var(--aside-caution);background: color-mix(in srgb, var(--aside-caution) 16%, transparent); }
-.tag-fail    { color: var(--status-fail);  background: color-mix(in srgb, var(--status-fail) 16%, transparent); }
-.tag-brand   { color: var(--brand);        background: color-mix(in srgb, var(--brand) 14%, transparent); }
-.tag-neutral { color: var(--fg-muted);     background: var(--bg-soft); }
+.chip:hover { border-color: var(--ink-2); }
+.chip[aria-pressed="true"] { border-color: var(--ink); background: var(--surface-2); }
+.chip b { font-size: 0.9rem; }
+.chip small { font-size: 0.72rem; color: var(--ink-2); }
 
-/* 卡片 eyebrow(v3:Kaggle 競賽卡片風格)——圖示徽章 + 大寫小標 */
-.card-eyebrow {
-  display: inline-flex; align-items: center; gap: 0.4rem;
-  font-size: 0.68rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
-  color: var(--fg-muted);
+/* 進階設定 */
+details.adv > summary { list-style: none; cursor: pointer; }
+details.adv > summary::-webkit-details-marker { display: none; }
+details.adv > summary .chev { transition: transform .2s ease; }
+details.adv[open] > summary .chev { transform: rotate(90deg); }
+.tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.tab {
+  padding: 0.55rem 0.9rem; font-size: 0.88rem; font-weight: 600; color: var(--ink-2); white-space: nowrap;
+  border: none; background: none; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer;
 }
-.card-icon {
-  display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; flex-shrink: 0;
-  border-radius: 0.5rem; font-size: 0.85rem;
-  background: color-mix(in srgb, var(--brand) 14%, transparent); color: var(--brand);
-}
-
-/* 資料表格(v3:LeetCode 密集列風格)——ClaimsTable/CasesTable/ValidationList 共用外殼,
-   取代原本三個元件各自重複定義的 .sh-table */
-.sh-table { overflow-x: auto; border: 1px solid var(--border); border-radius: 0.75rem; }
-.sh-table table { width: 100%; min-width: 520px; font-size: 0.88rem; border-collapse: collapse; }
-.sh-table table + table { margin-top: 1.25rem; border-top: 1px solid var(--border); padding-top: 1.25rem; }
-.sh-table caption { text-align: left; font-weight: 700; padding: 0.85rem 1rem 0.35rem; }
-.sh-table th {
-  background: var(--bg-soft); text-align: left; padding: 0.6rem 0.85rem;
-  font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
-  color: var(--fg-muted); border-bottom: 1px solid var(--border);
-}
-.sh-table td { padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--border); vertical-align: top; }
-.sh-table tbody tr:last-child td { border-bottom: none; }
-.sh-table tbody tr { transition: background 0.12s ease; }
-.sh-table tbody tr:hover { background: var(--bg-soft); }
-.sh-c { text-align: center; white-space: nowrap; }
-.sh-table td:nth-child(2) { white-space: nowrap; }
-
-/* 錨點不被 sticky nav 蓋住 */
-.prose h2, .prose h3, .prose h4 { scroll-margin-top: 5rem; }
-
-/* ---- 試算器表單(2026-10)---- */
-.field { display: flex; flex-direction: column; gap: 0.3rem; }
-.field label, .field .label { font-size: 0.78rem; font-weight: 600; color: var(--fg-muted); }
-.field .hint { font-size: 0.72rem; color: var(--fg-muted); opacity: 0.85; }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+.field { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
+.field label, .field .label { font-size: 0.78rem; font-weight: 600; color: var(--ink-2); }
+.field .hint { font-size: 0.72rem; color: var(--ink-2); }
 .inp {
-  width: 100%; min-width: 0;
-  background: var(--bg-soft); color: var(--fg);
-  border: 1px solid var(--border); border-radius: 0.5rem;
-  padding: 0.45rem 0.6rem; font-size: 0.9rem; font-variant-numeric: tabular-nums;
-  transition: border-color 0.12s ease;
+  width: 100%; min-width: 0; background: var(--surface-2); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 0.55rem; padding: 0.45rem 0.6rem; font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
 }
-.inp:focus { outline: none; border-color: color-mix(in srgb, var(--brand) 70%, var(--border)); }
-.inp-unit { position: relative; }
-.inp-unit .inp { padding-right: 3.2rem; }
-.inp-unit.compact .inp { padding-right: 2.6rem; padding-left: 0.5rem; }
-.inp-unit.compact span { right: 0.45rem; font-size: 0.7rem; }
-.inp-unit span {
-  position: absolute; right: 0.6rem; top: 50%; transform: translateY(-50%);
-  font-size: 0.75rem; color: var(--fg-muted); pointer-events: none;
-}
-.panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 0.9rem; }
-.btn-ghost {
-  font-size: 0.8rem; font-weight: 600; padding: 0.35rem 0.7rem; border-radius: 0.45rem;
-  border: 1px solid var(--border); color: var(--fg-muted); background: transparent; cursor: pointer;
-}
-.btn-ghost:hover { color: var(--fg); border-color: color-mix(in srgb, var(--brand) 55%, var(--border)); }
-.btn-x {
-  width: 1.9rem; height: 1.9rem; flex-shrink: 0; display: grid; place-items: center;
-  border-radius: 0.4rem; border: 1px solid var(--border); color: var(--fg-muted); background: transparent; cursor: pointer;
-}
-.btn-x:hover { color: var(--status-fail); border-color: var(--status-fail); }
-.stat-value { font-size: 1.9rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
-.chart svg { width: 100%; height: auto; display: block; }
-.chart text { font-family: var(--font-sans); }
-/* 數字欄位不顯示上下箭頭(手機窄欄會吃掉數字寬度) */
+.inp:focus { outline: none; border-color: var(--free); }
 .inp[type=number] { -moz-appearance: textfield; appearance: textfield; }
 .inp[type=number]::-webkit-inner-spin-button, .inp[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.inp-unit { position: relative; }
+.inp-unit .inp { padding-right: 2.9rem; }
+.inp-unit span { position: absolute; right: 0.55rem; top: 50%; transform: translateY(-50%); font-size: 0.72rem; color: var(--ink-2); pointer-events: none; }
+.btn {
+  font-size: 0.82rem; font-weight: 600; padding: 0.4rem 0.75rem; border-radius: 0.55rem;
+  border: 1px solid var(--line); color: var(--ink); background: var(--surface); cursor: pointer;
+}
+.btn:hover { border-color: var(--ink-2); }
+.btn-x {
+  width: 2.1rem; height: 2.1rem; flex-shrink: 0; display: grid; place-items: center; border-radius: 0.5rem;
+  border: 1px solid var(--line); color: var(--ink-2); background: transparent; cursor: pointer;
+}
+.btn-x:hover { color: var(--warn); border-color: var(--warn); }
+
+/* 狀態點 */
+.dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; flex-shrink: 0; margin-top: 0.4rem; }
+.dot-ok { background: var(--free); }
+.dot-warn { background: var(--gold); }
+.dot-bad { background: var(--warn); }
+
+/* 圖表 */
+.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.chart text { font-family: var(--font-sans); }
+
+/* 方法頁 */
+.prose { color: var(--ink); line-height: 1.8; }
+.prose h2 { font-size: 1.4rem; font-weight: 700; margin: 2.2rem 0 0.8rem; scroll-margin-top: 5rem; }
+.prose p, .prose ul, .prose ol { margin: 0.85rem 0; }
+.prose ul { list-style: disc; padding-left: 1.4rem; }
+.prose li { margin: 0.35rem 0; }
+.prose strong { font-weight: 700; }
+.prose a { color: var(--free); text-decoration: underline; text-underline-offset: 2px; }
+.prose pre {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 0.8rem;
+  padding: 1rem; overflow-x: auto; margin: 1rem 0; font-size: 0.85rem; line-height: 1.7;
+}
+.prose code { font-family: var(--font-mono); }

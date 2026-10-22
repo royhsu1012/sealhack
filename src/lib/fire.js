@@ -53,6 +53,52 @@ export const DEFAULT_INPUTS = {
   ],
 };
 
+/** 預設情境:一鍵切換(年份以基準年為 0 的相對值表示,載入時換算成實際年份) */
+export const PRESETS = [
+  { id: 'example', label: '單身有房', note: '35 歲、年收 180 萬、房貸 800 萬', inputs: {} },
+  {
+    id: 'renter', label: '小資租屋', note: '28 歲、年收 75 萬、無貸款',
+    inputs: {
+      fireYearOffset: 15, age: 28, monthlyExpense: 3.5, salary: 75, salaryGrowth: 0.03, assets: 80,
+      loans: [],
+      incomes: [
+        { name: '勞退月退休金', monthly: 0.6, startAge: 60 },
+        { name: '勞保老年年金', monthly: 1.5, startAge: 65 },
+      ],
+      goals: [],
+    },
+  },
+  {
+    id: 'family', label: '雙薪家庭', note: '38 歲、家庭年收 280 萬、房貸 1,200 萬、子女教育',
+    inputs: {
+      fireYearOffset: 10, age: 38, monthlyExpense: 9, salary: 280, salaryGrowth: 0.025, assets: 600,
+      loans: [{ name: '房貸', principal: 1200, years: 25, rate: 0.022 }],
+      incomes: [
+        { name: '勞退月退休金(兩人)', monthly: 2, startAge: 60 },
+        { name: '勞保老年年金(兩人)', monthly: 3.5, startAge: 65 },
+      ],
+      goals: [{ yearOffset: 8, name: '子女教育', amount: 200 }],
+    },
+  },
+];
+
+/** 以基準年套用預設情境 */
+export function presetInputs(id, baseYear) {
+  const preset = PRESETS.find((p) => p.id === id) ?? PRESETS[0];
+  const shift = baseYear - DEFAULT_INPUTS.baseYear;
+  const base = structuredClone({
+    ...DEFAULT_INPUTS,
+    baseYear,
+    fireYear: DEFAULT_INPUTS.fireYear + shift,
+    goals: DEFAULT_INPUTS.goals.map((g) => ({ ...g, year: g.year + shift })),
+  });
+  const { fireYearOffset, goals, ...rest } = structuredClone(preset.inputs);
+  const out = { ...base, ...rest };
+  if (fireYearOffset != null) out.fireYear = baseYear + fireYearOffset;
+  if (goals) out.goals = goals.map((g) => ({ year: baseYear + g.yearOffset, name: g.name, amount: g.amount }));
+  return out;
+}
+
 /** 本息平均攤還月付金 */
 export function pmt(principal, monthlyRate, months) {
   if (months <= 0 || principal <= 0) return 0;
@@ -221,6 +267,61 @@ export function earliestFireYear(inp, assumedReturn = inp.assumedReturn, maxYear
     if (r != null && r <= assumedReturn) return y;
   }
   return null;
+}
+
+/**
+ * 一生資產路徑(以報酬率 r 推算,預設為預期報酬率):
+ * 工作期:每年 bal = bal × (1+r) + A_t;FIRE 當年年底一次還清貸款餘額。
+ * 自由期:每年 bal = bal × (1+r) − (生活費_t − 已開始領取的年金_t),直到 endAge。
+ * 回傳逐年資料與錢用完的年齡(未用完為 null)。
+ */
+export function lifePath(inp, r = inp.assumedReturn, endAge = 95) {
+  const n = inp.fireYear - inp.baseYear;
+  const fireAge = inp.age + n;
+  const flows = n > 0 ? annualCashflow(inp) : [];
+  const loans = loanSchedule(inp.loans, Math.max(n, 0), inp.baseYear);
+  let bal = inp.assets - inp.emergencyMonths * inp.monthlyExpense;
+  const rows = [{ age: inp.age, year: inp.baseYear, balance: bal, phase: 'work' }];
+  let depletionAge = null;
+  for (let t = 1; inp.age + t <= endAge; t++) {
+    const age = inp.age + t;
+    if (t <= n) {
+      bal = bal * (1 + r) + flows[t - 1].invest;
+      if (t === n) bal -= loans.balanceAtFire;
+      rows.push({ age, year: inp.baseYear + t, balance: bal, phase: 'work' });
+    } else {
+      const expense = 12 * inp.monthlyExpense * (1 + inp.inflation) ** t;
+      const pension = inp.incomes
+        .filter((q) => q.monthly > 0 && age >= (q.startAge == null ? fireAge : q.startAge))
+        .reduce((s, q) => s + 12 * q.monthly * (1 + inp.inflation) ** t, 0);
+      bal = bal * (1 + r) - (expense - pension);
+      if (bal < 0 && depletionAge == null) depletionAge = age;
+      rows.push({ age, year: inp.baseYear + t, balance: Math.max(bal, 0), phase: 'free', withdraw: expense - pension });
+      if (bal < 0) bal = 0;
+    }
+  }
+  return { rows, fireAge, depletionAge, balanceAtFire: rows.find((x) => x.age === fireAge)?.balance ?? null };
+}
+
+/**
+ * 什麼最影響退休年齡:每個參數上下調整,比較「最早可 FIRE 年齡」的變化(以預期報酬率計)。
+ * 找不到可 FIRE 的年份時以 null 表示。
+ */
+export function fireAgeDrivers(inp) {
+  const ageOf = (x) => { const y = earliestFireYear(x); return y == null ? null : x.age + y - x.baseYear; };
+  const base = ageOf(inp);
+  const spec = [
+    { key: 'monthlyExpense', label: '每月生活費 ±1 萬', lo: { monthlyExpense: inp.monthlyExpense - 1 }, hi: { monthlyExpense: inp.monthlyExpense + 1 } },
+    { key: 'salary', label: '稅後年收入 ±10%', lo: { salary: inp.salary * 0.9 }, hi: { salary: inp.salary * 1.1 } },
+    { key: 'assumedReturn', label: '投資報酬率 ±1%', lo: { assumedReturn: inp.assumedReturn - 0.01 }, hi: { assumedReturn: inp.assumedReturn + 0.01 } },
+    { key: 'salaryGrowth', label: '薪資成長率 ±1%', lo: { salaryGrowth: inp.salaryGrowth - 0.01 }, hi: { salaryGrowth: inp.salaryGrowth + 0.01 } },
+    { key: 'inflation', label: '通膨率 ±0.5%', lo: { inflation: inp.inflation - 0.005 }, hi: { inflation: inp.inflation + 0.005 } },
+    { key: 'swr', label: '提領率 ±0.5%', lo: { swr: inp.swr - 0.005 }, hi: { swr: inp.swr + 0.005 } },
+  ];
+  const rows = spec
+    .filter((s) => Object.values(s.lo).every((v) => v > 0) || s.key === 'salaryGrowth' || s.key === 'assumedReturn')
+    .map((s) => ({ key: s.key, label: s.label, low: ageOf({ ...inp, ...s.lo }), high: ageOf({ ...inp, ...s.hi }) }));
+  return { base, rows };
 }
 
 /** 敏感度:變動單一參數,回傳各值下的目標資金與所需報酬率 */
