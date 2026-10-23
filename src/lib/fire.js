@@ -386,7 +386,7 @@ export function fireAgeDrivers(inp) {
   const spec = [
     { key: 'monthlyExpense', label: '每月生活費 ±1 萬', lo: { monthlyExpense: inp.monthlyExpense - 1 }, hi: { monthlyExpense: inp.monthlyExpense + 1 } },
     { key: 'salary', label: '月收入 ±10%', lo: { salary: inp.salary * 0.9 }, hi: { salary: inp.salary * 1.1 } },
-    { key: 'assumedReturn', label: '投資報酬率 ±1%', lo: { assumedReturn: inp.assumedReturn - 0.01 }, hi: { assumedReturn: inp.assumedReturn + 0.01 } },
+    { key: 'assumedReturn', label: '報酬率 ±1%', lo: { assumedReturn: inp.assumedReturn - 0.01 }, hi: { assumedReturn: inp.assumedReturn + 0.01 } },
     { key: 'salaryGrowth', label: '每年加薪 ±1%', lo: { salaryGrowth: inp.salaryGrowth - 0.01 }, hi: { salaryGrowth: inp.salaryGrowth + 0.01 } },
     { key: 'inflation', label: '通膨率 ±0.5%', lo: { inflation: inp.inflation - 0.005 }, hi: { inflation: inp.inflation + 0.005 } },
   ];
@@ -426,31 +426,148 @@ export function levers(inp, r = inp.assumedReturn, endAge = 95) {
   };
 }
 
-/** 樂觀 / 悲觀情境:報酬率、通膨各加減幾個百分點(基本 = 使用者選的報酬率與通膨) */
-export const SCENARIOS = [
-  { key: 'optimistic', dr: 0.02, di: -0.005 },
-  { key: 'pessimistic', dr: -0.02, di: 0.01 },
-];
+// ---------- 機率範圍(蒙地卡羅) ----------
+// 每年報酬率隨機:ln(1 + R) ~ 常態,中位數 = 選的報酬率 r,波動依 r 估計;通膨固定。
+// 固定種子 → 同樣的輸入每次結果一樣,拉滑桿時數字不會跳動;所有年份共用同一組亂數,比較不同退休年齡才公平。
+export const MC = { paths: 1000, seed: 20261023 };
+
+/** 報酬率的年波動(標準差):σ = 2.5 × (r − 1.5%),介於 3%–20%(保守約 6%、穩健約 11%、積極約 16%) */
+export function volatilityOf(r) {
+  return Math.min(0.2, Math.max(0.03, 2.5 * (r - 0.015)));
+}
+
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+let shockCache = null;
+/** 標準常態亂數表:paths 條路徑 × years 年(Box–Muller,快取重用) */
+function shocks(paths, years) {
+  if (shockCache && shockCache.paths >= paths && shockCache.years >= years) return shockCache;
+  const rnd = mulberry32(MC.seed);
+  const z = new Float64Array(paths * years);
+  for (let i = 0; i < z.length; i += 2) {
+    const m = Math.sqrt(-2 * Math.log(1 - rnd())), v = 2 * Math.PI * rnd();
+    z[i] = m * Math.cos(v);
+    if (i + 1 < z.length) z[i + 1] = m * Math.sin(v);
+  }
+  shockCache = { paths, years, z };
+  return shockCache;
+}
+
+let growthCache = null;
+/** 每條路徑每年的成長倍數 exp(μ + s·z);同一個報酬率在一次畫面更新裡會重複用到,快取起來 */
+function growth(r, sigma, paths, years) {
+  if (growthCache && growthCache.r === r && growthCache.sigma === sigma && growthCache.paths >= paths && growthCache.years >= years) return growthCache;
+  const { z, years: stride } = shocks(paths, years);
+  const mu = Math.log(1 + r), s = sigma / (1 + r);
+  const g = new Float64Array(z.length);
+  for (let i = 0; i < z.length; i++) g[i] = Math.exp(mu + s * z[i]);
+  growthCache = { r, sigma, paths: shockCache.paths, years: stride, g };
+  return growthCache;
+}
 
 /**
- * 樂觀到悲觀:回傳每個情境套用後的輸入與報酬率(最低為 0)、最快多久能退休、比基本情況早或晚多少(delay > 0 = 晚),
- * 以及理想退休年齡(fireYear)夠不夠。頁面用 inp / r 畫出各情境的一生資產路徑。
+ * 模擬 paths 條一生資產路徑(算法同 lifePath,只是每年報酬率隨機)。
+ * 回傳 balances[t][p](第 t 年底、第 p 條路徑,用完後為 0;keep = false 時不存)、每條路徑幾歲用完(0 = 撐到 endAge)。
  */
-export function scenarios(inp, r = inp.assumedReturn, endAge = 95) {
-  const base = earliestFireTime(inp, r, 45, endAge);
+function simulate(inp, r, sigma, endAge, paths, keep = true) {
   const n = inp.fireYear - inp.baseYear;
-  return SCENARIOS.map((s) => {
-    const x = { ...inp, inflation: Math.max(0, inp.inflation + s.di) };
-    const rr = Math.max(0, r + s.dr);
-    const t = earliestFireTime(x, rr, 45, endAge);
-    const need = n >= 1 ? fundNeeded(x, rr, endAge) : null;
-    const have = n >= 1 ? fundAtFire(x, rr) : null;
-    return {
-      key: s.key, inp: x, r: rr, inflation: x.inflation, t,
-      delay: base != null && t != null ? t - base : null,
-      need, have, ok: need == null ? null : have >= need,
-    };
+  const T = endAge - inp.age;
+  if (n < 0 || T < 1) return null;
+  const flows = n > 0 ? annualCashflow(inp).map((f) => f.invest) : [];
+  const loanAtFire = loanSchedule(inp.loans, n, inp.baseYear).balanceAtFire;
+  const fireAge = inp.age + n;
+  const withdraw = new Float64Array(T + 1);
+  for (let t = n + 1; t <= T; t++) {
+    const age = inp.age + t;
+    const expense = 12 * inp.monthlyExpense * (1 + inp.inflation) ** t;
+    const pension = inp.incomes
+      .filter((q) => q.monthly > 0 && age >= (q.startAge ?? fireAge))
+      .reduce((s, q) => s + 12 * q.monthly * (1 + inp.inflation) ** t, 0);
+    withdraw[t] = expense - pension;
+  }
+  const { g: G, years: stride } = growth(r, sigma, paths, Math.max(T, 80));
+  const start = inp.assets - inp.emergencyMonths * inp.monthlyExpense - (n === 0 ? loanAtFire : 0);
+  const balances = keep ? Array.from({ length: T + 1 }, () => new Float64Array(paths)) : null;
+  const depletedAt = new Int16Array(paths);
+  for (let p = 0; p < paths; p++) {
+    let bal = start;
+    if (keep) balances[0][p] = bal;
+    for (let t = 1; t <= T; t++) {
+      const g = G[p * stride + t - 1];
+      if (t <= n) {
+        bal = bal * g + flows[t - 1];
+        if (t === n) bal -= loanAtFire;
+      } else {
+        bal = bal * g - withdraw[t];
+        if (bal < 0) {
+          if (!depletedAt[p]) depletedAt[p] = inp.age + t;
+          bal = 0;
+        }
+      }
+      if (keep) balances[t][p] = bal;
+    }
+  }
+  return { balances, depletedAt, T, fireAge };
+}
+
+/** 在理想退休年齡(fireYear)退休、撐到 endAge 的機率 */
+export function successRate(inp, r = inp.assumedReturn, opts = {}) {
+  const { paths = MC.paths, sigma = volatilityOf(r), endAge = 95 } = opts;
+  const sim = simulate(inp, r, sigma, endAge, paths, false);
+  if (!sim) return null;
+  let ok = 0;
+  for (let p = 0; p < paths; p++) if (!sim.depletedAt[p]) ok++;
+  return ok / paths;
+}
+
+/**
+ * 一生資產的機率範圍:每一歲的 P10 / P25 / P50(中位數)/ P75 / P90,以及撐到 endAge 的機率。
+ * 退休那年的值是還清貸款之後。
+ */
+export function monteCarlo(inp, r = inp.assumedReturn, opts = {}) {
+  const { paths = MC.paths, sigma = volatilityOf(r), endAge = 95 } = opts;
+  const sim = simulate(inp, r, sigma, endAge, paths);
+  if (!sim) return null;
+  const q = (arr, k) => arr[Math.min(arr.length - 1, Math.floor(k * (arr.length - 1)))];
+  const rows = sim.balances.map((col, t) => {
+    const v = Float64Array.from(col).sort();
+    return { age: inp.age + t, year: inp.baseYear + t, p10: q(v, 0.1), p25: q(v, 0.25), p50: q(v, 0.5), p75: q(v, 0.75), p90: q(v, 0.9) };
   });
+  let ok = 0;
+  for (let p = 0; p < paths; p++) if (!sim.depletedAt[p]) ok++;
+  const firstZero = (key) => rows.find((x) => x.age > sim.fireAge && x[key] <= 0)?.age ?? null;
+  return { rows, fireAge: sim.fireAge, sigma, success: ok / paths, p10Zero: firstZero('p10'), p50Zero: firstZero('p50') };
+}
+
+/**
+ * 有 confidence 把握(撐到 endAge 的機率 ≥ confidence)的最快退休時間(年,含小數;找不到回傳 null)。
+ * 越晚退休機率越高(同一組亂數),所以用二分法找第一個夠的年份,再用前後兩年的機率線性內插出月份。
+ */
+export function earliestFireTimeAt(inp, r = inp.assumedReturn, confidence = 0.9, opts = {}) {
+  const { maxYears = 45, endAge = 95 } = opts;
+  const memo = new Map();
+  const rate = (y) => {
+    if (!memo.has(y)) memo.set(y, successRate({ ...inp, fireYear: y }, r, opts) ?? 0);
+    return memo.get(y);
+  };
+  let lo = inp.baseYear;
+  let hi = Math.min(inp.baseYear + maxYears, inp.baseYear + endAge - inp.age - 1);
+  if (rate(lo) >= confidence) return 0;
+  if (hi <= lo || rate(hi) < confidence) return null;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (rate(mid) >= confidence) hi = mid;
+    else lo = mid;
+  }
+  const p0 = rate(hi - 1), p1 = rate(hi);
+  return hi - 1 - inp.baseYear + (p1 > p0 ? (confidence - p0) / (p1 - p0) : 1);
 }
 
 /** 敏感度:變動單一參數,回傳各值下的目標資金與所需報酬率 */
@@ -459,4 +576,16 @@ export function sensitivity(inp, key, values) {
     const p = computePlan({ ...inp, [key]: v });
     return { value: v, target: p.target, rCombined: p.rCombined, rLump: p.rLump, fireAge: p.fireAge };
   });
+}
+
+// ---------- 歷史數據對照(投資方法頁) ----------
+/**
+ * 歷史上持有一段期間、年化報酬率至少 r 的比例。
+ * sorted = 由小到大排好的歷史年化報酬率(src/data/evidence.json 的 hit.*,由 scripts/evidence.mjs 產生)。
+ */
+export function historyHitRate(sorted, r) {
+  if (!sorted.length) return null;
+  let lo = 0, hi = sorted.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (sorted[mid] < r) lo = mid + 1; else hi = mid; }
+  return (sorted.length - lo) / sorted.length;
 }

@@ -2,34 +2,24 @@
 import { fundNeeded, fundAtFire } from '../lib/fire.js';
 import { END_AGE, R_MAX, nf, wan, big, pct, niceStep, T, textW, legend } from './shared.js';
 
-// 一生資產:樂觀 / 基本 / 悲觀三條路徑(都在理想年齡退休),樂觀到悲觀之間塗色,看得出累積快慢與撐不撐得住
-// paths:[{ key: 'optimistic' | 'base' | 'pessimistic', label, life }];need = 基本情況要準備的錢;pre = 退休那年一次還清的貸款
-const LINE = {
-  optimistic: { stroke: 'var(--free)', width: 2, dash: '6 4' },
-  base: { stroke: 'var(--ink)', width: 2.6, dash: '' },
-  pessimistic: { stroke: 'var(--warn)', width: 2, dash: '6 4' },
-};
-export function scenarioChart(paths, need, pre, W) {
-  const base = paths.find((p) => p.key === 'base');
-  const opt = paths.find((p) => p.key === 'optimistic');
-  const pes = paths.find((p) => p.key === 'pessimistic');
-  const fireAge = base.life.fireAge;
-  const rows = base.life.rows;
+// 一生資產的機率範圍(monteCarlo 的結果):中位數一條線,中間一半的情況(P25–P75)深色帶、八成的情況(P10–P90)淺色帶
+// need = 以選的報酬率算出、在理想退休年齡退休需要準備的錢
+export const BAND_DARK = 'color-mix(in srgb, var(--free) 38%, transparent)';
+export const BAND_LIGHT = 'color-mix(in srgb, var(--free) 16%, transparent)';
+export function fanChart(mc, need, W) {
+  const { rows, fireAge } = mc;
   const H = W < 560 ? 300 : 380, L = 48, R = W - 16, top = 34, B = H - 62;
   const a0 = rows[0].age, a1 = rows.at(-1).age;
   const x = (a) => L + ((a - a0) / (a1 - a0)) * (R - L);
-  // 重點是累積快慢:縱軸以退休那年(還貸款前)的資產與要準備的錢為準,退休後一路長高的部分從上方裁掉
-  const atFire = paths.map((p) => (p.life.balanceAtFire ?? 0) + pre);
-  const allMax = Math.max(need, ...paths.flatMap((p) => p.life.rows.map((r) => r.balance)));
-  const peak = Math.max(1, Math.min(allMax, Math.max(need, ...atFire) * 1.8));
+  // 縱軸聚焦退休前後:以退休時的 P90 與需要準備的錢為準,退休後一路長高的部分從上方裁掉
+  const atFire = rows.find((r) => r.age === fireAge) ?? rows.at(-1);
+  const allMax = Math.max(need, ...rows.map((r) => r.p90));
+  const peak = Math.max(1, Math.min(allMax, Math.max(need, atFire.p90) * 1.6));
   const step = niceStep(peak, 4);
   const vmax = Math.ceil((peak * 1.05) / step) * step;
   const y = (v) => top + ((vmax - Math.max(0, v)) / vmax) * (B - top);
-  const pts = (p) => p.life.rows.flatMap((r) => (r.age === fireAge && pre > 0
-    ? [[x(r.age), y(r.balance + pre)], [x(r.age), y(r.balance)]]
-    : [[x(r.age), y(r.balance)]]));
-  const d = (arr) => arr.map((q, i) => `${i ? 'L' : 'M'}${q[0].toFixed(1)},${q[1].toFixed(1)}`).join(' ');
-  const band = opt && pes ? `${d(pts(opt))} ${pts(pes).reverse().map((q) => `L${q[0].toFixed(1)},${q[1].toFixed(1)}`).join(' ')} Z` : '';
+  const line = (k) => rows.map((r, i) => `${i ? 'L' : 'M'}${x(r.age).toFixed(1)},${y(r[k]).toFixed(1)}`).join(' ');
+  const band = (lo, hi) => `${line(hi)} ${[...rows].reverse().map((r) => `L${x(r.age).toFixed(1)},${y(r[lo]).toFixed(1)}`).join(' ')} Z`;
   const fx = x(Math.min(fireAge, a1));
   const ticks = [];
   for (let v = 0; v <= vmax + 1e-9; v += step) ticks.push(v);
@@ -38,20 +28,23 @@ export function scenarioChart(paths, need, pre, W) {
   for (let a = Math.ceil(a0 / ageStep) * ageStep; a <= a1; a += ageStep) ageTicks.push(a);
   const tY = y(need);
 
-  // 「幾歲用完」:每條路徑各一個點,標籤由下往上疊
-  const depl = paths.filter((p) => p.life.depletionAge).sort((p, q) => p.life.depletionAge - q.life.depletionAge)
-    .map((p, i) => {
-      const a = p.life.depletionAge, dx = x(a), end = dx > R - 110;
-      const text = `${p.label} ${a} 歲用完`, w = textW(text, 12), ly = B - 12 - i * 17;
-      return { p, a, dx, end, text, ly, box: end ? [dx - 10 - w, dx - 10, ly - 12, ly + 3] : [dx + 10, dx + 10 + w, ly - 12, ly + 3] };
+  // 「用完」的點:最差一成、一半的情況各一個,標籤由下往上疊
+  const zeros = [['p10Zero', '最差一成'], ['p50Zero', '一半的情況']]
+    .filter(([k]) => mc[k] != null)
+    .map(([k, label], i) => {
+      const a = mc[k], dx = x(a);
+      const text = `${label} ${a} 歲用完`, w = textW(text, 12), ly = B - 12 - i * 17;
+      // 右邊放得下就放右邊,否則放左邊;兩邊都不夠就在點的上方、夾在圖內
+      const lx = dx + 10 + w <= R ? dx + 10 : dx - 10 - w >= L ? dx - 10 - w : Math.min(Math.max(dx - w / 2, L + 2), R - w);
+      return { a, dx, text, ly, lx, box: [lx, lx + w, ly - 12, ly + 3] };
     });
-  // 「要準備 X 萬」標籤:依序試幾個位置,挑第一個不壓到其他標籤的
+  // 「需要準備 X 萬」標籤:依序試幾個位置,挑第一個不壓到其他標籤的
   const retireEnd = fx > R - 120;
   const retireW = textW(`${fireAge} 歲退休`, 13);
-  const boxes = [retireEnd ? [fx - 8 - retireW, fx - 8, top - 14, top + 1] : [fx + 8, fx + 8 + retireW, top - 14, top + 1], ...depl.map((m) => m.box)];
+  const boxes = [retireEnd ? [fx - 8 - retireW, fx - 8, top - 14, top + 1] : [fx + 8, fx + 8 + retireW, top - 14, top + 1], ...zeros.map((m) => m.box)];
   const tWide = fx - x(a0) >= 140;
   const tSize = tWide ? 12 : 11;
-  const tText = `${tWide ? '要準備' : '目標'} ${big(need)}`;
+  const tText = `${tWide ? '需要準備' : '需要'} ${big(need)}`;
   const tw = textW(tText, tSize);
   const tFree = ([x1, yy]) => {
     const b = [x1 - 2, x1 + tw + 2, yy - tSize - 2, yy + 5];
@@ -59,38 +52,33 @@ export function scenarioChart(paths, need, pre, W) {
   };
   const tPos = [[x(a0) + 4, tY - 7], [x(a0) + 4, tY + tSize + 5], [fx + 8, tY - 7], [fx + 8, tY + tSize + 5], [x(a0) + 4, tY - 25], [x(a0) + 4, tY - 43]]
     .find(tFree) ?? [x(a0) + 4, tY - 7];
-
-  const baseDepl = base.life.depletionAge;
-  const freeEnd = baseDepl ? x(baseDepl) : R;
-  const freeLabel = baseDepl ? `自由 ${fireAge}–${baseDepl} 歲` : `自由 ${fireAge} 歲之後`;
-  const order = ['optimistic', 'pessimistic', 'base'];
-  const tip = (i) => paths.map((p) => `${p.label} ${big(p.life.rows[i]?.balance ?? 0)}`).join('・');
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="一生資產:${fireAge} 歲退休,樂觀到悲觀三種情況${baseDepl ? `;基本情況 ${baseDepl} 歲用完` : ''}${pes?.life.depletionAge ? `;悲觀 ${pes.life.depletionAge} 歲用完` : ''}">
-    <defs><clipPath id="sc-plot"><rect x="${L}" y="${top - 2}" width="${R - L}" height="${B - top + 2}"/></clipPath></defs>
+  const freeLabel = `自由 ${fireAge} 歲之後`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="一生資產的機率範圍:${fireAge} 歲退休,撐到 95 歲的機率 ${Math.round(mc.success * 100)}%">
+    <defs><clipPath id="fan-plot"><rect x="${L}" y="${top - 2}" width="${R - L}" height="${B - top + 2}"/></clipPath></defs>
     ${ticks.map((v) => `<line x1="${L}" x2="${R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/>${T(L - 8, y(v) + 4, v === 0 ? '0' : big(v).replace(' 萬', ''), { anchor: 'end', size: 11 })}`).join('')}
     ${T(L - 8, top - 16, '萬元', { anchor: 'end', size: 11 })}
-    <g clip-path="url(#sc-plot)">
-      ${band ? `<path d="${band}" fill="var(--free)" fill-opacity="0.13"/>` : ''}
-      ${order.map((k) => paths.find((p) => p.key === k)).filter(Boolean).map((p) => `<path d="${d(pts(p))}" fill="none" stroke="${LINE[p.key].stroke}" stroke-width="${LINE[p.key].width}" ${LINE[p.key].dash ? `stroke-dasharray="${LINE[p.key].dash}"` : ''} stroke-linejoin="round"/>`).join('')}
+    <g clip-path="url(#fan-plot)">
+      <path d="${band('p10', 'p90')}" fill="${BAND_LIGHT}"/>
+      <path d="${band('p25', 'p75')}" fill="${BAND_DARK}"/>
+      <path d="${line('p50')}" fill="none" stroke="var(--ink)" stroke-width="2.4" stroke-linejoin="round"/>
     </g>
     <line x1="${x(a0)}" x2="${fx}" y1="${tY}" y2="${tY}" stroke="var(--ink-2)" stroke-dasharray="3 4"/>
     <line x1="${fx}" x2="${fx}" y1="${top - 10}" y2="${B}" stroke="var(--gold)" stroke-width="2"/>
-    <circle cx="${fx}" cy="${y((base.life.balanceAtFire ?? 0) + pre)}" r="5" fill="var(--gold)"/>
+    <circle cx="${fx}" cy="${y(atFire.p50)}" r="5" fill="var(--gold)"/>
     ${T(tPos[0], tPos[1], tText, { size: tSize, halo: true })}
     ${T(fx + (retireEnd ? -8 : 8), top - 2, `${fireAge} 歲退休`, { anchor: retireEnd ? 'end' : 'start', fill: 'var(--ink)', weight: 800, size: 13 })}
-    ${depl.map((m) => `<circle cx="${m.dx}" cy="${B}" r="5" fill="${LINE[m.p.key].stroke}"/>${T(m.end ? m.dx - 10 : m.dx + 10, m.ly, m.text, { anchor: m.end ? 'end' : 'start', fill: 'var(--ink)', weight: 700, size: 12, halo: true })}`).join('')}
+    ${zeros.map((m) => `<circle cx="${m.dx}" cy="${B}" r="5" fill="var(--warn)"/>${T(m.lx, m.ly, m.text, { fill: 'var(--ink)', weight: 700, size: 12, halo: true })}`).join('')}
     <line x1="${L}" x2="${R}" y1="${B}" y2="${B}" stroke="var(--line)"/>
     ${ageTicks.map((a) => T(x(a), B + 16, `${a}`, { anchor: 'middle', size: 11 })).join('')}
     <rect x="${x(a0)}" y="${B + 26}" width="${Math.max(0, fx - x(a0) - 2)}" height="22" rx="5" fill="var(--work)" fill-opacity="0.35"/>
-    <rect x="${fx + 2}" y="${B + 26}" width="${Math.max(0, freeEnd - fx - 2)}" height="22" rx="5" fill="var(--free)" fill-opacity="0.3"/>
-    ${baseDepl ? `<rect x="${x(baseDepl) + 2}" y="${B + 26}" width="${Math.max(0, R - x(baseDepl) - 2)}" height="22" rx="5" fill="var(--warn)" fill-opacity="0.25"/>` : ''}
+    <rect x="${fx + 2}" y="${B + 26}" width="${Math.max(0, R - fx - 2)}" height="22" rx="5" fill="var(--free)" fill-opacity="0.3"/>
     ${fx - x(a0) > 34 ? T((x(a0) + fx) / 2, B + 41, fx - x(a0) > 90 ? `工作 ${a0}–${fireAge} 歲` : '工作', { anchor: 'middle', size: 12, fill: 'var(--ink)', weight: 600 }) : ''}
-    ${freeEnd - fx > 34 ? T((fx + freeEnd) / 2, B + 41, freeEnd - fx > 90 ? freeLabel : '自由', { anchor: 'middle', size: 12, fill: 'var(--ink)', weight: 600 }) : ''}
-    ${rows.map((r, i) => `<rect x="${x(r.age) - (R - L) / rows.length / 2}" y="${top}" width="${(R - L) / rows.length}" height="${B - top}" fill="transparent"><title>${r.age} 歲(${r.year}):${tip(i)}</title></rect>`).join('')}
+    ${R - fx > 34 ? T((fx + R) / 2, B + 41, R - fx > 90 ? freeLabel : '自由', { anchor: 'middle', size: 12, fill: 'var(--ink)', weight: 600 }) : ''}
+    ${rows.map((r) => `<rect x="${x(r.age) - (R - L) / rows.length / 2}" y="${top}" width="${(R - L) / rows.length}" height="${B - top}" fill="transparent"><title>${r.age} 歲(${r.year}):中位數 ${big(r.p50)};一半的情況 ${big(r.p25)}–${big(r.p75)};八成 ${big(r.p10)}–${big(r.p90)}</title></rect>`).join('')}
   </svg>`;
 }
 
-// 需要準備多少:瀑布圖(b = needBreakdown,以報酬率 r 折回退休那年)
+// 需要準備多少:瀑布圖(b = needBreakdown,以報酬率 r 折回退休時)
 export function targetChart(b, r, W) {
   const H = 260, L = 10, R = W - 10, top = 30, B = H - 44;
   const steps = [
@@ -143,7 +131,7 @@ export function cashflowChart(flows, W) {
   </svg>`;
 }
 
-// 什麼最影響退休年齡:龍捲風圖
+// 影響退休年齡的因素:龍捲風圖
 export function driversChart(d, W) {
   if (d.base == null) return '<p class="text-sm muted">以目前條件 45 年內無法退休,先調整生活費或收入。</p>';
   const rows = d.rows.map((r) => {
@@ -156,13 +144,13 @@ export function driversChart(d, W) {
   const minA = Math.min(d.base - 1, ...rows.map((r) => r.a)), maxA = Math.max(d.base + 1, ...rows.map((r) => r.b));
   const x = (a) => L + ((a - minA) / (maxA - minA)) * (R - L);
   const bx = x(d.base);
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="影響退休年齡的因素,目前最早 ${d.base} 歲">
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="影響退休年齡的因素,目前最快 ${d.base} 歲">
     ${T(bx, 14, `目前 ${d.base} 歲`, { anchor: 'middle', size: 12, fill: 'var(--ink)', weight: 700 })}
     <line x1="${bx}" x2="${bx}" y1="${top - 4}" y2="${H - 6}" stroke="var(--ink)" stroke-width="1.5"/>
     ${rows.map((r, i) => {
       const cy = top + i * rowH + rowH / 2;
       const earlier = Math.min(r.a, d.base), later = Math.max(r.b, d.base);
-      const tip = `${r.label}:${r.lo == null ? '無法' : `${r.lo} 歲`} ~ ${r.hi == null ? '無法' : `${r.hi} 歲`}`;
+      const tip = `${r.label}:調低 ${r.lo == null ? '無法退休' : `${r.lo} 歲`}・調高 ${r.hi == null ? '無法退休' : `${r.hi} 歲`}`;
       return `${T(0, cy + 4, r.label, { size: 12.5, fill: 'var(--ink)' })}
         <line x1="${L}" x2="${R}" y1="${cy}" y2="${cy}" stroke="var(--grid)"/>
         ${earlier < d.base ? `<rect x="${x(earlier)}" y="${cy - 9}" width="${bx - x(earlier)}" height="18" rx="4" fill="var(--free)" fill-opacity="0.8"><title>${tip}</title></rect>${T(x(earlier) - 5, cy + 4, `${earlier}`, { anchor: 'end', size: 11 })}` : ''}

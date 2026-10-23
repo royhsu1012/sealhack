@@ -5,3 +5,6 @@ dist/
 
 # runtime
 .claude/scheduled_tasks.lock
+
+# 投資方法頁的原始資料快取(node scripts/evidence.mjs 產生)
+scripts/evidence-raw/

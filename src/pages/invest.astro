@@ -1,0 +1,347 @@
+---
+import Base from '../layouts/Base.astro';
+import { BOOKS } from '../data/books.js';
+import E from '../data/evidence.json';
+
+// 只做顯示格式;所有統計都在 scripts/evidence.mjs 先算好
+const nf = (d) => new Intl.NumberFormat('zh-TW', { maximumFractionDigits: d });
+const P = (v, d = 1) => `${v < 0 ? '−' : ''}${nf(d).format(Math.abs(v) * 100)}%`;
+const W = (v, max) => `${Math.max(1.5, Math.min(100, (Math.abs(v) / max) * 100))}%`;
+const bookName = Object.fromEntries(BOOKS.map((b) => [b.id, `《${b.title}》`]));
+
+const twH = E.holding.tw, usH = E.holding.us;
+const tw1 = twH.find((h) => h.years === 1), tw10 = twH.find((h) => h.years === 10);
+const us20 = usH.find((h) => h.years === 20);
+const fee0 = E.fees.rows[0], fee15 = E.fees.rows.at(-1), fee02 = E.fees.rows[1];
+const capeLow = E.cape.bands[0], capeHigh = E.cape.bands.at(-1);
+const yrs = E.years;
+const upYears = yrs.filter((y) => y.ret > 0).length;
+const avgDrop = yrs.reduce((s, y) => s + y.drop, 0) / yrs.length;
+const yMax = 0.9;
+const capeNow = Math.round(E.cape.latest.cape);
+const twDiv = E.growth.tw.cagr - E.growth.tw.priceCagr, usDiv = E.growth.us.cagr - E.growth.us.priceCagr;
+
+const PRINCIPLES = [
+  {
+    t: '留在市場,時間拉長',
+    s: '短期漲跌像丟銅板,持有越久,結果越接近企業長期成長的速度。',
+    big: P(tw10.loss), cap: `台股任挑 10 年持有,虧損的比例(持有 1 年是 ${P(tw1.loss, 0)})`,
+    books: ['maggiulli', 'lilu'], to: 'hold',
+  },
+  {
+    t: '買下整個市場,把成本壓到最低',
+    s: '多數主動基金長期輸給指數,而費用每年都在複利地吃掉成果。',
+    big: P(fee15.keep - 1, 0), cap: `費用率 1.5%,30 年後少掉的成果(0.2% 只少 ${P(1 - fee02.keep)})`,
+    books: ['bogle', 'buffett'], to: 'fees',
+  },
+  {
+    t: '持續買進,不等低點',
+    s: '有錢就投入、每月照買;等回檔再買,多數時候反而買得更少。',
+    big: P(E.lumpVsDca.tw.lumpWins, 0), cap: '台股一筆錢一次投入,勝過分 12 個月投入的比例',
+    books: ['maggiulli', 'munger'], to: 'timing',
+  },
+  {
+    t: '價格決定報酬,買進要有安全邊際',
+    s: '同一個市場,買貴了之後 10 年的報酬明顯變低;個股更要算清楚價值。',
+    big: `${P(capeLow.mean, 0)} 對 ${P(capeHigh.mean, 0)}`, cap: '美股 CAPE 低於 10 與高於 30 時買進,之後 10 年的平均年化報酬率',
+    books: ['buffett', 'lilu', 'bogle'], to: 'cape',
+  },
+  {
+    t: '看懂週期,管好情緒',
+    s: '每年都會有一次像樣的回檔;不預測頂底,照計畫買、依溫度微調。',
+    big: P(avgDrop, 0), cap: `台股每年平均的最大回檔;但 ${yrs.length} 年裡有 ${upYears} 年收紅`,
+    books: ['marks', 'munger'], to: 'mood',
+  },
+];
+const CHECKS = [
+  ['看得懂', '說得出它十年後靠什麼賺錢;說不出來就在能力圈外。'],
+  ['護城河', '資本報酬率長期又高又穩(例如股東權益報酬率多年在 15% 以上),對手很難搶走它的客戶。'],
+  ['財務穩健', '負債不高、自由現金流為正,景氣差時不必借錢或增資。'],
+  ['經營者', '誠實、以股東利益為先,過去把賺來的錢配置得好。'],
+  ['價格', '明顯低於你估的內在價值,留有安全邊際;好公司買貴了也是壞投資。'],
+  ['反過來想', '先寫下會讓它失敗的三件事,都能接受才買,並自己設定個股占總資產的上限。'],
+];
+---
+<Base title="投資方法" description="從退休需要的報酬率出發:整理持續買進、柏格、巴菲特、蒙格、馬克斯、李錄六本書的方法,再用台股 2003 年起、美股 1928 年起的歷史數據檢驗。">
+  <div class="invest">
+    <header class="invest-head">
+      <p class="pill">投資方法</p>
+      <h1>怎麼找到好的投資標的</h1>
+      <p class="muted">從退休測驗算出的報酬率出發,整理六本經典的方法,再用台股、美股的歷史數據逐一檢驗。</p>
+    </header>
+
+    <!-- 你需要的報酬率,歷史上達到的比例(依 localStorage 的測驗答案) -->
+    <section class="card inv-need" aria-labelledby="need-title">
+      <h2 class="card-title" id="need-title">你的計畫需要多少報酬率</h2>
+      <p class="text-sm muted mt-1" id="need-note">範例情境的數字;做完退休測驗會換成你的。</p>
+      <div class="need-head">
+        <div><span class="muted text-sm">最低報酬率</span><b class="num" id="need-be">–</b></div>
+        <div><span class="muted text-sm">你選的報酬率</span><b class="num" id="need-r">–</b></div>
+      </div>
+      <table class="need-table">
+        <thead><tr><th scope="col">歷史上持有</th><th scope="col">達到最低報酬率</th><th scope="col">達到你選的</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">台股任 10 年</th><td class="num" data-hit="tw10" data-of="be">–</td><td class="num" data-hit="tw10" data-of="r">–</td></tr>
+          <tr><th scope="row">美股任 10 年</th><td class="num" data-hit="us10" data-of="be">–</td><td class="num" data-hit="us10" data-of="r">–</td></tr>
+          <tr><th scope="row">美股任 20 年</th><td class="num" data-hit="us20" data-of="be">–</td><td class="num" data-hit="us20" data-of="r">–</td></tr>
+        </tbody>
+      </table>
+      <p class="text-xs muted mt-3">含息、未扣費用與稅的年化報酬率。過去不代表未來:台股這段期間剛好遇上半導體長多,美股現在的 CAPE 約 {capeNow},都可能讓之後的報酬率低於歷史。</p>
+      <a class="btn-ghost inv-back" href="/">回到退休測驗調整</a>
+    </section>
+
+    <!-- 結論:五個原則 -->
+    <section aria-labelledby="sum-title">
+      <h2 class="inv-h2" id="sum-title">結論:五個原則</h2>
+      <p class="muted text-sm">六本書講的方法,收斂成下面五件事;每一條都附上歷史數據。</p>
+      <ol class="principles">
+        {PRINCIPLES.map((p, i) => (
+          <li class="card principle">
+            <span class="principle-no">{i + 1}</span>
+            <div class="principle-body">
+              <h3>{p.t}</h3>
+              <p class="text-sm muted">{p.s}</p>
+              <p class="principle-big"><b class="num">{p.big}</b><span>{p.cap}</span></p>
+              <p class="principle-foot">
+                <span class="books">{p.books.map((b) => bookName[b]).join('・')}</span>
+                <a href={`#${p.to}`}>看數據</a>
+              </p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <!-- 投資方法:組成一套流程 -->
+    <section class="card inv-steps" aria-labelledby="steps-title">
+      <h2 class="card-title" id="steps-title">把原則變成每個月的做法</h2>
+      <ol class="steps">
+        <li><b>先顧好底</b><span>緊急預備金放好、高利率的貸款先還;這兩件在退休測驗的財務體檢裡看得到。</span></li>
+        <li><b>核心:每月自動買整個市場</b><span>選費用率低、分散的市場型指數基金,發薪後自動扣款,不看盤、不停扣。</span></li>
+        <li><b>有一筆錢就直接投入</b><span>獎金、年終不等回檔;真的怕,就在 3–6 個月內分批放完。</span></li>
+        <li><b>衛星:只在能力圈內挑個股</b><span>用下面的檢查表逐條過,並先設好個股最多占多少。</span></li>
+        <li><b>每年看一次溫度與比例</b><span>估值高、人人樂觀時降低報酬期待、照比例再平衡;大跌時照計畫繼續買。</span></li>
+        <li><b>回到退休測驗更新數字</b><span>報酬率用保守一點的數字規劃,實際報酬比較好就是提早退休的緩衝。</span></li>
+      </ol>
+    </section>
+
+    <section class="card" aria-labelledby="check-title">
+      <h2 class="card-title" id="check-title">好標的檢查表(個股)</h2>
+      <p class="text-sm muted mt-1">整理自巴菲特、蒙格與李錄。美國百年來只有約 4% 的股票貢獻了整體股市扣掉國庫券之後的全部財富,挑中贏家很難,所以個股只當衛星。</p>
+      <ul class="checks">
+        {CHECKS.map(([k, v]) => <li><b>{k}</b><span>{v}</span></li>)}
+      </ul>
+    </section>
+
+    <!-- 數據檢驗 -->
+    <h2 class="inv-h2">數據檢驗</h2>
+
+    <section class="card evidence" id="hold">
+      <h3>持有越久,賠錢的機率越低</h3>
+      <p class="text-sm muted">每個月都當一次起點,持有 N 年後年化報酬率為負的比例。</p>
+      <div class="ev-grid">
+        {[['台股(2003 年起)', twH], ['美股(1928 年起)', usH]].map(([name, rows]) => (
+          <div>
+            <p class="ev-sub">{name}</p>
+            <ul class="bars">
+              {rows.map((h) => (
+                <li title={`最差 ${P(h.min)}・中位數 ${P(h.median)}・最好 ${P(h.max)}(共 ${h.windows} 段)`}>
+                  <span class="bar-label">持有 {h.years} 年</span>
+                  <span class="bar-track"><span class="bar-fill" style={`--w:${W(h.loss, 0.3)};--c:var(--warn)`}></span></span>
+                  <b class="num">{P(h.loss)}</b>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <p class="ev-take">台股持有 10 年以上、美股持有 20 年以上,歷史上沒有一段是賠錢的;美股持有 20 年最差的一段,年化仍有 {P(us20.min)}。</p>
+    </section>
+
+    <section class="card evidence" id="growth">
+      <h3>長期報酬來自哪裡</h3>
+      <p class="text-sm muted">柏格的拆法:股價成長(企業獲利成長加上本益比變化)+ 股息。</p>
+      <ul class="bars stack">
+        {[['台股', E.growth.tw, twDiv], ['美股', E.growth.us, usDiv]].map(([name, g, div]) => (
+          <li>
+            <span class="bar-label">{name} {g.from.slice(0, 4)}–{g.to.slice(0, 4)}</span>
+            <span class="bar-track">
+              <span class="bar-fill" style={`--w:${W(g.priceCagr, 0.16)};--c:var(--work)`} title={`股價 ${P(g.priceCagr)}`}></span>
+              <span class="bar-fill" style={`--w:${W(div, 0.16)};--c:var(--free)`} title={`股息約 ${P(div)}`}></span>
+            </span>
+            <b class="num">{P(g.cagr)}</b>
+          </li>
+        ))}
+      </ul>
+      <p class="legend"><span><span style="color:var(--work)">■</span> 股價成長</span><span><span style="color:var(--free)">■</span> 股息再投入</span></p>
+      <p class="ev-take">台股年化 {P(E.growth.tw.cagr)} 裡約 {P(twDiv)} 來自股息,美股約 {P(usDiv)}。股息與獲利成長是企業真正賺來的;本益比變化只是情緒,不能指望它年年幫忙。</p>
+    </section>
+
+    <section class="card evidence" id="timing">
+      <h3>一次投入、每月照買,還是等低點</h3>
+      <p class="text-sm muted">「全知抄底」知道每個低點:錢先存著,只在兩個歷史高點之間的最低點全部買進。</p>
+      <ul class="bars">
+        {[
+          ['一次投入勝過分 12 個月', E.lumpVsDca.tw.lumpWins, E.lumpVsDca.us.lumpWins],
+          ['每月照買勝過全知抄底', E.perfectDip.tw.dcaWins, E.perfectDip.us.dcaWins],
+          ['每月照買勝過晚 2 個月的抄底', E.perfectDip.tw.late2, E.perfectDip.us.late2],
+        ].map(([label, t, u]) => (
+          <li class="pair">
+            <span class="bar-label">{label}</span>
+            <span class="bar-pair">
+              <span class="bar-row"><span class="tag">台</span><span class="bar-track"><span class="bar-fill" style={`--w:${W(t, 1)};--c:var(--free)`}></span></span><b class="num">{P(t, 0)}</b></span>
+              <span class="bar-row"><span class="tag">美</span><span class="bar-track"><span class="bar-fill" style={`--w:${W(u, 1)};--c:var(--ink-2)`}></span></span><b class="num">{P(u, 0)}</b></span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p class="text-xs muted mt-2">比較期間:一次投入看 12 個月後的價值;抄底台股用 10 年、美股用 40 年的每月投入。</p>
+      <p class="ev-take">一筆錢一次投入,台股 {P(E.lumpVsDca.tw.lumpWins, 0)}、美股 {P(E.lumpVsDca.us.lumpWins, 0)} 的時候比分批好。就算知道每個低點,全知抄底的中位數也只多 {P(-E.perfectDip.tw.medianEdge)}(台股);只要晚 2 個月才買到,每月照買就贏了 {P(E.perfectDip.tw.late2, 0)}(台股)、{P(E.perfectDip.us.late2, 0)}(美股)的期間。</p>
+    </section>
+
+    <section class="card evidence" id="best-days">
+      <h3>錯過最好的幾天</h3>
+      <p class="text-sm muted">台股報酬指數 {E.missBest.from.slice(0, 4)}–{E.missBest.to.slice(0, 4)},把漲最多的幾天拿掉(那幾天剛好空手)的年化報酬率。</p>
+      <ul class="bars">
+        {E.missBest.rows.map((r) => (
+          <li>
+            <span class="bar-label">{r.missed ? `錯過最好的 ${r.missed} 天` : '一直留在市場'}</span>
+            <span class="bar-track"><span class="bar-fill" style={`--w:${W(r.cagr, 0.15)};--c:${r.missed ? 'var(--work)' : 'var(--free)'}`}></span></span>
+            <b class="num">{P(r.cagr)}</b>
+          </li>
+        ))}
+      </ul>
+      <p class="ev-take">近 24 年、約 5,800 個交易日裡,只錯過最好的 10 天,年化就少了 {P(E.missBest.rows[0].cagr - E.missBest.rows[1].cagr)}。最好的日子常常緊跟在最差的日子後面,想躲開下跌,通常也會錯過反彈。</p>
+    </section>
+
+    <section class="card evidence" id="mood">
+      <h3>市場先生的情緒:每年都有大跌,多數年份仍收紅</h3>
+      <p class="text-sm muted">台股報酬指數每一年的全年報酬率(長條)與年內最大回檔(橫線)。</p>
+      <div class="years" role="img" aria-label={`台股 ${yrs[0].year}–${yrs.at(-1).year} 年,${yrs.length} 年中 ${upYears} 年收紅,每年平均最大回檔 ${P(avgDrop, 0)}`}>
+        {yrs.map((y) => (
+          <div class="yr" title={`${y.year}:全年 ${P(y.ret, 0)}・年內最大回檔 ${P(y.drop, 0)}`}>
+            <div class="yr-up">{y.ret > 0 && <span style={`height:${W(y.ret, yMax)};background:var(--free)`}></span>}</div>
+            <div class="yr-down">
+              {y.ret < 0 && <span style={`height:${W(y.ret, yMax)};background:var(--warn)`}></span>}
+              <i style={`top:${W(y.drop, yMax)}`}></i>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div class="years-axis"><span>{yrs[0].year}</span><span>{yrs[Math.floor(yrs.length / 2)].year}</span><span>{yrs.at(-1).year}</span></div>
+      <p class="legend"><span><span style="color:var(--free)">■</span> 全年上漲</span><span><span style="color:var(--warn)">■</span> 全年下跌</span><span><span style="color:var(--ink)">—</span> 年內最大回檔</span></p>
+      <p class="ev-take">{yrs.length} 年裡有 {upYears} 年收紅,但每年平均都有一次 {P(avgDrop, 0)} 的回檔。把波動當成市場先生的報價,而不是要你行動的指令。</p>
+    </section>
+
+    <section class="card evidence" id="cape">
+      <h3>買進時的價格,決定之後的報酬</h3>
+      <p class="text-sm muted">美股依買進當月的 Shiller CAPE(經景氣循環調整的本益比)分組,之後 10 年的平均年化報酬率({E.cape.from.slice(0, 4)}–{E.cape.to.slice(0, 4)} 年的每個月)。</p>
+      <ul class="bars">
+        {E.cape.bands.map((b) => (
+          <li title={`最差 ${P(b.min)}・最好 ${P(b.max)}(${b.n} 個月)`}>
+            <span class="bar-label">CAPE {b.lo === 0 ? `低於 ${b.hi}` : b.hi === 99 ? `${b.lo} 以上` : `${b.lo}–${b.hi}`}</span>
+            <span class="bar-track"><span class="bar-fill" style={`--w:${W(b.mean, 0.16)};--c:var(--free)`}></span></span>
+            <b class="num">{P(b.mean)}</b>
+          </li>
+        ))}
+      </ul>
+      <p class="ev-take">便宜時買,之後 10 年平均年化 {P(capeLow.mean)};CAPE 30 以上買,只剩 {P(capeHigh.mean)}。目前美股 CAPE 約 {capeNow},歷史上只有網路泡沫前後這麼高。這不是叫你停買,而是提醒:用保守一點的報酬率規劃,並把安全邊際算進去。</p>
+    </section>
+
+    <section class="card evidence" id="drawdown">
+      <h3>大跌之後買進,一定比較好嗎</h3>
+      <p class="text-sm muted">比較「任何月份買進」與「指數比歷史高點低 20% 以上時買進」,之後 3 年的平均年化報酬率。</p>
+      <ul class="bars">
+        {[['台股', E.drawdown.tw], ['美股', E.drawdown.us]].map(([name, d]) => (
+          <li class="pair">
+            <span class="bar-label">{name}</span>
+            <span class="bar-pair">
+              <span class="bar-row"><span class="tag">平時</span><span class="bar-track"><span class="bar-fill" style={`--w:${W(d.all.mean, 0.16)};--c:var(--work)`}></span></span><b class="num">{P(d.all.mean)}</b></span>
+              <span class="bar-row"><span class="tag">跌深</span><span class="bar-track"><span class="bar-fill" style={`--w:${W(d.deep.mean, 0.16)};--c:var(--gold)`}></span></span><b class="num">{P(d.deep.mean)}</b></span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <ul class="bears">
+        {E.drawdown.twBears.map((b) => <li><span>台股 {b.peak.slice(0, 4)} 年 {+b.peak.slice(5)} 月起</span><b class="num">{P(b.drop, 0)}</b><span class="muted">{b.recover ? `${b.recover} 個月回到高點` : '尚未回到高點'}</span></li>)}
+        {E.drawdown.usBears.map((b) => <li><span>美股 {b.peak.slice(0, 4)} 年 {+b.peak.slice(5)} 月起</span><b class="num">{P(b.drop, 0)}</b><span class="muted">{b.recover ? `${b.recover} 個月回到高點` : '尚未回到高點'}</span></li>)}
+      </ul>
+      <p class="ev-take">台股跌深後買進,之後 3 年平均比較好;美股卻不一定,1929–1932 年跌了八成以上,越跌越深。跌深不等於便宜,所以馬克斯看的是估值與情緒的「溫度」,而不是跌了多少。</p>
+    </section>
+
+    <section class="card evidence" id="fees">
+      <h3>成本也會複利</h3>
+      <p class="text-sm muted">每月投入 1 萬、30 年、扣費用前年化 6%,30 年後的金額。</p>
+      <ul class="bars">
+        {E.fees.rows.map((f) => (
+          <li>
+            <span class="bar-label">費用率 {P(f.fee)}</span>
+            <span class="bar-track"><span class="bar-fill" style={`--w:${W(f.value, fee0.value)};--c:${f.fee <= 0.002 ? 'var(--free)' : 'var(--work)'}`}></span></span>
+            <b class="num">{nf(0).format(f.value)} 萬</b>
+          </li>
+        ))}
+      </ul>
+      <ul class="facts">
+        <li><b>79%</b><span>2025 年,美國主動型大型股基金輸給 S&amp;P 500 的比例(SPIVA)。</span></li>
+        <li><b>7.1% 對 2.2%</b><span>巴菲特的十年賭局,前 9 年(2008–2016)指數基金與五檔避險基金組合平均的年化報酬率。</span></li>
+        <li><b>少一半</b><span>巴菲特 2018 年的信:1942 年投入指數基金的收益,若每年付 1% 給各種「幫手」,大約會少掉一半。</span></li>
+      </ul>
+      <p class="ev-take">費用率 1.5% 會讓 30 年後少掉約 {P(1 - fee15.keep, 0)};0.2% 只少 {P(1 - fee02.keep)}。報酬無法掌握,成本可以。</p>
+    </section>
+
+    <!-- 六本書 -->
+    <h2 class="inv-h2">六本書的摘要與方法</h2>
+    <p class="muted text-sm">用自己的話整理,不是原文。點開看摘要、具體方法與對應的數據。</p>
+    <div class="books-list">
+      {BOOKS.map((b) => (
+        <details class="card book">
+          <summary>
+            <span class="book-title">《{b.title}》</span>
+            <span class="text-sm muted">{b.author}・{b.origin}</span>
+            <span class="text-sm book-line">{b.line}</span>
+          </summary>
+          <div class="book-body">
+            <h4>摘要</h4>
+            <ul>{b.summary.map((s) => <li>{s}</li>)}</ul>
+            <h4>具體方法</h4>
+            <ul>{b.methods.map((s) => <li>{s}</li>)}</ul>
+            <p class="book-links">對應數據:{b.evidence.map((id) => <a href={`#${id}`}>{({ hold: '持有越久', growth: '報酬來源', timing: '一次投入與抄底', 'best-days': '錯過最好的幾天', mood: '市場先生', cape: '買進價格', drawdown: '大跌之後', fees: '成本' })[id]}</a>)}</p>
+          </div>
+        </details>
+      ))}
+    </div>
+
+    <section class="inv-src">
+      <h2 class="inv-h2">資料來源與限制</h2>
+      <ul>
+        <li>{E.sources.tw}。</li>
+        <li>{E.sources.us};股息以每月殖利率 ÷ 12 估算,{E.sources.cape}。</li>
+        <li>研究與文件:<a href="https://www.berkshirehathaway.com/letters/letters.html">波克夏股東信</a>(2017、2018 年)、<a href="https://ofdollarsanddata.com/even-god-couldnt-beat-dollar-cost-averaging/">Of Dollars and Data</a>(馬朱利的抄底實驗)、<a href="https://www.spglobal.com/spdji/en/spiva/article/spiva-us-year-end-2025/">SPIVA U.S. Year-End 2025</a>、Bessembinder(2018)〈Do Stocks Outperform Treasury Bills?〉。</li>
+        <li>所有報酬率都是名目、含息、未扣費用與稅;美股是一個「事後看來很成功」的市場,台股資料只有 24 年,都不代表未來。數據更新於 {E.generated},重算方式見 <code>scripts/evidence.mjs</code>。</li>
+        <li>本頁整理書中的原則與歷史數據,不推薦任何特定標的,不構成投資建議。</li>
+      </ul>
+    </section>
+  </div>
+
+  <script type="application/json" id="hit-data" set:html={JSON.stringify(E.hit)} />
+  <script>
+    import { loadState, pct } from '../scripts/shared.js';
+    import { breakEvenReturn, historyHitRate } from '../lib/fire.js';
+
+    const hit = JSON.parse(document.getElementById('hit-data')?.textContent || '{}');
+    const s = loadState();
+    const inp = s.inputs;
+    const be = breakEvenReturn(inp, 95);
+    const r = Math.max(0, inp.assumedReturn);
+    const rate = { be: be ?? null, r };
+    const set = (id: string, v: string) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set('need-be', be == null ? '50% 也不夠' : be === 0 ? '0% 就夠' : pct(be));
+    set('need-r', pct(r));
+    if (s.done) set('need-note', '依你在退休測驗的答案;改答案後回來會自動更新。');
+    document.querySelectorAll<HTMLElement>('[data-hit]').forEach((td) => {
+      const v = rate[td.dataset.of as 'be' | 'r'];
+      const h = v == null ? null : historyHitRate(hit[td.dataset.hit as string] ?? [], v);
+      td.textContent = h == null ? '–' : `${Math.round(h * 100)}%`;
+    });
+  </script>
+</Base>

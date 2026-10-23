@@ -77,5 +77,5 @@ export const PERSONAS = {
   'saver-bold': { variant: 'sprint', name: '衝刺海豹', tag: '存得兇也敢衝,目標是提早下班。', tint: 'var(--pastel-peach)' },
   'spender-safe': { variant: 'slow', name: '慢活海豹', tag: '照自己的步調走,穩穩的最安心。', tint: 'var(--pastel-lilac)' },
   'spender-steady': { variant: 'chill', name: '悠哉海豹', tag: '現在的生活要顧,未來也想顧到。', tint: 'var(--pastel-sky)' },
-  'spender-bold': { variant: 'adventure', name: '冒險海豹', tag: '存得不算多,靠報酬拚一把。', tint: 'var(--pastel-pink)' },
+  'spender-bold': { variant: 'adventure', name: '冒險海豹', tag: '存得不算多,靠投資拚一把。', tint: 'var(--pastel-pink)' },
 };

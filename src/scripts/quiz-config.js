@@ -7,12 +7,12 @@ export const QUESTIONS = [
     slider: { key: 'age', min: 20, max: 65, step: 1, unit: '歲' },
   },
   {
-    id: 'dream', title: '理想中,你想幾歲退休?', hint: '挑一個夢想年齡,結果會告訴你來不來得及。',
+    id: 'dream', title: '理想中,你想幾歲退休?', hint: '挑一個理想退休年齡,結果會告訴你來不來得及。',
     key: 'fireAge', choices: [45, 50, 55, 60, 65].map((v) => ({ v, label: `${v} 歲` })),
     more: [{ key: 'fireAge', label: '自己填', unit: '歲', min: 30, max: 75, step: 1 }],
   },
   {
-    id: 'spend', title: '你每個月大概花多少?', hint: '不含房貸;退休後也照這個水準生活。',
+    id: 'spend', title: '你每個月大概花多少?', hint: '不含貸款;退休後也照這個水準生活。',
     key: 'monthlyExpense',
     choices: [
       { v: 4, label: '簡約', sub: '每月 4 萬' },
@@ -30,16 +30,16 @@ export const QUESTIONS = [
     slider: { key: 'monthlyIncome', min: 2, max: 50, step: 0.5, unit: '萬' }, feedback: true,
     more: [
       { key: 'salaryGrowth', label: '每年加薪', unit: '%', min: 0, max: 10, step: 0.5, pct: true },
-      { field: 'salaryCap', label: '收入上限(每月)', unit: '萬', scale: 12, hint: '加薪到這裡就停;留空 = 不設上限' },
+      { field: 'salaryCap', label: '每月收入上限', unit: '萬', scale: 12, hint: '加薪到這裡就停;留空代表不設上限。' },
     ],
   },
   {
-    id: 'assets', title: '現在有多少存款和投資?', hint: '銀行存款、股票、基金都算;不含自住的房子。',
+    id: 'assets', title: '現在有多少存款與投資?', hint: '銀行存款、股票、基金都算;不含自住的房子。',
     slider: { key: 'assets', min: 0, max: 5000, step: 10, unit: '萬' },
-    more: [{ key: 'emergencyMonths', label: '緊急預備金(不拿去投資)', unit: '個月', min: 0, max: 24, step: 1 }],
+    more: [{ key: 'emergencyMonths', label: '緊急預備金', unit: '個月', hint: '這幾個月的生活費放在銀行,不拿去投資。', min: 0, max: 24, step: 1 }],
   },
   {
-    id: 'loans', title: '有房貸或其他貸款嗎?', hint: '退休那年還沒還完的,會算進要準備的錢。',
+    id: 'loans', title: '有房貸或其他貸款嗎?', hint: '退休時還沒還完的,會算進需要準備的錢。',
     choices: [
       { v: 'none', label: '沒有' },
       { v: 'home', label: '有房貸' },
@@ -49,7 +49,7 @@ export const QUESTIONS = [
     list: 'loans',
   },
   {
-    id: 'goals', title: '未來有大筆支出嗎?', hint: '可以複選;金額和年份在細項裡改。', multi: true,
+    id: 'goals', title: '未來有大額支出嗎?', hint: '可以複選;金額和年份在細項裡改。', multi: true,
     choices: [
       { v: 'wedding', label: '結婚' },
       { v: 'kids', label: '小孩教育' },
@@ -71,9 +71,9 @@ export const QUESTIONS = [
     id: 'style', title: '你的投資風格比較像?', hint: '只是假設的年化報酬率,不是保證;結果頁還能再拉。',
     key: 'assumedReturn',
     choices: [
-      { v: 0.04, label: '保守', sub: '年化約 4%,起伏小' },
-      { v: 0.06, label: '穩健', sub: '年化約 6%' },
-      { v: 0.08, label: '積極', sub: '年化約 8%,起伏大' },
+      { v: 0.04, label: '保守', sub: '報酬率約 4%,起伏小' },
+      { v: 0.06, label: '穩健', sub: '報酬率約 6%' },
+      { v: 0.08, label: '積極', sub: '報酬率約 8%,起伏大' },
     ],
     more: [{ key: 'assumedReturn', label: '自己填', unit: '%', min: 0, max: 12, step: 0.5, pct: true }],
   },

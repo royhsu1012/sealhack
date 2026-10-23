@@ -32,7 +32,8 @@ export function saveState(s) {
 export const nf = (d) => new Intl.NumberFormat('zh-TW', { minimumFractionDigits: d, maximumFractionDigits: d });
 export const wan = (v, d = 0) => `${nf(d).format(v)} 萬`;
 export const big = (v) => (Math.abs(v) >= 10000 ? `${new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 2 }).format(v / 10000)} 億` : wan(v));
-export const pct = (r, d = 1) => (r == null ? '無解' : r <= 0 ? '0%' : `${nf(d).format(r * 100)}%`);
+/** 百分比:最多一位小數、整數不寫 .0(6%、6.4%) */
+export const pct = (r) => (r == null ? '無解' : r <= 0 ? '0%' : `${new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 1 }).format(r * 100)}%`);
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 export const num = (v) => { const x = parseFloat(v); return Number.isFinite(x) ? x : null; };
 export const round = (v, d) => Math.round(v * 10 ** d) / 10 ** d;

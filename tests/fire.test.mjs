@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 import {
   DEFAULT_INPUTS as D, pmt, loanBalance, computePlan, earliestFireYear, solveRate, futureValue,
   lifePath, fireAgeDrivers, presetInputs, PRESETS,
-  fundNeeded, fundAtFire, breakEvenReturn, needBreakdown, earliestFireTime, personaOf, levers, scenarios,
+  fundNeeded, fundAtFire, breakEvenReturn, needBreakdown, earliestFireTime, personaOf, levers, monteCarlo, successRate, earliestFireTimeAt, volatilityOf,
+  historyHitRate,
 } from '../src/lib/fire.js';
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: got ${a}, want ${b} ± ${tol}`);
@@ -164,20 +165,24 @@ test('退休人格與想再快一點', () => {
   assert.ok(Object.values(g).every((v) => v > 0), '都會提早');
 });
 
-test('樂觀到悲觀情境', () => {
-  const s = Object.fromEntries(scenarios(D, 0.06).map((x) => [x.key, x]));
-  near(s.optimistic.r, 0.08, 1e-9, '樂觀:報酬 +2%');
-  near(s.optimistic.inflation, 0.015, 1e-9, '樂觀:通膨 −0.5%');
-  near(s.pessimistic.r, 0.04, 1e-9, '悲觀:報酬 −2%');
-  near(s.pessimistic.inflation, 0.03, 1e-9, '悲觀:通膨 +1%');
-  near(s.optimistic.delay, -2.69, 0.01, '樂觀提早約 2 年 8 個月');
-  near(s.pessimistic.delay, 5.98, 0.01, '悲觀晚約 6 年');
-  assert.equal(s.optimistic.ok, true, '樂觀:50 歲夠');
-  assert.equal(s.pessimistic.ok, false, '悲觀:50 歲不夠');
-  assert.equal(lifePath(s.pessimistic.inp, s.pessimistic.r).depletionAge, 68, '悲觀:50 歲退休的話 68 歲用完');
-  assert.equal(lifePath(s.optimistic.inp, s.optimistic.r).depletionAge, null, '樂觀:撐得到 95 歲');
-  assert.ok(lifePath(s.optimistic.inp, s.optimistic.r).rows[15].balance > lifePath(D, 0.06).rows[15].balance, '樂觀累積得比較快');
-  assert.equal(scenarios({ ...D, inflation: 0.002 }, 0.01).find((x) => x.key === 'pessimistic').r, 0, '報酬率最低為 0');
+test('機率範圍(蒙地卡羅)', () => {
+  near(volatilityOf(0.04), 0.0625, 1e-9, '保守 4%:波動約 6%');
+  near(volatilityOf(0.06), 0.1125, 1e-9, '穩健 6%:波動約 11%');
+  assert.equal(volatilityOf(0.15), 0.2, '波動上限 20%');
+  const mc = monteCarlo(D, 0.06);
+  assert.deepEqual(monteCarlo(D, 0.06).rows, mc.rows, '固定種子:同樣輸入結果一樣');
+  const at50 = mc.rows.find((x) => x.age === 50);
+  const det50 = lifePath(D, 0.06).rows.find((x) => x.age === 50).balance;
+  assert.ok(at50.p10 < at50.p25 && at50.p25 < at50.p50 && at50.p50 < at50.p75 && at50.p75 < at50.p90, '分位數由小到大');
+  assert.ok(Math.abs(at50.p50 / det50 - 1) < 0.05, '中位數貼近固定報酬的路徑');
+  near(mc.success, 0.762, 0.001, '50 歲退休撐到 95 歲的機率');
+  assert.equal(mc.p50Zero, null, '中位數撐得到 95 歲');
+  assert.equal(mc.p10Zero, 76, '最差一成的情況 76 歲用完');
+  near(earliestFireTimeAt(D, 0.06, 0.5), earliestFireTime(D, 0.06), 0.2, '五成把握 ≈ 固定報酬的最快時間');
+  near(earliestFireTimeAt(D, 0.06, 0.9), 16.73, 0.01, '九成把握約 16 年 9 個月');
+  const later = [2038, 2040, 2042, 2045].map((y) => successRate({ ...D, fireYear: y }, 0.06));
+  assert.ok(later.every((v, i) => i === 0 || v >= later[i - 1]), '越晚退休,撐得住的機率越高');
+  assert.ok(successRate(D, 0.06, { sigma: 0.03 }) > mc.success, '波動越小,機率越高');
 });
 
 test('預設情境', () => {
@@ -191,4 +196,12 @@ test('預設情境', () => {
   }
   const fam = presetInputs('family', 2026);
   assert.equal(fam.goals[0].year, 2034);
+});
+
+test('歷史數據對照:持有期間年化報酬率至少 r 的比例', () => {
+  const a = [-0.02, 0.01, 0.03, 0.05, 0.08];
+  assert.equal(historyHitRate(a, 0.03), 0.6, '3% 以上有 3 / 5');
+  assert.equal(historyHitRate(a, -0.5), 1, '門檻很低時全部達到');
+  assert.equal(historyHitRate(a, 0.1), 0, '門檻高於最大值時都沒達到');
+  assert.equal(historyHitRate([], 0.03), null, '沒有資料');
 });

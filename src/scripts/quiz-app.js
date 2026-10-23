@@ -1,13 +1,13 @@
 // 退休測驗:開場 → 一題一張卡 → 退休人格與結果。所有計算交給 src/lib/fire.js。
 import {
   computePlan, lifePath, fireAgeDrivers, needBreakdown, fundNeeded, fundAtFire,
-  breakEvenReturn, earliestFireTime, personaOf, levers, scenarios, pmt,
+  breakEvenReturn, earliestFireTime, personaOf, levers, monteCarlo, earliestFireTimeAt, pmt,
 } from '../lib/fire.js';
 import {
   BASE_YEAR, END_AGE, R_MAX, freshState, loadState, saveState, nf, wan, big, pct, esc, num, round, $,
-  spanText, whenParts, knobGet, knobSet, writeKnobs, widthOf, onResize, setMiniBar, watchMiniBar,
+  spanText, whenParts, knobGet, knobSet, writeKnobs, widthOf, legend, onResize, setMiniBar, watchMiniBar,
 } from './shared.js';
-import { scenarioChart, targetChart, cashflowChart, driversChart, tradeoffChart } from './charts.js';
+import { fanChart, BAND_DARK, BAND_LIGHT, targetChart, cashflowChart, driversChart, tradeoffChart } from './charts.js';
 import { QUESTIONS, LOAN_DEFAULTS, GOAL_DEFAULTS, PENSION_DEFAULTS } from './quiz-config.js';
 import { seal, PERSONAS } from './seal.js';
 
@@ -42,7 +42,7 @@ const LISTS = {
     blank: () => ({ year: BASE_YEAR + 5, name: '大額支出', amount: 50 }),
     fields: [
       { key: 'year', label: '年份', unit: '年', step: 1 },
-      { key: 'amount', label: '金額(今天的錢)', unit: '萬', step: 10 },
+      { key: 'amount', label: '金額(今日幣值)', unit: '萬', step: 10 },
     ],
   },
 };
@@ -86,7 +86,7 @@ function writeFields() {
 }
 
 // ---------- 答案 ↔ 輸入 ----------
-// 第一次做測驗:數字沿用範例,選擇題從中性答案開始(沒有貸款、沒有大筆支出、勞保勞退算進去)
+// 第一次做測驗:數字沿用範例,選擇題從中性答案開始(沒有貸款、沒有大額支出、勞保勞退算進去)
 function quizStart() {
   const base = freshState();
   base.inputs = { ...base.inputs, loans: [], goals: [], incomes: PENSION_DEFAULTS.map((p) => ({ ...p })) };
@@ -194,8 +194,6 @@ let last = null;
 const STYLE = { safe: '保守', steady: '穩健', bold: '積極' };
 const LEVER = { saveMore: '每月多存 1 萬', spendLess: '每月少花 5 千', returnUp: '報酬率多 1%' };
 
-const pctS = (r) => pct(r).replace('.0%', '%');
-const SCEN = { optimistic: '樂觀', base: '基本', pessimistic: '悲觀' };
 
 function placeMark(be) {
   const mark = $('ret-mark');
@@ -211,40 +209,32 @@ function check(level, title, body) {
   return `<li class="flex gap-3"><span class="dot dot-${level}" aria-hidden="true"></span><div><p class="font-semibold">${title}</p><p class="text-sm muted mt-0.5">${body}</p></div></li>`;
 }
 
-// 一生資產:樂觀 / 基本 / 悲觀三條路徑 + 各自最快何時能退休
+// 一生資產的機率範圍 + 撐得住的機率 + 九成把握的最快退休時間
 function drawLife() {
   if (!last) return;
-  const { inp, r, n, fireAge, t } = last;
+  const { inp, r, n, fireAge } = last;
   if (n < 1) {
     $('chart-life').innerHTML = '<p class="text-sm muted">理想退休年齡要大於現在的年齡。</p>';
-    $('r-scen').innerHTML = '';
+    $('r-odds').innerHTML = '';
     return;
   }
-  const sc = Object.fromEntries(scenarios(inp, r, END_AGE).map((x) => [x.key, x]));
-  const rows = [
-    { key: 'optimistic', inp: sc.optimistic.inp, r: sc.optimistic.r, t: sc.optimistic.t },
-    { key: 'base', inp, r, t },
-    { key: 'pessimistic', inp: sc.pessimistic.inp, r: sc.pessimistic.r, t: sc.pessimistic.t },
-  ];
-  const paths = rows.map((x) => ({ key: x.key, label: SCEN[x.key], life: lifePath(x.inp, x.r, END_AGE) }));
-  $('chart-life').innerHTML = scenarioChart(paths, fundNeeded(inp, r, END_AGE), computePlan(inp).loans.balanceAtFire, widthOf('chart-life'));
-  $('life-note').textContent = `都在 ${fireAge} 歲退休;中間是你選的報酬率,上下是樂觀與悲觀。`;
-  $('r-scen').innerHTML = rows.map((x) => {
-    const w = x.t == null ? null : whenParts(x.t, x.inp.age);
-    const when = x.t == null ? '45 年內存不夠' : w.now ? '現在就能退休' : `最快 ${w.year} 年 ${w.month} 月`;
-    const depl = paths.find((p) => p.key === x.key).life.depletionAge;
-    return `<li class="scen-${x.key}">
-      <span class="scen-line" aria-hidden="true"></span>
-      <b class="scen-name">${SCEN[x.key]}</b>
-      <b class="scen-when num">${when}</b>
-      <small class="scen-sub">報酬 ${pctS(x.r)}・通膨 ${pctS(x.inp.inflation)}・${fireAge} 歲退休${depl ? `${depl} 歲用完` : `撐過 ${END_AGE} 歲`}</small>
-    </li>`;
-  }).join('');
+  const mc = monteCarlo(inp, r, { endAge: END_AGE });
+  $('chart-life').innerHTML = fanChart(mc, fundNeeded(inp, r, END_AGE), widthOf('chart-life'))
+    + legend([['var(--ink)', '中位數'], [BAND_DARK, '中間一半的情況'], [BAND_LIGHT, '八成的情況']]);
+  $('life-note').textContent = `${fireAge} 歲退休,模擬 1,000 種市場走勢:年報酬率中位數 ${pct(r)}、上下波動約 ${pct(mc.sigma)}。`;
+  const p = Math.round(mc.success * 100);
+  const lvl = mc.success >= 0.9 ? 'ok' : mc.success >= 0.7 ? 'warn' : 'bad';
+  const t90 = earliestFireTimeAt(inp, r, 0.9, { endAge: END_AGE });
+  const w90 = t90 == null ? null : whenParts(t90, inp.age);
+  $('r-odds').innerHTML = `
+    <li><span class="dot dot-${lvl}" aria-hidden="true"></span><span>${fireAge} 歲退休,撐到 ${END_AGE} 歲的機率</span><b class="num">${p}%</b></li>
+    <li><span class="dot dot-ok" aria-hidden="true"></span><span>九成把握,最快退休</span>
+      <b class="num">${t90 == null ? '45 年內做不到' : w90.now ? '現在' : `${w90.year} 年 ${w90.month} 月<small>約 ${w90.age} 歲</small>`}</b></li>`;
 }
 
 function drawMore() {
   if (!last || !$('more').open) return;
-  const { inp, r, n, be } = last;
+  const { inp, r, n, be, fireAge } = last;
   if (n < 1) {
     ['chart-trade', 'chart-target', 'chart-cashflow', 'chart-drivers', 'checks'].forEach((id) => { $(id).innerHTML = ''; });
     return;
@@ -266,8 +256,8 @@ function drawMore() {
     ? check('warn', `${c.negativeYears.join('、')} 年存款不夠`, '大額支出那年要動用存款;提前 2–3 年把錢準備好。')
     : check('ok', '每年都有存到錢', '沒有需要動用存款的年份。'));
   items.push(life.depletionAge
-    ? check('bad', `${life.depletionAge} 歲資金用完`, `照理想年齡退休、每年 ${pct(r)} 報酬推算;晚一點退休或降低生活費,才撐得到 ${END_AGE} 歲。`)
-    : check('ok', `資金撐得到 ${END_AGE} 歲`, `照理想年齡退休、每年 ${pct(r)} 報酬推算,資產沒有用完。`));
+    ? check('bad', `${life.depletionAge} 歲資金用完`, `照 ${fireAge} 歲退休、報酬率 ${pct(r)} 推算;晚一點退休或降低生活費,才能撐到 ${END_AGE} 歲。`)
+    : check('ok', `資金撐到 ${END_AGE} 歲`, `照 ${fireAge} 歲退休、報酬率 ${pct(r)} 推算,資產沒有用完。`));
   $('checks').innerHTML = items.join('');
 }
 
@@ -286,19 +276,19 @@ function renderResult() {
   // 最快何時退休
   const t = earliestFireTime(inp, r, 45, END_AGE);
   const w = t == null ? null : whenParts(t, inp.age);
-  $('r-kicker').textContent = `照每年 ${pct(r)} 報酬,你最快`;
+  $('r-kicker').textContent = `報酬率 ${pct(r)} 時,你最快`;
   if (t == null) {
     $('r-date').textContent = '還要很久';
-    $('r-span').textContent = '45 年內都存不夠退休,看看下面怎麼再快一點。';
+    $('r-span').textContent = '45 年內都存不夠退休,看看下面怎麼再快一點';
   } else if (w.now) {
     $('r-date').textContent = '現在';
-    $('r-span').textContent = '就可以退休了!資產已經撐得到 95 歲。';
+    $('r-span').textContent = `就可以退休,資產已經撐到 ${END_AGE} 歲`;
   } else {
     $('r-date').innerHTML = `${w.year}<small>年</small>${w.month}<small>月</small>`;
-    $('r-span').textContent = `就能退休(${w.span}後,約 ${w.age} 歲)`;
+    $('r-span').textContent = `就可以退休(${w.span}後,約 ${w.age} 歲)`;
   }
 
-  // 理想年齡來不來得及
+  // 理想退休年齡來不來得及
   const fireAge = knobGet(inp, 'fireAge');
   const n = inp.fireYear - inp.baseYear;
   let be = null;
@@ -319,19 +309,19 @@ function renderResult() {
   $('r-levers').innerHTML = L.rows.map((x) => {
     const v = x.gain != null
       ? (x.gain > 1 / 24 ? `提早 ${spanText(x.gain)}` : '差不多')
-      : x.t != null ? `${spanText(x.t)}後就能退休` : '還是存不夠';
+      : x.t != null ? `${spanText(x.t)}後就可以退休` : '還是存不夠';
     return `<li><span>${LEVER[x.key]}</span><b>${v}</b></li>`;
   }).join('');
 
   placeMark(be);
-  $('ret-note').textContent = be == null ? '拉拉看,最快退休的時間會跟著變。' : `三角形是 ${fireAge} 歲退休最少需要的報酬率;拉拉看,最快退休的時間會跟著變。`;
+  $('ret-note').textContent = be == null ? '拉拉看,最快退休的時間會跟著變。' : `三角形是 ${fireAge} 歲退休的最低報酬率;拉拉看,最快退休的時間會跟著變。`;
 
   last = { inp, r, n, fireAge, be, name: P.name, w, t };
   drawLife();
   drawMore();
   setMiniBar(
-    t == null ? '45 年內存不夠退休' : w.now ? '現在就能退休' : `最快 ${w.year} 年 ${w.month} 月退休`,
-    `${P.name} · 報酬 ${pct(r)}`,
+    t == null ? '45 年內存不夠退休' : w.now ? '現在就可以退休' : `最快 ${w.year} 年 ${w.month} 月退休`,
+    `${P.name}・報酬率 ${pct(r)}`,
   );
 }
 
@@ -351,11 +341,11 @@ function toast(msg) {
 async function share() {
   if (!last) return;
   const { name, r, w, t } = last;
-  const when = t == null ? '還要再努力一下' : w.now ? '現在就能退休' : `最快 ${w.year} 年 ${w.month} 月就能退休`;
-  const text = `我是「${name}」!照每年 ${pct(r)} 報酬,我${when}。你是哪一型的退休海豹?`;
+  const when = t == null ? '還要再努力一下' : w.now ? '現在就可以退休' : `最快 ${w.year} 年 ${w.month} 月就可以退休`;
+  const text = `我是「${name}」!報酬率 ${pct(r)} 時,我${when}。你是哪一型的退休海豹?`;
   const url = `${location.origin}/`;
   if (navigator.share) {
-    try { await navigator.share({ title: 'SealHack 退休測驗', text, url }); } catch { /* 使用者取消 */ }
+    try { await navigator.share({ title: 'SealHack FIRE 退休測驗', text, url }); } catch { /* 使用者取消 */ }
     return;
   }
   try {

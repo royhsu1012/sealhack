@@ -8,8 +8,8 @@ const N = QUESTIONS.length;
 const R_MAX = 12;
 const ticks = [0, 2, 4, 6, 8, 10, 12];
 const zones = [
-  ['var(--free)', '4% 以下:保守'],
-  ['var(--gold)', '4–7%:穩健'],
+  ['var(--free)', '低於 5%:保守'],
+  ['var(--gold)', '5–7%:穩健'],
   ['var(--warn)', '7% 以上:積極'],
 ];
 ---
@@ -94,6 +94,7 @@ const zones = [
                       </div>
                     </div>
                     <input type="range" min={m.min} max={m.max} step={m.step} data-knob={m.key} data-pct={m.pct ? '1' : undefined} aria-label={m.label} />
+                    {m.hint && <div class="hint">{m.hint}</div>}
                   </div>
                 ))}
                 {q.list && (
@@ -143,9 +144,9 @@ const zones = [
           <span>%</span>
         </div>
       </div>
-      <div class="ret" style={`--z1:${(4 / R_MAX) * 100}%;--z2:${(7 / R_MAX) * 100}%`}>
+      <div class="ret" style={`--z1:${(5 / R_MAX) * 100}%;--z2:${(7 / R_MAX) * 100}%`}>
         <div class="ret-mark" id="ret-mark" hidden><span id="ret-mark-label" class="ret-mark-label"></span></div>
-        <input class="ret-range" type="range" min="0" max={R_MAX} step="0.1" data-knob="assumedReturn" data-pct="1" aria-label="每年投資報酬率" />
+        <input class="ret-range" type="range" min="0" max={R_MAX} step="0.1" data-knob="assumedReturn" data-pct="1" aria-label="報酬率" />
         <div class="ret-scale" aria-hidden="true">
           {ticks.map((v) => <span style={`--f:${v / R_MAX}`}>{v}%</span>)}
         </div>
@@ -154,13 +155,14 @@ const zones = [
         {zones.map(([c, s]) => <span><span style={`color:${c}`}>■</span> {s}</span>)}
       </p>
       <p class="text-xs muted mt-2" id="ret-note"></p>
+      <a class="inv-link" href="/invest/"><span>這個報酬率要怎麼投資?</span><b>看投資方法</b></a>
     </form>
 
     <div class="card">
-      <h2 class="card-title">你的一生資產:樂觀到悲觀</h2>
+      <h2 class="card-title">你的一生資產:機率範圍</h2>
       <p id="life-note" class="text-sm muted mt-1"></p>
       <div id="chart-life" class="chart mt-4"></div>
-      <ul class="scen" id="r-scen"></ul>
+      <ul class="odds" id="r-odds"></ul>
     </div>
 
     <div class="result-actions">
@@ -172,17 +174,17 @@ const zones = [
     <details class="card more" id="more">
       <summary>
         <span class="card-title">更多分析</span>
-        <span class="text-sm muted">報酬率交叉圖、要準備多少、每年存款、影響因素、財務體檢</span>
+        <span class="text-sm muted">報酬率交叉圖、需要準備多少、每年能存下多少、影響退休年齡的因素、財務體檢</span>
       </summary>
       <div class="more-body">
         <section>
-          <h3>報酬率越高,需要的錢越少、存到的錢越多</h3>
-          <p class="text-sm muted">兩條線交叉的地方,就是理想年齡退休最低要有的報酬率。</p>
+          <h3>報酬率交叉圖</h3>
+          <p class="text-sm muted">報酬率越高,需要準備的錢越少、存得到的錢越多;兩條線交叉的地方,就是理想退休年齡的最低報酬率。</p>
           <div id="chart-trade" class="chart mt-3"></div>
         </section>
         <section>
-          <h3>理想年齡退休,需要準備多少</h3>
-          <p class="text-sm muted">到 95 歲的生活費(以你的報酬率折回退休那年),扣掉年金,再加上還沒還完的貸款。</p>
+          <h3>需要準備多少</h3>
+          <p class="text-sm muted">在理想退休年齡退休時:到 95 歲的生活費(以你的報酬率折回退休時),扣掉年金,再加上還沒還完的貸款。</p>
           <div id="chart-target" class="chart mt-3"></div>
         </section>
         <section>
@@ -191,7 +193,7 @@ const zones = [
           <div id="chart-cashflow" class="chart mt-3"></div>
         </section>
         <section>
-          <h3>什麼最影響退休年齡</h3>
+          <h3>影響退休年齡的因素</h3>
           <p class="text-sm muted">每個條件往好、往壞各調一點,看最快退休的年齡差幾歲。</p>
           <div id="chart-drivers" class="chart mt-3"></div>
         </section>

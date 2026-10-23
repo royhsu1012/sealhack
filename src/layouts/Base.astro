@@ -4,9 +4,9 @@ import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 
 interface Props { title: string; description?: string; }
-const { title, description = '輸入 FIRE 年份、生活費、薪資、貸款與年金,算出需要累積多少資金、投資報酬率至少要多少。' } = Astro.props;
+const { title, description = '回答 9 個小問題,看看你最快什麼時候可以退休。所有計算都在你的瀏覽器裡完成。' } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
-const fullTitle = title === 'SealHack' ? 'SealHack — FIRE 財務規劃試算' : `${title}｜SealHack FIRE`;
+const fullTitle = title === 'SealHack' ? 'SealHack FIRE — 退休測驗' : `${title}｜SealHack FIRE`;
 ---
 
 <!doctype html>

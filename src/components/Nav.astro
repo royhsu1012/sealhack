@@ -2,12 +2,13 @@
 const path = Astro.url.pathname;
 const links = [
   { label: '退休測驗', href: '/' },
+  { label: '投資方法', href: '/invest/' },
   { label: '怎麼算的', href: '/method/' },
 ];
 const isActive = (h: string) => (h === '/' ? path === '/' : path.startsWith(h));
 ---
 <header class="border-b" style="border-color:var(--line)">
-  <div class="mx-auto max-w-6xl px-4 h-14 flex items-center gap-5">
+  <div class="mx-auto max-w-6xl px-3 sm:px-4 h-14 flex items-center gap-2 sm:gap-5">
     <a href="/" class="flex items-center gap-2 h-10 min-w-10 font-extrabold shrink-0" aria-label="SealHack FIRE 首頁">
       <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
         <rect x="1" y="14" width="10" height="11" rx="2" fill="var(--work)"/>
@@ -15,14 +16,14 @@ const isActive = (h: string) => (h === '/' ? path === '/' : path.startsWith(h));
       </svg>
       <span class="hidden sm:inline">SealHack FIRE</span>
     </a>
-    <nav class="flex items-center gap-1 sm:gap-2 text-sm whitespace-nowrap">
+    <nav class="flex items-center gap-1 sm:gap-2 text-[13px] sm:text-sm whitespace-nowrap">
       {links.map((l) => (
-        <a href={l.href} class="px-2 py-2.5" style={isActive(l.href) ? 'color:var(--ink);font-weight:700' : 'color:var(--ink-2)'} aria-current={isActive(l.href) ? 'page' : undefined}>{l.label}</a>
+        <a href={l.href} class="px-0.5 min-[360px]:px-1 sm:px-2 py-2.5" style={isActive(l.href) ? 'color:var(--ink);font-weight:700' : 'color:var(--ink-2)'} aria-current={isActive(l.href) ? 'page' : undefined}>{l.label}</a>
       ))}
     </nav>
     <div class="flex-1"></div>
     <a href="https://github.com/royhsu1012/sealhack" class="hidden sm:inline px-2 py-2.5 text-sm muted">GitHub</a>
-    <button id="theme-toggle" aria-label="切換深淺色" class="w-10 h-10 grid place-items-center rounded-lg border" style="border-color:var(--line)">
+    <button id="theme-toggle" aria-label="切換深淺色" class="shrink-0 w-10 h-10 grid place-items-center rounded-lg border" style="border-color:var(--line)">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
     </button>
   </div>
