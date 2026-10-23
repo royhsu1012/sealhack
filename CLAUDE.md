@@ -34,7 +34,12 @@ src/lib/fire.js            計算引擎(純函式,無 DOM;唯一事實來源):ne
 src/scripts/quiz-config.js 題目卡內容與選項預設值(貸款、大額支出、年金)
 src/scripts/quiz-app.js    測驗互動層:開場 / 題目卡 / 結果三階段(<html data-phase>)
 src/scripts/charts.js      結果頁 SVG 圖表(一生資產機率範圍、交叉圖、瀑布圖、每年存款、影響因素)
-src/scripts/seal.js        海豹吉祥物 SVG 與 6 種退休人格
+src/scripts/seal.js        像素海豹的 HTML(幾個空的 <i>)與 6 種退休人格;圖案全在 CSS
+src/styles/seal.css        純 CSS 畫的像素海豹(scripts/seal-css.mjs 產生,勿手改;global.css 匯入)
+src/data/seal-pixels.json  參考圖 1:1 還原的像素資料(192 × 108;網站只用海豹本體與眼睛)
+src/data/seal-accessories.js 人格配件的像素圖案
+scripts/seal-sprite.py     由 scripts/assets/seal-reference.png(使用者提供)產生 seal-pixels.json 與 --sp-* 調色盤(需要 Pillow)
+scripts/seal-css.mjs       seal-pixels.json + 配件 → seal.css(`npm run seal`)
 src/scripts/shared.js      localStorage 狀態、格式化、滑桿、圖表小工具、底部結果列
 src/pages/index.astro      測驗頁(開場 → 題目卡 → 結果)
 src/pages/method.astro     計算方法:公式、假設、題目預設值與退休人格

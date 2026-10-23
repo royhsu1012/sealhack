@@ -1,8 +1,9 @@
 @import "tailwindcss";
+@import "./seal.css";
 
 /* ---- SealHack 設計 tokens(淺色預設) ----
    語意:--work = 工作期(灰藍)、--free = 自由期 / 夠用 / 主強調(綠)、--gold = 退休時間點、--warn = 警示 / 不夠
-   --seal-* = 海豹吉祥物;--pastel-* = 測驗卡與退休人格的底色 */
+   --seal-acorn = 海豹配件的木頭色;--sp-* = 像素海豹調色盤(檔案最後,由 scripts/seal-sprite.py 產生);--pastel-* = 測驗卡與退休人格的底色 */
 @theme {
   --font-sans: "Manrope", "Noto Sans TC", ui-sans-serif, system-ui, "PingFang TC", "Microsoft JhengHei", sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
@@ -21,12 +22,6 @@
   --warn: #c4573a;
   --grid: #e9edf2;
   --brand: var(--free);
-  --seal: #a7bad0;
-  --seal-dark: #8da2bb;
-  --seal-belly: #f1f5f9;
-  --seal-eye: #1e2a3c;
-  --seal-shine: #ffffff;
-  --seal-blush: #f5a8b5;
   --seal-acorn: #b7793f;
   --pastel-mint: #e2f4ec;
   --pastel-sky: #e3eefb;
@@ -48,12 +43,6 @@
   --gold: #f0c04a;
   --warn: #ec7c5d;
   --grid: #1f2c43;
-  --seal: #94a9c2;
-  --seal-dark: #7790ad;
-  --seal-belly: #dfe7f0;
-  --seal-eye: #101828;
-  --seal-shine: #ffffff;
-  --seal-blush: #e8909f;
   --seal-acorn: #c98c50;
   --pastel-mint: #173a30;
   --pastel-sky: #183049;
@@ -118,8 +107,16 @@ h1, h2, h3 { letter-spacing: -0.015em; }
 
 /* 開場 */
 .intro { max-width: 32rem; margin: 0 auto; padding: 1.5rem 1rem 0; text-align: center; }
-.intro-seal { width: min(14rem, 60vw); margin: 0 auto 0.5rem; animation: bob 3s ease-in-out infinite; }
-.intro-seal svg, .persona-art svg { width: 100%; height: auto; display: block; }
+.intro-seal { margin: 0 auto 0.5rem; }
+/* 像素海豹(純 CSS,圖案在 seal.css):--p = 一格像素的大小;身體每 1.4 秒跳一格、每 5 秒眨眼 */
+.intro-seal .px-seal, .persona-art .px-seal { --p: 3px; }
+@media (min-width: 640px) { .intro-seal .px-seal { --p: 4px; } }
+.px-seal .px-hop { animation: px-bob 1.4s step-end infinite; }
+.px-seal .px-eyes { animation: px-eyes 5s step-end infinite; }
+.px-seal .px-shut { opacity: 0; animation: px-shut 5s step-end infinite; }
+@keyframes px-bob { 0% { transform: translateY(0); } 50% { transform: translateY(calc(var(--p) * -1)); } }
+@keyframes px-eyes { 0% { opacity: 1; } 92% { opacity: 0; } 95% { opacity: 1; } }
+@keyframes px-shut { 0% { opacity: 0; } 92% { opacity: 1; } 95% { opacity: 0; } }
 .intro-title { font-size: clamp(2rem, 9vw, 3rem); font-weight: 800; line-height: 1.2; margin-top: 0.75rem; }
 .intro-sub { margin-top: 1rem; color: var(--ink-2); line-height: 1.7; }
 .intro .btn-big { margin-top: 1.75rem; width: 100%; max-width: 20rem; }
@@ -195,7 +192,7 @@ h1, h2, h3 { letter-spacing: -0.015em; }
 .result { max-width: 44rem; margin: 0 auto; padding: 1.25rem 1rem 0; gap: 1rem; }
 .result > .card { padding: 1.25rem; border-radius: 1.4rem; }
 .persona { --tint: var(--pastel-sky); background: var(--tint); border-radius: 1.75rem; padding: 1.5rem 1.25rem; text-align: center; }
-.persona-art { width: min(13rem, 58vw); margin: 0 auto; animation: pop-in .6s cubic-bezier(.2, 1.4, .4, 1) both; }
+.persona-art { margin: 0 auto; animation: pop-in .6s cubic-bezier(.2, 1.4, .4, 1) both; }
 .persona-pre { margin-top: 0.25rem; font-weight: 700; color: var(--ink-2); }
 .persona-name { font-size: clamp(2rem, 9vw, 2.75rem); font-weight: 800; line-height: 1.15; }
 .persona-tag { margin-top: 0.35rem; font-size: 1.05rem; }
@@ -495,3 +492,50 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 
 }
 .idea h3 { font-weight: 800; font-size: 1rem; }
 .idea-link { display: inline-flex; align-items: center; min-height: 2.5rem; min-width: 2.75rem; color: var(--free); font-weight: 700; font-size: 0.82rem; }
+
+/* seal-palette:start(scripts/seal-sprite.py 產生,勿手改) */
+:root {
+  --sp-0: #c4e7ff;
+  --sp-1: #ffffff;
+  --sp-2: #e8f6ff;
+  --sp-3: #d6efff;
+  --sp-4: #c3ced9;
+  --sp-5: #e1e1e1;
+  --sp-6: #a7b7c7;
+  --sp-7: #bfe5ff;
+  --sp-8: #97bad1;
+  --sp-9: #96adc6;
+  --sp-10: #aac8dd;
+  --sp-11: #8293a5;
+  --sp-12: #c6dceb;
+  --sp-13: #94a2b0;
+  --sp-14: #323c4a;
+  --sp-15: #6e87a5;
+  --sp-16: #e2f3ff;
+  --sp-17: #8196b0;
+  --sp-18: #647990;
+  --sp-19: #5d738b;
+  --sp-20: #7a92ae;
+  --sp-21: #404a55;
+  --sp-22: #a1b0bf;
+  --sp-23: #5b646d;
+  --sp-24: #76889d;
+  --sp-25: #526983;
+  --sp-26: #656f79;
+  --sp-27: #161b22;
+  --sp-28: #aebfd1;
+  --sp-29: #cceaff;
+  --sp-30: #bbc7d4;
+  --sp-31: #d9dbde;
+  --sp-32: #83a0b7;
+  --sp-33: #eff9ff;
+  --sp-34: #929599;
+  --sp-35: #85898e;
+  --sp-36: #222c36;
+  --sp-37: #b2d0e6;
+  --sp-38: #b9d2e5;
+  --sp-39: #cbcfd4;
+  --sp-40: #b1b2b5;
+  --sp-41: #c5dff1;
+}
+/* seal-palette:end */
