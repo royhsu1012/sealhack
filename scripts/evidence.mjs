@@ -211,6 +211,71 @@ function feeDrag(gross = 0.06, years = 30, fees = [0.002, 0.01, 0.015]) {
   return { gross, years, monthly: 1, rows: [0, ...fees].map((f) => ({ fee: f, value: Math.round(fv(f)), keep: r3(fv(f) / base) })) };
 }
 
+// ---------- 《持續買進》專頁 ----------
+/** 在歷史高點買進 vs 其他時候買進:之後 12 個月的報酬率、36 個月的年化報酬率 */
+function athForward(series) {
+  let peak = -Infinity;
+  const flags = series.map((s) => { const at = s.v >= peak; peak = Math.max(peak, s.v); return at; });
+  const pick = (months, at) => {
+    const a = [];
+    for (let i = 0; i + months < series.length; i++) if (flags[i] === at) a.push(cagr(series[i].v, series[i + months].v, months / 12));
+    return { n: a.length, mean: r4(mean(a)), loss: r3(share(a, (v) => v < 0)) };
+  };
+  return {
+    share: r3(share(flags, Boolean)),
+    m12: { ath: pick(12, true), other: pick(12, false) },
+    m36: { ath: pick(36, true), other: pick(36, false) },
+  };
+}
+/** 指數離歷史高點多遠:在高點、跌 10% 以上、跌 20% 以上的月份比例 */
+function underwater(series) {
+  let peak = -Infinity;
+  const dd = series.map((s) => { peak = Math.max(peak, s.v); return s.v / peak - 1; });
+  return { atPeak: r3(share(dd, (d) => d === 0)), below10: r3(share(dd, (d) => d <= -0.1)), below20: r3(share(dd, (d) => d <= -0.2)) };
+}
+/** 持有 1 年報酬率的分布 */
+function hist1y(series) {
+  const a = rolling(series, 1);
+  const edges = [-Infinity, -0.2, -0.1, 0, 0.1, 0.2, 0.3, Infinity];
+  return edges.slice(0, -1).map((lo, i) => ({ lo: Number.isFinite(lo) ? lo : null, hi: Number.isFinite(edges[i + 1]) ? edges[i + 1] : null, share: r3(share(a, (v) => v >= lo && v < edges[i + 1])) }));
+}
+/**
+ * 遇到空頭時三種人(每月投入 1):照常買 / 跌 20% 以上就停扣、回到高點才把存下的錢投入 /
+ * 跌 30% 以上就全部賣掉、回到高點才全部買回。停扣只看遇到跌 20% 以上的視窗,賣出只看真的賣過的視窗。
+ */
+function crisis(series, months) {
+  const v = series.map((s) => s.v);
+  const peaks = []; let pk = -Infinity;
+  for (const x of v) { pk = Math.max(pk, x); peaks.push(pk); }
+  const pauseEdge = [], panicEdge = [];
+  for (let s = 0; s + months <= v.length; s++) {
+    const e = s + months - 1;
+    let hit = false;
+    for (let t = s; t <= e; t++) if (v[t] / peaks[t] - 1 <= -0.2) { hit = true; break; }
+    if (!hit) continue;
+    let dca = 0, pu = 0, pc = 0, paused = false, pn = 0, pnCash = 0, out = false, sold = false;
+    for (let t = s; t <= e; t++) {
+      const dd = v[t] / peaks[t] - 1;
+      dca += 1 / v[t];
+      // 停扣
+      if (!paused && dd <= -0.2) paused = true;
+      if (paused && v[t] >= peaks[t]) paused = false;
+      pc += 1;
+      if (!paused) { pu += pc / v[t]; pc = 0; }
+      // 恐慌賣出
+      if (!out && dd <= -0.3) { pnCash += pn * v[t]; pn = 0; out = true; sold = true; }
+      if (out && v[t] >= peaks[t]) out = false;
+      pnCash += 1;
+      if (!out) { pn += pnCash / v[t]; pnCash = 0; }
+    }
+    const base = dca * v[e];
+    pauseEdge.push((pu * v[e] + pc) / base - 1);
+    if (sold) panicEdge.push((pn * v[e] + pnCash) / base - 1);
+  }
+  const sum = (a) => ({ n: a.length, keepWins: r3(share(a, (x) => x < 0)), median: r4(median(a)), worst: r4(Math.min(...a)) });
+  return { years: months / 12, pause: sum(pauseEdge), panic: sum(panicEdge) };
+}
+
 // ---------- 輸出 ----------
 const twPxM = monthEnd(twPx.filter((r) => r.date >= twTR[0].date), 'date', 'close');
 const twYears = (new Date(twTR.at(-1).date) - new Date(twTR[0].date)) / (365.25 * 864e5);
@@ -239,6 +304,17 @@ const evidence = {
   cape: capeStudy(),
   drawdown: { tw: afterDrawdown(tw), us: afterDrawdown(us), twBears: bearMarkets(tw), usBears: bearMarkets(us).filter((b) => b.drop <= -0.3) },
   fees: feeDrag(),
+  keepBuying: {
+    athForward: { tw: athForward(tw), us: athForward(us) },
+    underwater: { tw: underwater(tw), us: underwater(us) },
+    hist1y: { tw: hist1y(tw), us: hist1y(us) },
+    lumpByLength: Object.fromEntries([['tw', tw], ['us', us]].map(([k, se]) => [k, [6, 12, 24, 36].map((m) => ({ months: m, ...lumpVsDca(se, m) }))])),
+    dipLag: {
+      tw: [0, 1, 2, 3, 6].map((lag) => ({ lag, dcaWins: dcaVsPerfectDip(tw, 120, lag).dcaWins })),
+      us: [0, 1, 2, 3, 6].map((lag) => ({ lag, dcaWins: dcaVsPerfectDip(us, 480, lag).dcaWins })),
+    },
+    crisis: { tw: crisis(tw, 120), us: crisis(us, 240) },
+  },
 };
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, `${JSON.stringify(evidence, null, 1)}\n`);

@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import InvestTabs from '../components/InvestTabs.astro';
 import { BOOKS } from '../data/books.js';
 import E from '../data/evidence.json';
 
@@ -64,6 +65,7 @@ const CHECKS = [
 ---
 <Base title="投資方法" description="從退休需要的報酬率出發:整理持續買進、柏格、巴菲特、蒙格、馬克斯、李錄六本書的方法,再用台股 2003 年起、美股 1928 年起的歷史數據檢驗。">
   <div class="invest">
+    <InvestTabs />
     <header class="invest-head">
       <p class="pill">投資方法</p>
       <h1>怎麼找到好的投資標的</h1>
@@ -305,6 +307,7 @@ const CHECKS = [
             <ul>{b.summary.map((s) => <li>{s}</li>)}</ul>
             <h4>具體方法</h4>
             <ul>{b.methods.map((s) => <li>{s}</li>)}</ul>
+            {b.id === 'maggiulli' && <a class="inv-link" href="/invest/keep-buying/"><span>17 個觀點與更多數據</span><b>看持續買進分頁</b></a>}
             <p class="book-links">對應數據:{b.evidence.map((id) => <a href={`#${id}`}>{({ hold: '持有越久', growth: '報酬來源', timing: '一次投入與抄底', 'best-days': '錯過最好的幾天', mood: '市場先生', cape: '買進價格', drawdown: '大跌之後', fees: '成本' })[id]}</a>)}</p>
           </div>
         </details>

@@ -1,0 +1,216 @@
+---
+import Base from '../../layouts/Base.astro';
+import InvestTabs from '../../components/InvestTabs.astro';
+import { SAVE_IDEAS, INVEST_IDEAS, RULES } from '../../data/keep-buying.js';
+import E from '../../data/evidence.json';
+
+// 只做顯示格式;統計都在 scripts/evidence.mjs 先算好
+const nf = (d) => new Intl.NumberFormat('zh-TW', { maximumFractionDigits: d });
+const P = (v, d = 1) => `${v < 0 ? '−' : ''}${nf(d).format(Math.abs(v) * 100)}%`;
+const W = (v, max) => `${Math.max(1.5, Math.min(100, (Math.abs(v) / max) * 100))}%`;
+const K = E.keepBuying;
+const MKT = [['tw', '台股'], ['us', '美股']];
+const lump12 = (k) => K.lumpByLength[k].find((x) => x.months === 12);
+const histLabel = (b) => (b.lo == null ? `低於 ${P(b.hi, 0)}` : b.hi == null ? `${P(b.lo, 0)} 以上` : `${P(b.lo, 0)} 到 ${P(b.hi, 0)}`);
+const isPage = (d) => d.startsWith('/');
+---
+<Base title="持續買進" description="尼克・馬朱利《持續買進》的 17 個觀點,用台股 2003 年起、美股 1928 年起的數據重跑:一次投入或分批、等不等低點、高點能不能買、空頭時停扣的代價,以及你現在該專心存錢還是投資。">
+  <div class="invest">
+    <InvestTabs />
+    <header class="invest-head">
+      <p class="pill">投資方法・持續買進</p>
+      <h1>持續買進:現在買、每月買、一直買</h1>
+      <p class="muted">尼克・馬朱利《持續買進》(Just Keep Buying,2022)是這套投資方法的主軸。下面用自己的話整理書中的觀點,再用台股、美股的歷史數據重跑一次。</p>
+    </header>
+
+    <!-- 你現在該專心存錢還是投資(依 localStorage 的測驗答案) -->
+    <section class="card kb-mine" id="save-invest" aria-labelledby="sv-title">
+      <h2 class="card-title" id="sv-title">你現在該專心存錢,還是專心投資?</h2>
+      <p class="text-sm muted mt-1" id="sv-note">範例情境的數字;做完退休測驗會換成你的。</p>
+      <p class="kb-answer" id="sv-answer">–</p>
+      <div class="sv-chart" id="sv-chart" role="img" aria-label="每年存進去的錢與投資預期賺的錢"></div>
+      <div class="years-axis" id="sv-axis"></div>
+      <p class="legend"><span><span style="color:var(--work)">■</span> 存進去的錢</span><span><span style="color:var(--free)">■</span> 投資預期賺的錢</span><span id="sv-cross-key" hidden><span style="color:var(--gold)">■</span> 追上的那一年</span></p>
+      <p class="text-xs muted mt-2">投資預期賺的錢 = 上一年底的資產 × 你選的報酬率;存進去的錢 = 收入 − 生活費 − 貸款 − 大額支出。</p>
+    </section>
+
+    <section aria-labelledby="save-title">
+      <h2 class="inv-h2" id="save-title">存錢篇:7 個觀點</h2>
+      <ol class="ideas">
+        {SAVE_IDEAS.map((x, i) => (
+          <li class="card idea">
+            <span class="idea-no">{i + 1}</span>
+            <div><h3>{x.t}</h3><p class="text-sm muted">{x.s}</p>{x.data && <a class="idea-link" href={x.data}>{isPage(x.data) ? (x.data === '/' ? '去做退休測驗' : '看相關數據') : '看數據'}</a>}</div>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section aria-labelledby="inv-title">
+      <h2 class="inv-h2" id="inv-title">投資篇:10 個觀點</h2>
+      <ol class="ideas" start={SAVE_IDEAS.length + 1}>
+        {INVEST_IDEAS.map((x, i) => (
+          <li class="card idea">
+            <span class="idea-no">{SAVE_IDEAS.length + i + 1}</span>
+            <div><h3>{x.t}</h3><p class="text-sm muted">{x.s}</p>{x.data && <a class="idea-link" href={x.data}>{isPage(x.data) ? '看相關數據' : '看數據'}</a>}</div>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <h2 class="inv-h2">用數據重跑一次</h2>
+
+    <section class="card evidence" id="lump">
+      <h3>一筆錢:一次投入,還是分批</h3>
+      <p class="text-sm muted">每個月都當一次起點,比較「一次全部投入」和「平均分成 N 個月投入」在分批結束時的價值,一次投入勝出的比例。</p>
+      <ul class="bars">
+        {K.lumpByLength.tw.map((t, i) => (
+          <li class="pair">
+            <span class="bar-label">分 {t.months} 個月投入</span>
+            <span class="bar-pair">
+              {MKT.map(([k, name]) => { const r = K.lumpByLength[k][i]; return (
+                <span class="bar-row"><span class="tag">{name.slice(0, 1)}</span><span class="bar-track"><span class="bar-fill" style={`--w:${W(r.lumpWins, 1)};--c:${k === 'tw' ? 'var(--free)' : 'var(--ink-2)'}`}></span></span><b class="num">{P(r.lumpWins, 0)}</b></span>
+              ); })}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p class="ev-take">分 12 個月投入時,一次投入在台股 {P(lump12('tw').lumpWins, 0)}、美股 {P(lump12('us').lumpWins, 0)} 的時候比較好,中位數多 {P(lump12('tw').medianEdge)}。分批拉得越長,一次投入的勝率越高。分批不是比較會賺,而是買到心安。</p>
+    </section>
+
+    <section class="card evidence" id="dip">
+      <h3>等低點再買:晚一點就輸了</h3>
+      <p class="text-sm muted">全知抄底:錢先存著,只在兩個歷史高點之間的最低點全部買進。如果晚 N 個月才買到,每月照買勝出的比例(台股看 10 年、美股看 40 年)。</p>
+      <ul class="bars">
+        {K.dipLag.tw.map((t, i) => (
+          <li class="pair">
+            <span class="bar-label">{t.lag ? `晚 ${t.lag} 個月買到` : '剛好買在最低點'}</span>
+            <span class="bar-pair">
+              {MKT.map(([k, name]) => { const r = K.dipLag[k][i]; return (
+                <span class="bar-row"><span class="tag">{name.slice(0, 1)}</span><span class="bar-track"><span class="bar-fill" style={`--w:${W(r.dcaWins, 1)};--c:${k === 'tw' ? 'var(--free)' : 'var(--ink-2)'}`}></span></span><b class="num">{P(r.dcaWins, 0)}</b></span>
+              ); })}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p class="ev-take">剛好買在每個最低點的全知者,台股有 {P(1 - K.dipLag.tw[0].dcaWins, 0)} 的期間贏過每月照買,但中位數只多 {P(-E.perfectDip.tw.medianEdge)};晚 2 個月才買到,每月照買就贏了 {P(K.dipLag.tw[2].dcaWins, 0)}(台股)、{P(K.dipLag.us[2].dcaWins, 0)}(美股)的期間。沒有人能剛好買在最低點。</p>
+    </section>
+
+    <section class="card evidence" id="ath">
+      <h3>歷史高點也可以買</h3>
+      <p class="text-sm muted">比較「在創新高的月份買進」與「其他月份買進」,之後 12 個月的平均報酬率。</p>
+      <ul class="bars">
+        {MKT.map(([k, name]) => { const a = K.athForward[k]; return (
+          <li class="pair">
+            <span class="bar-label">{name}(創新高的月份占 {P(a.share, 0)})</span>
+            <span class="bar-pair">
+              <span class="bar-row"><span class="tag">高點</span><span class="bar-track"><span class="bar-fill" style={`--w:${W(a.m12.ath.mean, 0.2)};--c:var(--gold)`}></span></span><b class="num">{P(a.m12.ath.mean)}</b></span>
+              <span class="bar-row"><span class="tag">其他</span><span class="bar-track"><span class="bar-fill" style={`--w:${W(a.m12.other.mean, 0.2)};--c:var(--work)`}></span></span><b class="num">{P(a.m12.other.mean)}</b></span>
+            </span>
+          </li>
+        ); })}
+      </ul>
+      <p class="ev-take">美股在高點買,之後 12 個月平均 {P(K.athForward.us.m12.ath.mean)},和其他時候({P(K.athForward.us.m12.other.mean)})差不多;台股這 24 年在高點買稍差({P(K.athForward.tw.m12.ath.mean)} 對 {P(K.athForward.tw.m12.other.mean)}),但平均仍是兩位數正報酬。約三成的月份都在創新高,怕高不買,就會長期站在場外。</p>
+    </section>
+
+    <section class="card evidence" id="underwater">
+      <h3>波動是入場費</h3>
+      <p class="text-sm muted">指數和前一個歷史高點相比的位置,占所有月份的比例;以及任挑一個月買進、持有 1 年的報酬率分布。</p>
+      <ul class="bars">
+        {[['剛好在歷史高點', 'atPeak'], ['比高點低 10% 以上', 'below10'], ['比高點低 20% 以上', 'below20']].map(([label, key]) => (
+          <li class="pair">
+            <span class="bar-label">{label}</span>
+            <span class="bar-pair">
+              {MKT.map(([k, name]) => (
+                <span class="bar-row"><span class="tag">{name.slice(0, 1)}</span><span class="bar-track"><span class="bar-fill" style={`--w:${W(K.underwater[k][key], 1)};--c:${key === 'atPeak' ? 'var(--free)' : 'var(--warn)'}`}></span></span><b class="num">{P(K.underwater[k][key], 0)}</b></span>
+              ))}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p class="ev-sub mt-4">持有 1 年的報酬率分布</p>
+      <ul class="bars">
+        {K.hist1y.tw.map((b, i) => (
+          <li class="pair">
+            <span class="bar-label">{histLabel(b)}</span>
+            <span class="bar-pair">
+              {MKT.map(([k, name]) => { const x = K.hist1y[k][i]; return (
+                <span class="bar-row"><span class="tag">{name.slice(0, 1)}</span><span class="bar-track"><span class="bar-fill" style={`--w:${W(x.share, 0.3)};--c:${(b.hi ?? 1) <= 0 ? 'var(--warn)' : 'var(--free)'}`}></span></span><b class="num">{P(x.share, 0)}</b></span>
+              ); })}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p class="ev-take">美股有 {P(K.underwater.us.below10, 0)} 的月份比高點低 10% 以上;持有 1 年,台股約 {P(K.hist1y.tw.slice(0, 3).reduce((s, b) => s + b.share, 0), 0)}、美股約 {P(K.hist1y.us.slice(0, 3).reduce((s, b) => s + b.share, 0), 0)} 的機率是賠錢的。這些下跌不是意外,而是長期報酬的入場費。</p>
+    </section>
+
+    <section class="card evidence" id="crisis">
+      <h3>空頭時:照常買、停扣、還是賣掉</h3>
+      <p class="text-sm muted">每月投入同樣的錢。停扣:指數比高點低 20% 以上就停,回到高點才把存下的錢一次投入。賣掉:低 30% 以上就全部賣出,回到高點才全部買回。只看期間內真的遇到空頭的情況(台股看 10 年、美股看 20 年)。</p>
+      <ul class="bars">
+        {[['停扣', 'pause'], ['恐慌賣出', 'panic']].map(([label, key]) => (
+          <li class="pair">
+            <span class="bar-label">照常買勝過{label}</span>
+            <span class="bar-pair">
+              {MKT.map(([k, name]) => (
+                <span class="bar-row"><span class="tag">{name.slice(0, 1)}</span><span class="bar-track"><span class="bar-fill" style={`--w:${W(K.crisis[k][key].keepWins, 1)};--c:${k === 'tw' ? 'var(--free)' : 'var(--ink-2)'}`}></span></span><b class="num">{P(K.crisis[k][key].keepWins, 0)}</b></span>
+              ))}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <ul class="facts">
+        <li><b>{P(K.crisis.tw.pause.median)}</b><span>台股停扣的人,期末資產的中位數比照常買的人少這麼多(美股 {P(K.crisis.us.pause.median)})。</span></li>
+        <li><b>{P(K.crisis.us.panic.median)}</b><span>美股恐慌賣出的人,期末資產的中位數比照常買的人少這麼多(台股 {P(K.crisis.tw.panic.median)})。</span></li>
+      </ul>
+      <p class="ev-take">空頭時停扣或賣出,幾乎每一次都輸給照常買的人。下跌時每個月同樣的錢買到更多單位數,這些單位數就是之後反彈時的報酬來源。</p>
+    </section>
+
+    <section class="card inv-steps" aria-labelledby="rules-title">
+      <h2 class="card-title" id="rules-title">持續買進的 8 個做法</h2>
+      <ol class="steps">
+        {RULES.map((r) => <li><span>{r}</span></li>)}
+      </ol>
+      <a class="inv-link" href="/invest/"><span>其他五本書與五個原則</span><b>回到總覽</b></a>
+    </section>
+
+    <section class="inv-src">
+      <h2 class="inv-h2">資料來源與限制</h2>
+      <ul>
+        <li>觀點整理自尼克・馬朱利《持續買進》(Just Keep Buying,2022),用自己的話改寫;全知抄底的實驗設計參考作者的 <a href="https://ofdollarsanddata.com/even-god-couldnt-beat-dollar-cost-averaging/">Of Dollars and Data</a> 文章。</li>
+        <li>{E.sources.tw}。{E.sources.us}。</li>
+        <li>所有報酬率都是名目、含息、未扣費用與稅;現金不計利息。台股資料只有 24 年,美股是「事後看來很成功」的市場,都不代表未來。數據更新於 {E.generated},重算方式見 <code>scripts/evidence.mjs</code>。</li>
+        <li>本頁整理書中的觀點與歷史數據,不推薦任何特定標的,不構成投資建議。</li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    import { loadState, nf } from '../../scripts/shared.js';
+    import { saveVsInvest } from '../../lib/fire.js';
+
+    const s = loadState();
+    const inp = s.inputs;
+    const r = Math.max(0, inp.assumedReturn);
+    const { rows, cross } = saveVsInvest(inp, r);
+    const $ = (id: string) => document.getElementById(id) as HTMLElement;
+    const wan = (v: number) => `${nf(0).format(Math.max(v, 0))} 萬`;
+    if (s.done) $('sv-note').textContent = `依你在退休測驗的答案,報酬率 ${nf(1).format(r * 100).replace(/\.0$/, '')}% 推算。`;
+    if (!rows.length) {
+      $('sv-answer').textContent = '理想退休年齡已經到了,先回退休測驗改一個比現在大的年齡。';
+    } else {
+      const first = rows[0];
+      const lead = first.save > first.gain
+        ? `明年你存進去約 ${wan(first.save)},投資預期只賺約 ${wan(first.gain)}:現在存錢的影響比較大。`
+        : `明年投資預期賺約 ${wan(first.gain)},已經超過你存進去的 ${wan(first.save)}:現在投資的影響比較大。`;
+      const tail = cross
+        ? (cross.year === first.year ? '' : `約 ${cross.age} 歲(${cross.year} 年)起,投資每年賺的會追上你存進去的。`)
+        : '到理想退休年齡之前,每年存進去的都比投資賺的多,所以提高收入、多存一點最有效。';
+      $('sv-answer').textContent = `${lead}${tail}`;
+      const max = Math.max(...rows.map((x) => Math.max(x.save, x.gain)), 1);
+      $('sv-chart').innerHTML = rows.map((x) => `<div class="sv-yr${cross && x.year === cross.year ? ' cross' : ''}" title="${x.year}(${x.age} 歲):存進去 ${wan(x.save)}・投資預期賺 ${wan(x.gain)}"><span style="height:${(Math.max(x.save, 0) / max) * 100}%;background:var(--work)"></span><span style="height:${(x.gain / max) * 100}%;background:var(--free)"></span></div>`).join('');
+      if (cross) $('sv-cross-key').hidden = false;
+      $('sv-axis').innerHTML = `<span>${rows[0].age} 歲</span><span>${rows.at(-1)!.age} 歲</span>`;
+    }
+  </script>
+</Base>

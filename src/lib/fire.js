@@ -587,6 +587,21 @@ export function sensitivity(inp, key, values) {
   });
 }
 
+/**
+ * 存錢 vs 投資(《持續買進》的觀點):工作期每年「存進去的錢」和「投資預期賺的錢」(上一年底資產 × r)。
+ * cross = 投資賺的第一次追上存進去的那一年(跳過存款為負的年份);退休前都沒追上回傳 null。
+ */
+export function saveVsInvest(inp, r = inp.assumedReturn) {
+  const n = inp.fireYear - inp.baseYear;
+  if (n < 1) return { rows: [], cross: null };
+  const path = lifePath(inp, r);
+  const rows = annualCashflow(inp).map((f, i) => ({
+    year: f.year, age: inp.age + i + 1, save: f.invest, gain: Math.max(path.rows[i].balance, 0) * r,
+  }));
+  const hit = rows.find((x) => x.save > 0 && x.gain >= x.save);
+  return { rows, cross: hit ? { year: hit.year, age: hit.age } : null };
+}
+
 // ---------- 歷史數據對照(投資方法頁) ----------
 /**
  * 歷史上持有一段期間、年化報酬率至少 r 的比例。

@@ -3073,5 +3073,283 @@
     "keep": 0.767
    }
   ]
+ },
+ "keepBuying": {
+  "athForward": {
+   "tw": {
+    "share": 0.29,
+    "m12": {
+     "ath": {
+      "n": 75,
+      "mean": 0.1315,
+      "loss": 0.28
+     },
+     "other": {
+      "n": 199,
+      "mean": 0.1665,
+      "loss": 0.206
+     }
+    },
+    "m36": {
+     "ath": {
+      "n": 61,
+      "mean": 0.0817,
+      "loss": 0.131
+     },
+     "other": {
+      "n": 189,
+      "mean": 0.1317,
+      "loss": 0.021
+     }
+    }
+   },
+   "us": {
+    "share": 0.308,
+    "m12": {
+     "ath": {
+      "n": 359,
+      "mean": 0.1294,
+      "loss": 0.195
+     },
+     "other": {
+      "n": 816,
+      "mean": 0.1171,
+      "loss": 0.272
+     }
+    },
+    "m36": {
+     "ath": {
+      "n": 343,
+      "mean": 0.0998,
+      "loss": 0.146
+     },
+     "other": {
+      "n": 808,
+      "mean": 0.1077,
+      "loss": 0.155
+     }
+    }
+   }
+  },
+  "underwater": {
+   "tw": {
+    "atPeak": 0.29,
+    "below10": 0.283,
+    "below20": 0.066
+   },
+   "us": {
+    "atPeak": 0.308,
+    "below10": 0.345,
+    "below20": 0.209
+   }
+  },
+  "hist1y": {
+   "tw": [
+    {
+     "lo": null,
+     "hi": -0.2,
+     "share": 0.036
+    },
+    {
+     "lo": -0.2,
+     "hi": -0.1,
+     "share": 0.062
+    },
+    {
+     "lo": -0.1,
+     "hi": 0,
+     "share": 0.128
+    },
+    {
+     "lo": 0,
+     "hi": 0.1,
+     "share": 0.146
+    },
+    {
+     "lo": 0.1,
+     "hi": 0.2,
+     "share": 0.285
+    },
+    {
+     "lo": 0.2,
+     "hi": 0.3,
+     "share": 0.161
+    },
+    {
+     "lo": 0.3,
+     "hi": null,
+     "share": 0.182
+    }
+   ],
+   "us": [
+    {
+     "lo": null,
+     "hi": -0.2,
+     "share": 0.056
+    },
+    {
+     "lo": -0.2,
+     "hi": -0.1,
+     "share": 0.07
+    },
+    {
+     "lo": -0.1,
+     "hi": 0,
+     "share": 0.123
+    },
+    {
+     "lo": 0,
+     "hi": 0.1,
+     "share": 0.177
+    },
+    {
+     "lo": 0.1,
+     "hi": 0.2,
+     "share": 0.248
+    },
+    {
+     "lo": 0.2,
+     "hi": 0.3,
+     "share": 0.161
+    },
+    {
+     "lo": 0.3,
+     "hi": null,
+     "share": 0.166
+    }
+   ]
+  },
+  "lumpByLength": {
+   "tw": [
+    {
+     "months": 6,
+     "windows": 280,
+     "lumpWins": 0.725,
+     "medianEdge": 0.0292
+    },
+    {
+     "months": 12,
+     "windows": 274,
+     "lumpWins": 0.774,
+     "medianEdge": 0.0567
+    },
+    {
+     "months": 24,
+     "windows": 262,
+     "lumpWins": 0.786,
+     "medianEdge": 0.1216
+    },
+    {
+     "months": 36,
+     "windows": 250,
+     "lumpWins": 0.872,
+     "medianEdge": 0.1438
+    }
+   ],
+   "us": [
+    {
+     "months": 6,
+     "windows": 1181,
+     "lumpWins": 0.692,
+     "medianEdge": 0.0253
+    },
+    {
+     "months": 12,
+     "windows": 1175,
+     "lumpWins": 0.733,
+     "medianEdge": 0.0538
+    },
+    {
+     "months": 24,
+     "windows": 1163,
+     "lumpWins": 0.788,
+     "medianEdge": 0.1099
+    },
+    {
+     "months": 36,
+     "windows": 1151,
+     "lumpWins": 0.824,
+     "medianEdge": 0.1635
+    }
+   ]
+  },
+  "dipLag": {
+   "tw": [
+    {
+     "lag": 0,
+     "dcaWins": 0.275
+    },
+    {
+     "lag": 1,
+     "dcaWins": 0.611
+    },
+    {
+     "lag": 2,
+     "dcaWins": 0.994
+    },
+    {
+     "lag": 3,
+     "dcaWins": 1
+    },
+    {
+     "lag": 6,
+     "dcaWins": 1
+    }
+   ],
+   "us": [
+    {
+     "lag": 0,
+     "dcaWins": 0.499
+    },
+    {
+     "lag": 1,
+     "dcaWins": 0.836
+    },
+    {
+     "lag": 2,
+     "dcaWins": 0.915
+    },
+    {
+     "lag": 3,
+     "dcaWins": 1
+    },
+    {
+     "lag": 6,
+     "dcaWins": 1
+    }
+   ]
+  },
+  "crisis": {
+   "tw": {
+    "years": 10,
+    "pause": {
+     "n": 157,
+     "keepWins": 0.987,
+     "median": -0.0604,
+     "worst": -0.1353
+    },
+    "panic": {
+     "n": 78,
+     "keepWins": 1,
+     "median": -0.1954,
+     "worst": -0.3225
+    }
+   },
+   "us": {
+    "years": 20,
+    "pause": {
+     "n": 948,
+     "keepWins": 1,
+     "median": -0.0524,
+     "worst": -0.4353
+    },
+    "panic": {
+     "n": 727,
+     "keepWins": 0.974,
+     "median": -0.2616,
+     "worst": -0.5043
+    }
+   }
+  }
  }
 }

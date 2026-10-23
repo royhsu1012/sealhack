@@ -1,0 +1,23 @@
+---
+// 數學公式:一行一個式子(手機上不在式子中間折行),下標 / 上標用 HTML。
+// 寫法:X_t、X_{n+k} → 下標;^t、^{n − t} → 上標;以兩個空白開頭的行是上一行的延續(縮排)。
+// where = [符號, 說明] 列在式子下方。
+interface Props { lines: string[]; where?: [string, string][] }
+const { lines, where = [] } = Astro.props;
+
+const math = (s: string) => s
+  .replace(/_\{([^}]*)\}/g, '<sub>$1</sub>')
+  .replace(/_([\p{L}\d]+)/gu, '<sub>$1</sub>')
+  .replace(/\^\{([^}]*)\}/g, '<sup>$1</sup>')
+  .replace(/\^([\p{L}\d]+)/gu, '<sup>$1</sup>');
+---
+<div class="eq">
+  <div class="eq-lines">
+    {lines.map((l) => <div class:list={['eq-line', { 'eq-cont': l.startsWith('  ') }]} set:html={math(l.trim())} />)}
+  </div>
+  {where.length > 0 && (
+    <dl class="eq-where">
+      {where.map(([k, v]) => <div><dt set:html={math(k)} /><dd set:html={math(v)} /></div>)}
+    </dl>
+  )}
+</div>

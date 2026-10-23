@@ -1,0 +1,11 @@
+---
+// 投資方法的分頁切換:總覽 /invest/、持續買進 /invest/keep-buying/
+const path = Astro.url.pathname.replace(/\/?$/, '/');
+const tabs = [
+  { label: '總覽', href: '/invest/' },
+  { label: '持續買進', href: '/invest/keep-buying/' },
+];
+---
+<nav class="inv-tabs" aria-label="投資方法分頁">
+  {tabs.map((t) => <a href={t.href} aria-current={path === t.href ? 'page' : undefined}>{t.label}</a>)}
+</nav>

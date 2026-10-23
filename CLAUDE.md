@@ -21,6 +21,7 @@
 **投資方法頁 `/invest/`**(2026-10-23 起):從最低報酬率出發(讀 localStorage,算歷史上持有 10 / 20 年達到的比例)→ 結論五原則 → 每月做法 →
 個股檢查表 → 8 段歷史數據檢驗(台股報酬指數 2003 起、美股含息 1928 起、Shiller CAPE)→ 六本書摘要與方法
 (馬朱利《持續買進》、柏格、巴菲特股東信、蒙格、馬克斯《掌握市場週期》、李錄)。只講原則與數據,不推薦標的。
+《持續買進》是主軸(使用者決定),有自己的分頁 `/invest/keep-buying/`;兩頁上方用分頁切換(InvestTabs)。
 退休前後都用同一個 r。生活費算到「預計活到幾歲」(`inputs.endAge`,預設 95,第 1 題細項 80–110;引擎用 `endAgeOf(inp)`)。
 原始公式來自《FIRE 財務規劃計畫書》(Claude Docs)。2026-10-23 起網站改用「需要準備 = 以 r 撐到 95 歲」取代 4% 提領率(使用者決定),
 計畫書尚未同步;`computePlan` 仍保留計畫書的 4% 模型與範例數字(測試用)。網站的「計算方法」頁是目前的公開版。
@@ -37,7 +38,10 @@ src/scripts/seal.js        海豹吉祥物 SVG 與 6 種退休人格
 src/scripts/shared.js      localStorage 狀態、格式化、滑桿、圖表小工具、底部結果列
 src/pages/index.astro      測驗頁(開場 → 題目卡 → 結果)
 src/pages/method.astro     計算方法:公式、假設、題目預設值與退休人格
-src/pages/invest.astro     投資方法:你的報酬率 vs 歷史、五原則、數據檢驗、六本書(圖表是 HTML 長條,建置時產生)
+src/pages/invest.astro     投資方法・總覽:你的報酬率 vs 歷史、五原則、數據檢驗、六本書(圖表是 HTML 長條,建置時產生)
+src/pages/invest/keep-buying.astro 投資方法・持續買進:你該專心存錢還是投資(saveVsInvest)、書中 17 個觀點、6 段數據、8 個做法
+src/data/keep-buying.js    《持續買進》的觀點與做法(自己的話)
+src/components/Formula.astro 方法頁的公式框:一行一式、上下標,手機不在式子中間折行
 src/data/books.js          六本書的摘要與方法(自己的話,不引用原文)
 src/data/evidence.json     歷史數據統計結果(由 scripts/evidence.mjs 產生,勿手改)
 scripts/evidence.mjs       抓 FinMind / multpl 公開資料 → 算統計 → 寫 evidence.json(`npm run evidence`;原始資料快取在 scripts/evidence-raw/,不進 git)

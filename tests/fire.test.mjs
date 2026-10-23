@@ -5,7 +5,7 @@ import {
   DEFAULT_INPUTS as D, pmt, loanBalance, computePlan, earliestFireYear, solveRate, futureValue,
   lifePath, fireAgeDrivers, presetInputs, PRESETS,
   fundNeeded, fundAtFire, breakEvenReturn, needBreakdown, earliestFireTime, personaOf, levers, monteCarlo, successRate, earliestFireTimeAt, volatilityOf,
-  historyHitRate,
+  historyHitRate, saveVsInvest,
 } from '../src/lib/fire.js';
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: got ${a}, want ${b} ± ${tol}`);
@@ -220,4 +220,19 @@ test('預計活到幾歲:預設 95,調高要準備更多、機率更低', () => 
   assert.equal(lifePath(long, 0.06).rows.at(-1).age, 100, '資產路徑畫到 100 歲');
   assert.ok(successRate(long, 0.06) < successRate(D, 0.06), '撐到 100 歲的機率比較低');
   assert.equal(monteCarlo(long, 0.06).rows.at(-1).age, 100, '機率範圍畫到 100 歲');
+});
+
+test('存錢 vs 投資:投資賺的追上存進去的那一年', () => {
+  const ex = saveVsInvest(D, 0.06);
+  assert.equal(ex.rows.length, D.fireYear - D.baseYear, '每個工作年一筆');
+  near(ex.rows[0].gain, (D.assets - D.emergencyMonths * D.monthlyExpense) * 0.06, 1e-9, '第一年投資賺的 = 期初資產 × r');
+  assert.equal(ex.cross, null, '範例:退休前每年都是存進去的比較多');
+  const rich = { ...D, assets: 800 };
+  const sv = saveVsInvest(rich, 0.06);
+  assert.ok(sv.cross, '資產多時,退休前就會追上');
+  const before = sv.rows.filter((x) => x.year < sv.cross.year && x.save > 0);
+  assert.ok(before.every((x) => x.gain < x.save), '追上之前,每年都是存進去的比較多');
+  const later = saveVsInvest(rich, 0.03).cross;
+  assert.ok(!later || later.year > sv.cross.year, '報酬率低,追上得比較晚');
+  assert.equal(saveVsInvest({ ...D, fireYear: D.baseYear }, 0.06).rows.length, 0, '已經到退休年份');
 });

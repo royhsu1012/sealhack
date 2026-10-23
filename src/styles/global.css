@@ -356,13 +356,19 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 
 .prose li { margin: 0.35rem 0; }
 .prose strong { font-weight: 700; }
 .prose a { color: var(--free); text-decoration: underline; text-underline-offset: 2px; }
-.prose pre {
-  background: var(--surface); border: 1px solid var(--line); border-radius: 0.8rem;
-  padding: 1rem; margin: 1rem 0; font-size: 0.85rem; line-height: 1.7;
-  white-space: pre-wrap; overflow-wrap: break-word;
-}
 .prose code { font-family: var(--font-mono); }
-@media (max-width: 639.98px) { .prose pre { padding: 0.8rem 0.9rem; font-size: 0.8rem; } }
+/* 方法頁公式(Formula.astro):一行一個式子,不在式子中間折行;太長時只在公式框內左右捲動 */
+.eq {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 0.8rem;
+  padding: 0.85rem 1rem; margin: 1rem 0; overflow-x: auto;
+}
+.eq-line { white-space: nowrap; font-size: 1.05rem; line-height: 1.9; font-variant-numeric: tabular-nums; }
+.eq-cont { padding-left: 1.6em; }
+.eq sub, .eq sup { font-size: 0.68em; line-height: 0; }
+.eq-where { margin: 0.5rem 0 0; padding-top: 0.6rem; border-top: 1px dashed var(--line); display: grid; gap: 0.3rem; font-size: 0.85rem; line-height: 1.6; color: var(--ink-2); }
+.eq-where div { display: grid; grid-template-columns: 3.4rem 1fr; gap: 0.5rem; }
+.eq-where dt { font-weight: 700; color: var(--ink); }
+@media (max-width: 639.98px) { .eq { padding: 0.75rem 0.85rem; } .eq-line { font-size: 0.98rem; } }
 
 /* ---------- 投資方法頁 ---------- */
 .invest { max-width: 44rem; margin: 0 auto; padding: 1.5rem 1rem 0; display: grid; gap: 1rem; }
@@ -468,3 +474,24 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 
   padding: 0.75rem 0.9rem; min-height: 2.75rem; border-radius: 0.9rem; background: var(--surface-2); font-size: 0.9rem;
 }
 .inv-link b { color: var(--free); white-space: nowrap; }
+
+/* 投資方法分頁切換 */
+.inv-tabs { display: inline-flex; gap: 0.25rem; padding: 0.25rem; border-radius: 999px; background: var(--surface-2); justify-self: start; }
+.inv-tabs a { display: inline-flex; align-items: center; min-height: 2.5rem; padding: 0 1.1rem; border-radius: 999px; font-size: 0.9rem; font-weight: 700; color: var(--ink-2); }
+.inv-tabs a[aria-current="page"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 12%, transparent); }
+
+/* 持續買進分頁 */
+.kb-mine { background: color-mix(in srgb, var(--pastel-lemon) 55%, var(--surface)); }
+.kb-answer { margin-top: 0.8rem; font-weight: 700; font-size: 1.02rem; line-height: 1.6; }
+.sv-chart { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; height: 8rem; margin-top: 1rem; border-bottom: 1px solid var(--ink-2); }
+.sv-yr { display: flex; align-items: flex-end; gap: 1px; height: 100%; border-radius: 3px 3px 0 0; }
+.sv-yr span { display: block; flex: 1; border-radius: 2px 2px 0 0; min-height: 1px; }
+.sv-yr.cross { box-shadow: inset 0 0 0 2px var(--gold); }
+.ideas { display: grid; gap: 0.6rem; margin-top: 0.75rem; }
+.idea { display: flex; gap: 0.8rem; padding: 0.95rem 1.05rem; border-radius: 1.1rem; }
+.idea-no {
+  flex-shrink: 0; width: 1.75rem; height: 1.75rem; border-radius: 50%; display: grid; place-items: center;
+  background: var(--surface-2); font-size: 0.8rem; font-weight: 800;
+}
+.idea h3 { font-weight: 800; font-size: 1rem; }
+.idea-link { display: inline-flex; align-items: center; min-height: 2.5rem; min-width: 2.75rem; color: var(--free); font-weight: 700; font-size: 0.82rem; }
