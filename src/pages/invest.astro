@@ -331,7 +331,7 @@ const CHECKS = [
     const hit = JSON.parse(document.getElementById('hit-data')?.textContent || '{}');
     const s = loadState();
     const inp = s.inputs;
-    const be = breakEvenReturn(inp, 95);
+    const be = breakEvenReturn(inp);
     const r = Math.max(0, inp.assumedReturn);
     const rate = { be: be ?? null, r };
     const set = (id: string, v: string) => { const el = document.getElementById(id); if (el) el.textContent = v; };

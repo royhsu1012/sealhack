@@ -3,7 +3,6 @@
 import { presetInputs } from '../lib/fire.js';
 
 export const BASE_YEAR = new Date().getFullYear();
-export const END_AGE = 95;
 export const R_MAX = 0.12;
 const STORAGE_KEY = 'fire-inputs-v2';
 
@@ -69,7 +68,8 @@ export function knobSet(inp, key, v) {
     const fireAge = knobGet(inp, 'fireAge');
     inp.age = Math.round(v);
     inp.fireYear = inp.baseYear + fireAge - inp.age; // 改年齡時保持想退休的年齡不變
-  } else inp[key] = v;
+  } else if (key === 'endAge') inp.endAge = Math.min(110, Math.max(80, Math.round(v)));
+  else inp[key] = v;
 }
 export function writeKnobs(inp) {
   document.querySelectorAll('[data-knob]').forEach((el) => {
@@ -79,7 +79,13 @@ export function writeKnobs(inp) {
       const min = +el.min, max = +el.max;
       el.value = String(Math.min(max, Math.max(min, v)));
       el.style.setProperty('--fill', `${((Math.min(max, Math.max(min, v)) - min) / (max - min)) * 100}%`);
-    } else if (el.tagName === 'OUTPUT') el.textContent = nf(Number.isInteger(v) ? 0 : 1).format(v);
+    } else if (el.tagName === 'OUTPUT') {
+      // 金額滑桿(data-wan):一億以上換成「億」
+      if (el.dataset.wan) el.innerHTML = v >= 10000
+        ? `${new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 2 }).format(v / 10000)}<small>億</small>`
+        : `${nf(Number.isInteger(v) ? 0 : 1).format(v)}<small>萬</small>`;
+      else el.textContent = nf(Number.isInteger(v) ? 0 : 1).format(v);
+    }
     else if (document.activeElement !== el) el.value = String(v);
   });
 }

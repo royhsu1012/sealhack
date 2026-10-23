@@ -3,8 +3,9 @@
 
 export const QUESTIONS = [
   {
-    id: 'age', title: '你現在幾歲?', hint: '用來算還要工作幾年;退休後的生活費會算到 95 歲。',
+    id: 'age', title: '你現在幾歲?', hint: '用來算還要工作幾年;退休後的生活費預設算到 95 歲,細項可以改。',
     slider: { key: 'age', min: 20, max: 65, step: 1, unit: '歲' },
+    more: [{ key: 'endAge', label: '預計活到', unit: '歲', min: 80, max: 110, step: 1, hint: '退休後的生活費算到這一年;家族長壽或想保守一點,就設高一些。' }],
   },
   {
     id: 'dream', title: '理想中,你想幾歲退休?', hint: '挑一個理想退休年齡,結果會告訴你來不來得及。',
@@ -35,7 +36,7 @@ export const QUESTIONS = [
   },
   {
     id: 'assets', title: '現在有多少存款與投資?', hint: '銀行存款、股票、基金都算;不含自住的房子。',
-    slider: { key: 'assets', min: 0, max: 5000, step: 10, unit: '萬' },
+    slider: { key: 'assets', min: 0, max: 10000, step: 10, unit: '萬' },
     more: [{ key: 'emergencyMonths', label: '緊急預備金', unit: '個月', hint: '這幾個月的生活費放在銀行,不拿去投資。', min: 0, max: 24, step: 1 }],
   },
   {

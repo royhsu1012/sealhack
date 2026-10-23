@@ -5,6 +5,8 @@ import { QUESTIONS } from '../scripts/quiz-config.js';
 import { seal } from '../scripts/seal.js';
 
 const N = QUESTIONS.length;
+// 滑桿兩端的刻度:一億以上寫「1 億」,其餘加千分位
+const endLabel = (v: number, unit: string) => (unit === '萬' && v >= 10000 ? `${v / 10000} 億` : new Intl.NumberFormat('zh-TW').format(v));
 const R_MAX = 12;
 const ticks = [0, 2, 4, 6, 8, 10, 12];
 const zones = [
@@ -54,9 +56,11 @@ const zones = [
 
           {q.slider && (
             <div class="q-slider">
-              <p class="q-value num"><output data-knob={q.slider.key}></output><small>{q.slider.unit}</small></p>
+              <p class="q-value num">{q.slider.unit === '萬'
+                ? <output data-knob={q.slider.key} data-wan="1"></output>
+                : <Fragment><output data-knob={q.slider.key}></output><small>{q.slider.unit}</small></Fragment>}</p>
               <input type="range" min={q.slider.min} max={q.slider.max} step={q.slider.step} data-knob={q.slider.key} aria-label={q.title} />
-              <p class="q-ends num" aria-hidden="true"><span>{q.slider.min}</span><span>{q.slider.max}</span></p>
+              <p class="q-ends num" aria-hidden="true"><span>{endLabel(q.slider.min, q.slider.unit)}</span><span>{endLabel(q.slider.max, q.slider.unit)}</span></p>
               {q.feedback && <p class="q-feedback" id="q-feedback"></p>}
             </div>
           )}
@@ -184,7 +188,7 @@ const zones = [
         </section>
         <section>
           <h3>需要準備多少</h3>
-          <p class="text-sm muted">在理想退休年齡退休時:到 95 歲的生活費(以你的報酬率折回退休時),扣掉年金,再加上還沒還完的貸款。</p>
+          <p class="text-sm muted">在理想退休年齡退休時:一路到預計活到那年的生活費(以你的報酬率折回退休時),扣掉年金,再加上還沒還完的貸款。</p>
           <div id="chart-target" class="chart mt-3"></div>
         </section>
         <section>

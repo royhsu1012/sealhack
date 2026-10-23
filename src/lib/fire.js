@@ -19,6 +19,7 @@
  * @property {number} assets        目前可投資資產 P0
  * @property {number} emergencyMonths 緊急預備金(月生活費倍數)
  * @property {number} assumedReturn 假設報酬率(用於最早 FIRE 年份)
+ * @property {number} [endAge]    預計活到幾歲:退休後的生活費算到這一年(未設定 = 95)
  * @property {Loan[]} loans
  * @property {Income[]} incomes
  * @property {Goal[]} goals
@@ -38,6 +39,7 @@ export const DEFAULT_INPUTS = {
   assets: 300,
   emergencyMonths: 6,
   assumedReturn: 0.06,
+  endAge: 95,
   loans: [
     { name: '房貸', principal: 800, years: 20, rate: 0.023 },
     { name: '車貸', principal: 50, years: 4, rate: 0.03 },
@@ -83,6 +85,9 @@ export const PRESETS = [
 ];
 
 /** 以基準年套用預設情境 */
+/** 預計活到幾歲(舊的儲存資料沒有這個欄位時用 95) */
+export const endAgeOf = (inp) => inp.endAge ?? 95;
+
 export function presetInputs(id, baseYear) {
   const preset = PRESETS.find((p) => p.id === id) ?? PRESETS[0];
   const shift = baseYear - DEFAULT_INPUTS.baseYear;
@@ -264,7 +269,7 @@ export function computePlan(inp) {
  * 以報酬率 r 最早可 FIRE 的年份:退休時存得到的錢 ≥ 撐到 endAge 需要的錢(往後最多找 maxYears 年);
  * 等同「照 r 的資產路徑到 endAge 都不會用完」。找不到回傳 null。
  */
-export function earliestFireYear(inp, r = inp.assumedReturn, maxYears = 45, endAge = 95) {
+export function earliestFireYear(inp, r = inp.assumedReturn, maxYears = 45, endAge = endAgeOf(inp)) {
   for (let y = inp.baseYear + 1; y <= inp.baseYear + maxYears && inp.age + y - inp.baseYear < endAge; y++) {
     const x = { ...inp, fireYear: y };
     if (fundAtFire(x, r) >= fundNeeded(x, r, endAge)) return y;
@@ -276,7 +281,7 @@ export function earliestFireYear(inp, r = inp.assumedReturn, maxYears = 45, endA
  * 以報酬率 r 最早多久後可以 FIRE(單位:年,含小數;現在就夠回傳 0,找不到回傳 null)。
  * 模型以年為單位,先找第一個夠用的年份,再用前後兩年的「存得到 − 需要」差額線性內插出月份。
  */
-export function earliestFireTime(inp, r = inp.assumedReturn, maxYears = 45, endAge = 95) {
+export function earliestFireTime(inp, r = inp.assumedReturn, maxYears = 45, endAge = endAgeOf(inp)) {
   const gap = (y) => {
     const x = { ...inp, fireYear: y };
     return fundAtFire(x, r) - fundNeeded(x, r, endAge);
@@ -295,7 +300,7 @@ export function earliestFireTime(inp, r = inp.assumedReturn, maxYears = 45, endA
  * 自由期:每年 bal = bal × (1+r) − (生活費_t − 已開始領取的年金_t),直到 endAge。
  * 回傳逐年資料與錢用完的年齡(未用完為 null)。
  */
-export function lifePath(inp, r = inp.assumedReturn, endAge = 95) {
+export function lifePath(inp, r = inp.assumedReturn, endAge = endAgeOf(inp)) {
   const n = inp.fireYear - inp.baseYear;
   const fireAge = inp.age + n;
   const flows = n > 0 ? annualCashflow(inp) : [];
@@ -328,7 +333,7 @@ export function lifePath(inp, r = inp.assumedReturn, endAge = 95) {
  * 減去同樣折回的年金與被動收入(incomes 為各項明細),再加上退休時一次還清的貸款餘額。
  * 每年年底提領「生活費 − 已開始領的年金」,與 lifePath 的退休期算法一致。
  */
-export function needBreakdown(inp, r, endAge = 95) {
+export function needBreakdown(inp, r, endAge = endAgeOf(inp)) {
   const n = inp.fireYear - inp.baseYear;
   const fireAge = inp.age + n;
   const active = inp.incomes.filter((q) => q.monthly > 0);
@@ -349,7 +354,7 @@ export function needBreakdown(inp, r, endAge = 95) {
 }
 
 /** 退休時要有多少錢,才能以報酬率 r 撐到 endAge(含退休時還清的貸款) */
-export function fundNeeded(inp, r, endAge = 95) {
+export function fundNeeded(inp, r, endAge = endAgeOf(inp)) {
   return needBreakdown(inp, r, endAge).total;
 }
 
@@ -361,7 +366,7 @@ export function fundAtFire(inp, r) {
 }
 
 /** 存得到的錢 = 需要的錢 時的報酬率(找 0–50%);0% 就夠回傳 0,50% 都不夠回傳 null */
-export function breakEvenReturn(inp, endAge = 95) {
+export function breakEvenReturn(inp, endAge = endAgeOf(inp)) {
   if (inp.fireYear - inp.baseYear < 1) return null;
   const gap = (r) => fundAtFire(inp, r) - fundNeeded(inp, r, endAge);
   if (gap(0) >= 0) return 0;
@@ -410,7 +415,7 @@ export function personaOf(inp) {
  * 想再快一點:每月多存 1 萬、每月少花 5 千、報酬率多 1%,各自讓「最早多久後能退休」提早幾年(含小數)。
  * base 為原本的時間;任一方無解時 gain 為 null。
  */
-export function levers(inp, r = inp.assumedReturn, endAge = 95) {
+export function levers(inp, r = inp.assumedReturn, endAge = endAgeOf(inp)) {
   const base = earliestFireTime(inp, r, 45, endAge);
   const cases = [
     ['saveMore', { ...inp, salary: inp.salary + 12 }, r],
@@ -429,7 +434,7 @@ export function levers(inp, r = inp.assumedReturn, endAge = 95) {
 // ---------- 機率範圍(蒙地卡羅) ----------
 // 每年報酬率隨機:ln(1 + R) ~ 常態,中位數 = 選的報酬率 r,波動依 r 估計;通膨固定。
 // 固定種子 → 同樣的輸入每次結果一樣,拉滑桿時數字不會跳動;所有年份共用同一組亂數,比較不同退休年齡才公平。
-export const MC = { paths: 1000, seed: 20261023 };
+export const MC = { paths: 1000, seed: 20261023, years: 100 };
 
 /** 報酬率的年波動(標準差):σ = 2.5 × (r − 1.5%),介於 3%–20%(保守約 6%、穩健約 11%、積極約 16%) */
 export function volatilityOf(r) {
@@ -446,9 +451,13 @@ function mulberry32(seed) {
   };
 }
 let shockCache = null;
-/** 標準常態亂數表:paths 條路徑 × years 年(Box–Muller,快取重用) */
+/**
+ * 標準常態亂數表:paths 條路徑 × 固定 MC.years 年(Box–Muller,快取重用)。
+ * 每條路徑的長度固定,不隨「預計活到幾歲」改變,所以同樣的輸入不論先算過什麼,結果都一樣。
+ */
 function shocks(paths, years) {
   if (shockCache && shockCache.paths >= paths && shockCache.years >= years) return shockCache;
+  years = Math.max(years, MC.years);
   const rnd = mulberry32(MC.seed);
   const z = new Float64Array(paths * years);
   for (let i = 0; i < z.length; i += 2) {
@@ -519,7 +528,7 @@ function simulate(inp, r, sigma, endAge, paths, keep = true) {
 
 /** 在理想退休年齡(fireYear)退休、撐到 endAge 的機率 */
 export function successRate(inp, r = inp.assumedReturn, opts = {}) {
-  const { paths = MC.paths, sigma = volatilityOf(r), endAge = 95 } = opts;
+  const { paths = MC.paths, sigma = volatilityOf(r), endAge = endAgeOf(inp) } = opts;
   const sim = simulate(inp, r, sigma, endAge, paths, false);
   if (!sim) return null;
   let ok = 0;
@@ -532,7 +541,7 @@ export function successRate(inp, r = inp.assumedReturn, opts = {}) {
  * 退休那年的值是還清貸款之後。
  */
 export function monteCarlo(inp, r = inp.assumedReturn, opts = {}) {
-  const { paths = MC.paths, sigma = volatilityOf(r), endAge = 95 } = opts;
+  const { paths = MC.paths, sigma = volatilityOf(r), endAge = endAgeOf(inp) } = opts;
   const sim = simulate(inp, r, sigma, endAge, paths);
   if (!sim) return null;
   const q = (arr, k) => arr[Math.min(arr.length - 1, Math.floor(k * (arr.length - 1)))];
@@ -551,7 +560,7 @@ export function monteCarlo(inp, r = inp.assumedReturn, opts = {}) {
  * 越晚退休機率越高(同一組亂數),所以用二分法找第一個夠的年份,再用前後兩年的機率線性內插出月份。
  */
 export function earliestFireTimeAt(inp, r = inp.assumedReturn, confidence = 0.9, opts = {}) {
-  const { maxYears = 45, endAge = 95 } = opts;
+  const { maxYears = 45, endAge = endAgeOf(inp) } = opts;
   const memo = new Map();
   const rate = (y) => {
     if (!memo.has(y)) memo.set(y, successRate({ ...inp, fireYear: y }, r, opts) ?? 0);

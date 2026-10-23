@@ -175,11 +175,13 @@ test('機率範圍(蒙地卡羅)', () => {
   const det50 = lifePath(D, 0.06).rows.find((x) => x.age === 50).balance;
   assert.ok(at50.p10 < at50.p25 && at50.p25 < at50.p50 && at50.p50 < at50.p75 && at50.p75 < at50.p90, '分位數由小到大');
   assert.ok(Math.abs(at50.p50 / det50 - 1) < 0.05, '中位數貼近固定報酬的路徑');
-  near(mc.success, 0.762, 0.001, '50 歲退休撐到 95 歲的機率');
+  near(mc.success, 0.785, 0.001, '50 歲退休撐到 95 歲的機率');
   assert.equal(mc.p50Zero, null, '中位數撐得到 95 歲');
-  assert.equal(mc.p10Zero, 76, '最差一成的情況 76 歲用完');
+  assert.equal(mc.p10Zero, 78, '最差一成的情況 78 歲用完');
   near(earliestFireTimeAt(D, 0.06, 0.5), earliestFireTime(D, 0.06), 0.2, '五成把握 ≈ 固定報酬的最快時間');
-  near(earliestFireTimeAt(D, 0.06, 0.9), 16.73, 0.01, '九成把握約 16 年 9 個月');
+  near(earliestFireTimeAt(D, 0.06, 0.9), 16.3, 0.01, '九成把握約 16 年 4 個月');
+  monteCarlo({ ...D, age: 20, fireYear: 2050, endAge: 110 }, 0.06);
+  near(monteCarlo(D, 0.06).success, mc.success, 1e-12, '先算過更長的期間,結果也一樣');
   const later = [2038, 2040, 2042, 2045].map((y) => successRate({ ...D, fireYear: y }, 0.06));
   assert.ok(later.every((v, i) => i === 0 || v >= later[i - 1]), '越晚退休,撐得住的機率越高');
   assert.ok(successRate(D, 0.06, { sigma: 0.03 }) > mc.success, '波動越小,機率越高');
@@ -204,4 +206,18 @@ test('歷史數據對照:持有期間年化報酬率至少 r 的比例', () => {
   assert.equal(historyHitRate(a, -0.5), 1, '門檻很低時全部達到');
   assert.equal(historyHitRate(a, 0.1), 0, '門檻高於最大值時都沒達到');
   assert.equal(historyHitRate([], 0.03), null, '沒有資料');
+});
+
+test('預計活到幾歲:預設 95,調高要準備更多、機率更低', () => {
+  assert.equal(D.endAge, 95, '預設活到 95 歲');
+  near(fundNeeded(D, 0.06), fundNeeded(D, 0.06, 95), 1e-9, '沒有指定時用 inp.endAge');
+  const old = { ...D }; delete old.endAge;
+  near(fundNeeded(old, 0.06), fundNeeded(D, 0.06), 1e-9, '舊資料沒有 endAge 時當作 95');
+  const long = { ...D, endAge: 100 };
+  assert.ok(fundNeeded(long, 0.06) > fundNeeded(D, 0.06), '活到 100 歲要準備更多');
+  assert.ok(breakEvenReturn(long) > breakEvenReturn(D), '最低報酬率變高');
+  assert.ok(earliestFireTime(long, 0.06) > earliestFireTime(D, 0.06), '最快退休時間變晚');
+  assert.equal(lifePath(long, 0.06).rows.at(-1).age, 100, '資產路徑畫到 100 歲');
+  assert.ok(successRate(long, 0.06) < successRate(D, 0.06), '撐到 100 歲的機率比較低');
+  assert.equal(monteCarlo(long, 0.06).rows.at(-1).age, 100, '機率範圍畫到 100 歲');
 });

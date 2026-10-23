@@ -1,6 +1,6 @@
 // 結果頁的 SVG 圖表(純字串;寬度跟隨容器,由呼叫端傳入 W)
-import { fundNeeded, fundAtFire } from '../lib/fire.js';
-import { END_AGE, R_MAX, nf, wan, big, pct, niceStep, T, textW, legend } from './shared.js';
+import { fundNeeded, fundAtFire, endAgeOf } from '../lib/fire.js';
+import { R_MAX, nf, wan, big, pct, niceStep, T, textW, legend } from './shared.js';
 
 // 一生資產的機率範圍(monteCarlo 的結果):中位數一條線,中間一半的情況(P25–P75)深色帶、八成的情況(P10–P90)淺色帶
 // need = 以選的報酬率算出、在理想退休年齡退休需要準備的錢
@@ -53,7 +53,7 @@ export function fanChart(mc, need, W) {
   const tPos = [[x(a0) + 4, tY - 7], [x(a0) + 4, tY + tSize + 5], [fx + 8, tY - 7], [fx + 8, tY + tSize + 5], [x(a0) + 4, tY - 25], [x(a0) + 4, tY - 43]]
     .find(tFree) ?? [x(a0) + 4, tY - 7];
   const freeLabel = `自由 ${fireAge} 歲之後`;
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="一生資產的機率範圍:${fireAge} 歲退休,撐到 95 歲的機率 ${Math.round(mc.success * 100)}%">
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="一生資產的機率範圍:${fireAge} 歲退休,撐到 ${a1} 歲的機率 ${Math.round(mc.success * 100)}%">
     <defs><clipPath id="fan-plot"><rect x="${L}" y="${top - 2}" width="${R - L}" height="${B - top + 2}"/></clipPath></defs>
     ${ticks.map((v) => `<line x1="${L}" x2="${R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/>${T(L - 8, y(v) + 4, v === 0 ? '0' : big(v).replace(' 萬', ''), { anchor: 'end', size: 11 })}`).join('')}
     ${T(L - 8, top - 16, '萬元', { anchor: 'end', size: 11 })}
@@ -79,10 +79,10 @@ export function fanChart(mc, need, W) {
 }
 
 // 需要準備多少:瀑布圖(b = needBreakdown,以報酬率 r 折回退休時)
-export function targetChart(b, r, W) {
+export function targetChart(b, r, endAge, W) {
   const H = 260, L = 10, R = W - 10, top = 30, B = H - 44;
   const steps = [
-    { label: '生活費', sub: `到 ${END_AGE} 歲,以 ${pct(r)} 折算`, from: 0, to: b.expenses, color: 'var(--ink)' },
+    { label: '生活費', sub: `到 ${endAge} 歲,以 ${pct(r)} 折算`, from: 0, to: b.expenses, color: 'var(--ink)' },
     { label: '年金折抵', sub: '勞保、勞退等', from: b.expenses, to: b.expenses - b.pensions, color: 'var(--free)' },
     { label: '貸款餘額', sub: '退休時還清', from: b.expenses - b.pensions, to: b.total, color: 'var(--work)' },
     { label: '需要準備', sub: '', from: 0, to: b.total, color: 'var(--ink)', total: true },
@@ -162,16 +162,16 @@ export function driversChart(d, W) {
 }
 
 
-/** 報酬率(橫軸)對「撐到 95 歲需要的錢」與「退休時存得到的錢」:兩條線交叉處就是最低報酬率 */
+/** 報酬率(橫軸)對「撐到預計活到的年齡需要的錢」與「退休時存得到的錢」:兩條線交叉處就是最低報酬率 */
 export function tradeoffChart(inp, rSel, be, W) {
   const xMax = Math.max(R_MAX, rSel, be != null ? be + 0.01 : 0);
   const H = W < 560 ? 270 : 320, L = 48, R = W - 14, top = 30, B = H - 32;
   const N = 48;
   const rs = Array.from({ length: N + 1 }, (_, k) => (xMax * k) / N);
-  const need = rs.map((r) => fundNeeded(inp, r, END_AGE));
+  const need = rs.map((r) => fundNeeded(inp, r));
   const have = rs.map((r) => fundAtFire(inp, r));
-  const needSel = fundNeeded(inp, rSel, END_AGE), haveSel = fundAtFire(inp, rSel);
-  const needBe = be != null ? fundNeeded(inp, be, END_AGE) : 0;
+  const needSel = fundNeeded(inp, rSel), haveSel = fundAtFire(inp, rSel);
+  const needBe = be != null ? fundNeeded(inp, be) : 0;
   const peak = Math.max(have.at(-1), need.at(-1), needSel, haveSel, needBe, 1) * 1.2;
   const step = niceStep(peak, 4);
   const vmax = Math.ceil(peak / step) * step;
@@ -214,12 +214,12 @@ export function tradeoffChart(inp, rSel, be, W) {
     <line x1="${L}" x2="${R}" y1="${B}" y2="${B}" stroke="var(--line)"/>
     <line x1="${sx}" x2="${sx}" y1="${top - 4}" y2="${B}" stroke="var(--ink-2)" stroke-dasharray="4 4"/>
     ${T(selX, top - 10, `你選的 ${pct(rSel)}`, { anchor: 'middle', size: 12, fill: 'var(--ink)', weight: 700 })}
-    ${needSel <= vmax ? `<circle cx="${sx}" cy="${y(needSel)}" r="5" fill="var(--ink)"><title>報酬率 ${pct(rSel)}:撐到 ${END_AGE} 歲需要 ${big(needSel)}</title></circle>` : ''}
+    ${needSel <= vmax ? `<circle cx="${sx}" cy="${y(needSel)}" r="5" fill="var(--ink)"><title>報酬率 ${pct(rSel)}:撐到 ${endAgeOf(inp)} 歲需要 ${big(needSel)}</title></circle>` : ''}
     <circle cx="${sx}" cy="${y(haveSel)}" r="5" fill="var(--free)"><title>報酬率 ${pct(rSel)}:退休時存得到 ${big(haveSel)}</title></circle>
     ${be != null && be > 0 && be <= xMax ? `<circle cx="${beX}" cy="${y(needBe)}" r="6" fill="var(--gold)" stroke="var(--surface)" stroke-width="2"/>
       ${bePos
         ? T(bePos[0], y(needBe) - 10, beLabel, { anchor: bePos[1], size: 13, fill: 'var(--ink)', weight: 800, halo: true })
         : T(beX, y(needBe) - 16, beLabel, { anchor: 'middle', size: 13, fill: 'var(--ink)', weight: 800, halo: true })}` : ''}
   </svg>
-  ${legend([['var(--ink)', `撐到 ${END_AGE} 歲需要的錢`], ['var(--free)', '退休時存得到的錢'], ['var(--gold)', '交叉點:最低報酬率']])}`;
+  ${legend([['var(--ink)', `撐到 ${endAgeOf(inp)} 歲需要的錢`], ['var(--free)', '退休時存得到的錢'], ['var(--gold)', '交叉點:最低報酬率']])}`;
 }
