@@ -76,7 +76,7 @@ export const QUESTIONS = [
       { v: 0.06, label: '穩健', sub: '報酬率約 6%' },
       { v: 0.08, label: '積極', sub: '報酬率約 8%,起伏大' },
     ],
-    more: [{ key: 'assumedReturn', label: '自己填', unit: '%', min: 0, max: 12, step: 0.5, pct: true }],
+    more: [{ key: 'assumedReturn', label: '自己填', unit: '%', min: 0, max: 20, step: 0.5, pct: true }],
   },
 ];
 

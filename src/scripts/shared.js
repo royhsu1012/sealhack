@@ -3,7 +3,7 @@
 import { presetInputs } from '../lib/fire.js';
 
 export const BASE_YEAR = new Date().getFullYear();
-export const R_MAX = 0.12;
+export const R_MAX = 0.2;
 const STORAGE_KEY = 'fire-inputs-v2';
 
 // ---------- 狀態:inputs 給引擎;answers 記住測驗選了哪張卡;done = 做完測驗 ----------

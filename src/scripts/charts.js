@@ -1,6 +1,9 @@
 // 結果頁的 SVG 圖表(純字串;寬度跟隨容器,由呼叫端傳入 W)
 import { fundNeeded, fundAtFire, endAgeOf } from '../lib/fire.js';
-import { R_MAX, nf, wan, big, pct, niceStep, T, textW, legend } from './shared.js';
+import { nf, wan, big, pct, niceStep, T, textW, legend } from './shared.js';
+
+// 交叉圖的橫軸預設畫到 12%;選得更高或最低報酬率更高時才往右延伸,避免高報酬把常用的範圍壓扁
+const CHART_R = 0.12;
 
 // 一生資產的機率範圍(monteCarlo 的結果):中位數一條線,中間一半的情況(P25–P75)深色帶、八成的情況(P10–P90)淺色帶
 // need = 以選的報酬率算出、在理想退休年齡退休需要準備的錢
@@ -164,7 +167,7 @@ export function driversChart(d, W) {
 
 /** 報酬率(橫軸)對「撐到預計活到的年齡需要的錢」與「退休時存得到的錢」:兩條線交叉處就是最低報酬率 */
 export function tradeoffChart(inp, rSel, be, W) {
-  const xMax = Math.max(R_MAX, rSel, be != null ? be + 0.01 : 0);
+  const xMax = Math.max(CHART_R, rSel + 0.01, be != null ? be + 0.01 : 0);
   const H = W < 560 ? 270 : 320, L = 48, R = W - 14, top = 30, B = H - 32;
   const N = 48;
   const rs = Array.from({ length: N + 1 }, (_, k) => (xMax * k) / N);

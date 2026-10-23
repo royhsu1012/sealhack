@@ -7,8 +7,8 @@ import { seal } from '../scripts/seal.js';
 const N = QUESTIONS.length;
 // 滑桿兩端的刻度:一億以上寫「1 億」,其餘加千分位
 const endLabel = (v: number, unit: string) => (unit === '萬' && v >= 10000 ? `${v / 10000} 億` : new Intl.NumberFormat('zh-TW').format(v));
-const R_MAX = 12;
-const ticks = [0, 2, 4, 6, 8, 10, 12];
+const R_MAX = 20;
+const ticks = [0, 4, 8, 12, 16, 20];
 const zones = [
   ['var(--free)', '低於 5%:保守'],
   ['var(--gold)', '5–7%:穩健'],
