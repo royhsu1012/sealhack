@@ -35,6 +35,5 @@ export const ACCESSORIES = {
   sprint: [
     { x: 83, y: 40, rows: ['R'.repeat(26), `.${'R'.repeat(26)}`] },
     { x: 74, y: 38, rows: ['...RR....', '.RRRRR...', 'RR...RRRR', 'R....RRRR', '.....RR..'] },
-    { x: 58, y: 55, rows: ['SSSSSS', '......', '......', '......', 'SSSSSSSS', '......', '......', '......', '..SSSSS'] },
   ],
 };

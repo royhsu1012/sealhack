@@ -130,8 +130,5 @@
     linear-gradient(90deg, transparent 0 24.359%, var(--warn) 24.359% 30.769%, transparent 30.769%) 0 calc(var(--p) * 13) / 100% calc(var(--p) * 1 + 0.5px) no-repeat,
     linear-gradient(90deg, transparent 0 23.077%, var(--warn) 23.077% 25.641%, transparent 25.641% 29.487%, var(--warn) 29.487% 67.949%, transparent 67.949%) 0 calc(var(--p) * 14) / 100% calc(var(--p) * 1 + 0.5px) no-repeat,
     linear-gradient(90deg, transparent 0 23.077%, var(--warn) 23.077% 24.359%, transparent 24.359% 29.487%, var(--warn) 29.487% 34.615%, transparent 34.615% 35.897%, var(--warn) 35.897% 69.231%, transparent 69.231%) 0 calc(var(--p) * 15) / 100% calc(var(--p) * 1 + 0.5px) no-repeat,
-    linear-gradient(90deg, transparent 0 29.487%, var(--warn) 29.487% 32.051%, transparent 32.051%) 0 calc(var(--p) * 16) / 100% calc(var(--p) * 1 + 0.5px) no-repeat,
-    linear-gradient(90deg, transparent 0 2.564%, var(--sp-4) 2.564% 10.256%, transparent 10.256%) 0 calc(var(--p) * 29) / 100% calc(var(--p) * 1 + 0.5px) no-repeat,
-    linear-gradient(90deg, transparent 0 2.564%, var(--sp-4) 2.564% 12.821%, transparent 12.821%) 0 calc(var(--p) * 33) / 100% calc(var(--p) * 1 + 0.5px) no-repeat,
-    linear-gradient(90deg, transparent 0 5.128%, var(--sp-4) 5.128% 11.538%, transparent 11.538%) 0 calc(var(--p) * 37) / 100% calc(var(--p) * 1 + 0.5px) no-repeat;
+    linear-gradient(90deg, transparent 0 29.487%, var(--warn) 29.487% 32.051%, transparent 32.051%) 0 calc(var(--p) * 16) / 100% calc(var(--p) * 1 + 0.5px) no-repeat;
 }
