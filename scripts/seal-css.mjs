@@ -5,6 +5,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { SEAL_BOX, bodyCells, eyeCells, eyeLineCells, accessoryCells } from '../src/scripts/seal-cells.js';
 import { ACCESSORIES } from '../src/data/seal-accessories.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -12,10 +13,7 @@ const P = JSON.parse(readFileSync(join(ROOT, 'src/data/seal-pixels.json'), 'utf8
 const OUT = join(ROOT, 'src/styles/seal.css');
 
 // 畫布:海豹本體加上所有配件的範圍(各人格的海豹位置一致)
-const X0 = 56, Y0 = 26, W = 78, H = 53;
-const sp = (i) => `var(--sp-${i})`;
-const R = P.roles;
-const CHAR = { O: sp(R.line), C: sp(R.body), E: sp(R.eye), W: sp(R.shine), S: sp(R.shade), G: 'var(--gold)', A: 'var(--seal-acorn)', R: 'var(--warn)' };
+const { x: X0, y: Y0, w: W, h: H } = SEAL_BOX;
 const u = (n) => (n === 0 ? '0' : `calc(var(--p) * ${n})`);
 // 漸層裡的位置用百分比(相對整張畫布),CSS 比較短;三位小數在 3–4px 一格時誤差不到 0.01px
 const pc = (n, total) => (n === 0 ? '0' : n === total ? '100%' : `${+(n / total * 100).toFixed(3)}%`);
@@ -51,36 +49,12 @@ function background(cells) {
   // 每一列往下多畫 0.5px 疊住下一列:螢幕縮放(例如 150%)時,列與列之間才不會露出細縫(上面的列先畫、蓋在上層)
   return grads.map(({ g, y, n }) => `${g} 0 ${u(y)} / 100% calc(var(--p) * ${n} + 0.5px) no-repeat`).join(',\n    ');
 }
-const fromRects = (list) => {
-  const m = new Map();
-  for (const [x, y, w, h, c] of list) for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) m.set(`${xx},${yy}`, sp(c));
-  return m;
-};
-const fromArt = (parts) => {
-  const m = new Map();
-  for (const { x, y, rows } of parts) rows.forEach((row, j) => [...row].forEach((ch, i) => { if (ch !== '.') m.set(`${x + i},${y + j}`, CHAR[ch]); }));
-  return m;
-};
-/** 閉眼(眨眼)與瞇眼笑:身體色蓋掉眼睛,再畫一條弧線 */
-function eyeLine(kind) {
-  const m = new Map();
-  for (const [x0, y0, x1, y1] of P.eyeBoxes) {
-    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) m.set(`${x},${y}`, CHAR.C);
-    if (kind === 'cover') continue;
-    const mid = kind === 'shut' ? y1 - 1 : y0 + 2, ends = kind === 'shut' ? mid - 1 : mid + 1;
-    for (let x = x0 + 1; x < x1; x++) m.set(`${x},${mid}`, CHAR.E);
-    m.set(`${x0},${ends}`, CHAR.E); m.set(`${x1},${ends}`, CHAR.E);
-  }
-  return m;
-}
-
 const layers = {
-  // 身體層把眼睛的位置也鋪上身體色,眼睛層蓋上去時不會有縫
-  'px-body': new Map([...eyeLine('cover'), ...fromRects(P.body)]),
-  'px-eyes': fromRects(P.eyes),
-  'px-shut': eyeLine('shut'),
-  'px-happy': eyeLine('happy'),
-  ...Object.fromEntries(Object.entries(ACCESSORIES).map(([k, parts]) => [`px-acc-${k}`, fromArt(parts)])),
+  'px-body': bodyCells(P),
+  'px-eyes': eyeCells(P),
+  'px-shut': eyeLineCells(P, 'shut'),
+  'px-happy': eyeLineCells(P, 'happy'),
+  ...Object.fromEntries(Object.keys(ACCESSORIES).map((k) => [`px-acc-${k}`, accessoryCells(P, k)])),
 };
 const css = `/* 像素海豹(純 CSS):由 scripts/seal-css.mjs 產生,勿手改。來源:參考圖 1:1 還原的 seal-pixels.json 與 seal-accessories.js */
 .px-seal { --p: 3px; position: relative; width: ${u(W)}; height: ${u(H)}; margin: 0 auto; }

@@ -13,6 +13,8 @@ import { seal, PERSONAS } from './seal.js';
 
 let s = loadState();
 let step = 0;
+// 做過測驗的人從首頁重新開始時,先記住上一次的結果;新測驗還沒做完前,「看我上次的結果」還能回去
+let prevDone = null;
 const N = QUESTIONS.length;
 const save = () => saveState(s);
 const phase = () => document.documentElement.dataset.phase;
@@ -186,7 +188,16 @@ function back() {
   if (step > 0) {
     step -= 1;
     renderQuiz(true);
-  } else setPhase(s.done ? 'result' : 'intro');
+  } else if (s.done) setPhase('result');
+  else showIntro();
+}
+
+/** 回到開場:做過測驗的人看到「重新測驗」與「看我上次的結果」 */
+function showIntro() {
+  const hasResult = s.done || !!prevDone;
+  $('to-result').hidden = !hasResult;
+  $('start').textContent = hasResult ? '重新測驗' : '開始測驗';
+  setPhase('intro');
 }
 
 // ---------- 結果 ----------
@@ -316,7 +327,7 @@ function renderResult() {
   placeMark(be);
   $('ret-note').textContent = be == null ? '拉拉看,最快退休的時間會跟著變。' : `三角形是 ${fireAge} 歲退休的最低報酬率;拉拉看,最快退休的時間會跟著變。`;
 
-  last = { inp, r, n, fireAge, be, name: P.name, w, t };
+  last = { inp, r, n, fireAge, be, name: P.name, persona: P, w, t };
   drawLife();
   drawMore();
   setMiniBar(
@@ -356,6 +367,44 @@ async function share() {
   }
 }
 
+// ---------- 下載圖卡 ----------
+let card = null;
+async function openCard() {
+  if (!last) return;
+  const { persona: P, r, w, t } = last;
+  const btn = $('r-card');
+  btn.disabled = true;
+  try {
+    const { makeCard } = await import('./share-card.js');
+    const blob = await makeCard({
+      variant: P.variant, name: P.name, tag: P.tag, tint: P.tint,
+      kicker: `報酬率 ${pct(r)} 時,我最快`,
+      when: t == null ? '還要很久' : w.now ? '現在' : `${w.year} 年 ${w.month} 月`,
+      sub: t == null ? '45 年內都存不夠退休' : w.now ? '就可以退休' : `就可以退休(${w.span}後,約 ${w.age} 歲)`,
+    });
+    if (card) URL.revokeObjectURL(card.url);
+    card = { blob, url: URL.createObjectURL(blob), file: `sealhack-${P.name}.png` };
+    $('card-img').src = card.url;
+    $('card-dialog').showModal();
+  } catch {
+    toast('圖卡產生失敗,請再試一次');
+  } finally {
+    btn.disabled = false;
+  }
+}
+/** 手機上用分享選單(可以存到相簿);不支援時直接下載檔案 */
+async function saveCard() {
+  if (!card) return;
+  const file = new File([card.blob], card.file, { type: 'image/png' });
+  if (matchMedia('(pointer: coarse)').matches && navigator.canShare?.({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: 'SealHack FIRE 退休測驗' }); return; } catch { /* 使用者取消 */ return; }
+  }
+  const a = document.createElement('a');
+  a.href = card.url; a.download = card.file;
+  document.body.append(a); a.click(); a.remove();
+  toast('圖卡已下載');
+}
+
 // ---------- 掛載 ----------
 export function mount() {
   if (!Object.keys(s.answers).length) {
@@ -363,6 +412,7 @@ export function mount() {
     else s = quizStart();
   }
   $('to-result').hidden = !s.done;
+  if (s.done) $('start').textContent = '重新測驗';
   if (phase() === 'result') showResult();
   else renderQuiz();
 
@@ -397,13 +447,21 @@ export function mount() {
       return;
     }
     switch (t.id) {
-      case 'start': step = 0; setPhase('quiz'); renderQuiz(true); break;
-      case 'to-result': showResult(); break;
+      case 'start':
+        if (s.done) { prevDone = s; s = quizStart(); writeKnobs(s.inputs); Object.keys(LISTS).forEach(renderList); }
+        step = 0; setPhase('quiz'); renderQuiz(true); break;
+      case 'to-result':
+        if (!s.done && prevDone) { s = prevDone; save(); }
+        prevDone = null; showResult(); break;
+      case 'r-home': showIntro(); break;
       case 'demo': s = freshState(); s.answers = deriveAnswers(s.inputs); s.done = true; save(); showResult(); break;
       case 'q-next': next(); break;
       case 'q-back': back(); break;
       case 'r-edit': step = 0; setPhase('quiz'); renderQuiz(true); break;
       case 'r-share': share(); break;
+      case 'r-card': openCard(); break;
+      case 'card-save': saveCard(); break;
+      case 'card-close': $('card-dialog').close(); break;
       default: break;
     }
   });
