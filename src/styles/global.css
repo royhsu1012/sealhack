@@ -359,13 +359,15 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 
   background: var(--surface); border: 1px solid var(--line); border-radius: 0.8rem;
   padding: 0.85rem 1rem; margin: 1rem 0; overflow-x: auto;
 }
-.eq-line { white-space: nowrap; font-size: 1.05rem; line-height: 1.9; font-variant-numeric: tabular-nums; }
-.eq-cont { padding-left: 1.6em; }
+/* 每段(.eq-t)不拆開,只在運算子前換行;換行的部分懸掛縮排 */
+.eq-line { font-size: 1.05rem; line-height: 1.9; font-variant-numeric: tabular-nums; padding-left: 1.6em; text-indent: -1.6em; }
+.eq-cont { padding-left: 3.2em; }
+.eq-t { white-space: nowrap; }
 .eq sub, .eq sup { font-size: 0.68em; line-height: 0; }
 .eq-where { margin: 0.5rem 0 0; padding-top: 0.6rem; border-top: 1px dashed var(--line); display: grid; gap: 0.3rem; font-size: 0.85rem; line-height: 1.6; color: var(--ink-2); }
 .eq-where div { display: grid; grid-template-columns: 3.4rem 1fr; gap: 0.5rem; }
 .eq-where dt { font-weight: 700; color: var(--ink); }
-@media (max-width: 639.98px) { .eq { padding: 0.75rem 0.85rem; } .eq-line { font-size: 0.98rem; } }
+@media (max-width: 639.98px) { .eq { padding: 0.75rem 0.85rem; } .eq-line { font-size: 0.95rem; } }
 
 /* ---------- 投資方法頁 ---------- */
 .invest { max-width: 44rem; margin: 0 auto; padding: 1.5rem 1rem 0; display: grid; gap: 1rem; }
@@ -540,7 +542,6 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 
 }
 /* seal-palette:end */
 
-.result-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 0 1.5rem; }
 /* 下載圖卡的預覽視窗 */
 .card-dialog {
   width: min(26rem, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); margin: auto; padding: 1rem;

@@ -113,7 +113,8 @@ data = {
     'source': 'scripts/assets/seal-reference.png', 'grid': [round(sx, 3), round(ox, 2), round(sy, 3), round(oy, 2)],
     'w': nx, 'h': ny, 'box': box, 'eyeBoxes': eye_boxes,
     'palette': palette,
-    'roles': {k: idx[v] for k, v in {'body': '#e1e1e1', 'line': '#5d738b', 'eye': '#323c4a', 'shine': '#ffffff', 'shade': '#c3ced9'}.items()},
+    'roles': {k: idx[v] for k, v in {'body': '#e1e1e1', 'line': '#5d738b', 'eye': '#323c4a', 'shine': '#ffffff', 'shade': '#c3ced9',
+                                       'muzzle': '#94a2b0', 'dot': '#5b646d', 'nose': '#222c36'}.items()},
     'scene': rects(scene_cells), 'shadow': rects(shadow), 'body': rects(body_only), 'eyes': rects(eyes),
 }
 OUT.write_text(json.dumps(data, separators=(',', ':')) + '\n', encoding='utf-8')

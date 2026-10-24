@@ -35,7 +35,7 @@ src/scripts/quiz-config.js 題目卡內容與選項預設值(貸款、大額支�
 src/scripts/quiz-app.js    測驗互動層:開場 / 題目卡 / 結果三階段(<html data-phase>)
 src/scripts/charts.js      結果頁 SVG 圖表(一生資產機率範圍、交叉圖、瀑布圖、每年存款、影響因素)
 src/scripts/seal.js        像素海豹的 HTML(幾個空的 <i>)與 6 種退休人格;圖案全在 CSS
-src/scripts/seal-cells.js  像素海豹的格子(身體、眼睛、配件):CSS 產生器與下載圖卡共用
+src/scripts/seal-cells.js  像素海豹的格子(身體、眼睛、配件)與左上角小海豹頭:CSS 產生器、下載圖卡、導覽列共用
 src/scripts/share-card.js  下載圖卡:人格 + 海豹 + 最快幾年幾月退休畫成 1080 × 1350 PNG(按下才載入)
 src/styles/seal.css        純 CSS 畫的像素海豹(scripts/seal-css.mjs 產生,勿手改;global.css 匯入)
 src/data/seal-pixels.json  參考圖 1:1 還原的像素資料(192 × 108;網站只用海豹本體與眼睛)

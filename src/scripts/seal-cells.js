@@ -46,3 +46,40 @@ export function sealCells(P, variant) {
   const eyes = variant === 'slow' ? eyeLineCells(P, 'happy') : eyeCells(P);
   return new Map([...bodyCells(P), ...eyes, ...accessoryCells(P, variant)]);
 }
+
+/** 小海豹頭(16 × 15):左上角 logo 與 favicon 用,跟大海豹同一組色票 */
+const ICON = [
+  '....OOOOOOOO....',
+  '..OOBBBBBBWWOO..',
+  '.OBBBBBBBBBWWBO.',
+  '.OBBBBBBBBBBBBO.',
+  'OBBBBBBBBBBBBBBO',
+  'OBBEEBBBBBBEEBBO',
+  'OBEWEEBBBBEWEEBO',
+  'OBEEEEBBBBEEEEBO',
+  'OBBEEBBNNBBEEBBO',
+  'OBBBBMMNNMMBBBBO',
+  'OSBBMDMMMMDMBBSO',
+  'OSSBBMMBBMMBBSSO',
+  '.OSSBBBBBBBBSSO.',
+  '..OOSSSSSSSSOO..',
+  '....OOOOOOOO....',
+];
+export const ICON_SIZE = { w: 16, h: 15 };
+/** → [x, y, 寬, 色票編號](同色相鄰的格子合併) */
+export function iconRects(P) {
+  const R = P.roles;
+  const idx = { O: R.line, B: R.body, S: R.shade, W: R.shine, E: R.eye, N: R.nose, M: R.muzzle, D: R.dot };
+  const out = [];
+  ICON.forEach((row, y) => {
+    let x = 0;
+    while (x < row.length) {
+      const c = row[x];
+      let n = 1;
+      while (row[x + n] === c) n++;
+      if (c !== '.') out.push([x, y, n, idx[c]]);
+      x += n;
+    }
+  });
+  return out;
+}

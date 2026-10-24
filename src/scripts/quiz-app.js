@@ -416,7 +416,7 @@ export function mount() {
   if (phase() === 'result') showResult();
   else renderQuiz();
   // 已經在測驗頁時,按左上角圖案不重新載入,直接回開場
-  document.querySelector('[data-home]')?.addEventListener('click', (e) => { e.preventDefault(); showIntro(); });
+  document.querySelectorAll('[data-home]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); showIntro(); }));
 
   let timer = 0;
   const refreshResult = () => { clearTimeout(timer); timer = setTimeout(() => { writeKnobs(s.inputs); renderResult(); }, 40); };
@@ -449,13 +449,13 @@ export function mount() {
       return;
     }
     switch (t.id) {
-      case 'start':
+      case 'start': case 'r-home':
+        // 做過測驗的人重新開始:從中性答案開始,上一次的結果先記著
         if (s.done) { prevDone = s; s = quizStart(); writeKnobs(s.inputs); Object.keys(LISTS).forEach(renderList); }
         step = 0; setPhase('quiz'); renderQuiz(true); break;
       case 'to-result':
         if (!s.done && prevDone) { s = prevDone; save(); }
         prevDone = null; showResult(); break;
-      case 'r-home': showIntro(); break;
       case 'demo': s = freshState(); s.answers = deriveAnswers(s.inputs); s.done = true; save(); showResult(); break;
       case 'q-next': next(); break;
       case 'q-back': back(); break;

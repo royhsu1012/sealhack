@@ -1,24 +1,26 @@
 ---
+import P from '../data/seal-pixels.json';
+import { iconRects, ICON_SIZE } from '../scripts/seal-cells.js';
 const path = Astro.url.pathname;
+// 「首頁」與左上角海豹都回開場(/?home);做過測驗的人在開場可以重新測驗或看上次的結果
 const links = [
-  { label: '退休測驗', href: '/' },
+  { label: '首頁', href: '/?home', home: true },
   { label: '投資方法', href: '/invest/' },
   { label: '怎麼算的', href: '/method/' },
 ];
-const isActive = (h: string) => (h === '/' ? path === '/' : path.startsWith(h));
+const isActive = (h: string) => (h === '/?home' ? path === '/' : path.startsWith(h));
 ---
 <header class="border-b" style="border-color:var(--line)">
   <div class="mx-auto max-w-6xl px-3 sm:px-4 h-14 flex items-center gap-2 sm:gap-5">
     <a href="/?home" class="flex items-center gap-2 h-10 min-w-10 font-extrabold shrink-0" aria-label="SealHack FIRE 首頁" data-home>
-      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
-        <rect x="1" y="14" width="10" height="11" rx="2" fill="var(--work)"/>
-        <rect x="13" y="4" width="12" height="21" rx="2" fill="var(--free)"/>
+      <svg width="32" height="30" viewBox={`0 0 ${ICON_SIZE.w} ${ICON_SIZE.h}`} shape-rendering="crispEdges" aria-hidden="true">
+        {iconRects(P).map(([x, y, w, c]) => <rect x={x} y={y} width={w} height="1" fill={`var(--sp-${c})`} />)}
       </svg>
       <span class="hidden sm:inline">SealHack FIRE</span>
     </a>
     <nav class="flex items-center gap-1 sm:gap-2 text-[13px] sm:text-sm whitespace-nowrap">
       {links.map((l) => (
-        <a href={l.href} class="px-0.5 min-[360px]:px-1 sm:px-2 py-2.5" style={isActive(l.href) ? 'color:var(--ink);font-weight:700' : 'color:var(--ink-2)'} aria-current={isActive(l.href) ? 'page' : undefined}>{l.label}</a>
+        <a href={l.href} class="min-w-10 text-center px-1.5 sm:px-2 py-2.5" style={isActive(l.href) ? 'color:var(--ink);font-weight:700' : 'color:var(--ink-2)'} aria-current={isActive(l.href) ? 'page' : undefined} data-home={l.home ? '' : undefined}>{l.label}</a>
       ))}
     </nav>
     <div class="flex-1"></div>

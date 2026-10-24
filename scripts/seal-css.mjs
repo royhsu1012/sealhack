@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SEAL_BOX, bodyCells, eyeCells, eyeLineCells, accessoryCells } from '../src/scripts/seal-cells.js';
+import { SEAL_BOX, bodyCells, eyeCells, eyeLineCells, accessoryCells, iconRects, ICON_SIZE } from '../src/scripts/seal-cells.js';
 import { ACCESSORIES } from '../src/data/seal-accessories.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -63,3 +63,9 @@ ${Object.entries(layers).map(([name, cells]) => `.px-seal .${name} {\n  backgrou
 `;
 writeFileSync(OUT, css);
 console.log(`seal.css ${(css.length / 1024).toFixed(1)} KB, layers:`, Object.fromEntries(Object.entries(layers).map(([k, v]) => [k, v.size])));
+
+// favicon:同一顆小海豹頭(靜態檔案沒辦法用 CSS 變數,直接寫色碼)
+const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1.5 18 18" shape-rendering="crispEdges">${iconRects(P).map(([x, y, w, c]) => `<rect x="${x}" y="${y}" width="${w}" height="1" fill="${P.palette[c]}"/>`).join('')}</svg>
+`;
+writeFileSync(join(ROOT, 'public/favicon.svg'), favicon);
+console.log('favicon.svg', ICON_SIZE);
