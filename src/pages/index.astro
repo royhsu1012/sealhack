@@ -18,9 +18,12 @@ const zones = [
 <Base title="SealHack" description="回答 9 個小問題,看看你最快什麼時候可以退休、是哪一型的退休海豹。所有計算都在你的瀏覽器裡完成。">
   <script is:inline>
     (function () {
+      // 左上角圖案連到 /?home:一律回開場(做過測驗的人在開場可以「看我上次的結果」);網址再改回 /
+      var home = /[?&]home(=|&|$)/.test(location.search);
       var p = 'intro';
-      try { var s = JSON.parse(localStorage.getItem('fire-inputs-v2') || 'null'); if (s && s.done) p = 'result'; } catch (e) {}
+      try { var s = JSON.parse(localStorage.getItem('fire-inputs-v2') || 'null'); if (s && s.done && !home) p = 'result'; } catch (e) {}
       document.documentElement.dataset.phase = p;
+      if (home) history.replaceState(null, '', '/');
     })();
   </script>
 

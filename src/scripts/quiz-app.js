@@ -415,6 +415,8 @@ export function mount() {
   if (s.done) $('start').textContent = '重新測驗';
   if (phase() === 'result') showResult();
   else renderQuiz();
+  // 已經在測驗頁時,按左上角圖案不重新載入,直接回開場
+  document.querySelector('[data-home]')?.addEventListener('click', (e) => { e.preventDefault(); showIntro(); });
 
   let timer = 0;
   const refreshResult = () => { clearTimeout(timer); timer = setTimeout(() => { writeKnobs(s.inputs); renderResult(); }, 40); };
