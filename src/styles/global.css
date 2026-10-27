@@ -22,6 +22,10 @@
   --warn: #c4573a;
   --grid: #e9edf2;
   --brand: var(--free);
+  /* 三種情況(樂觀 / 中性 / 悲觀):結果頁的情況列、一生資產圖的三條線 */
+  --sc-good: var(--free);
+  --sc-mid: var(--ink);
+  --sc-bad: var(--warn);
   --seal-acorn: #b7793f;
   --pastel-mint: #e2f4ec;
   --pastel-sky: #e3eefb;
@@ -202,6 +206,19 @@ h1, h2, h3 { letter-spacing: -0.015em; }
 .date-big { margin-top: 0.25rem; font-size: clamp(2.6rem, 12vw, 4rem); font-weight: 800; line-height: 1.1; }
 .date-big small { font-size: 0.42em; margin: 0 0.12em; }
 .result-span { margin-top: 0.35rem; font-weight: 700; font-size: 1.05rem; }
+/* 三種情況:樂觀 / 中性 / 悲觀,跟一生資產圖的三條線同色;悲觀是主答案,框起來 */
+.scen { margin-top: 1rem; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+.scen li { display: grid; gap: 0.1rem; padding: 0.6rem 0.4rem; border-radius: 0.9rem; background: var(--surface-2); border: 2px solid transparent; }
+.scen span { font-size: 0.85rem; font-weight: 800; color: var(--sc); }
+.scen b { font-size: 1.15rem; font-weight: 800; }
+.scen small { font-size: 0.72rem; color: var(--ink-2); font-weight: 600; }
+.scen .scen-good { --sc: var(--sc-good); }
+.scen .scen-mid { --sc: var(--sc-mid); }
+.scen .scen-bad { --sc: var(--sc-bad); border-color: var(--sc-bad); }
+.scen-fate { margin-top: 0.75rem; }
+.scen-fate b { font-size: 0.98rem; }
+.scen-fate .scen-bad { border-color: transparent; }
+.scen-note { margin-top: 0.5rem; font-size: 0.78rem; color: var(--ink-2); }
 .dream-q { color: var(--ink-2); font-weight: 600; }
 .dream-q b { color: var(--ink); }
 .dream-a { margin-top: 0.35rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.35rem; font-weight: 800; }
@@ -211,6 +228,7 @@ h1, h2, h3 { letter-spacing: -0.015em; }
 }
 .dream-a.ok span { background: var(--free); }
 .dream-a.bad span { background: var(--warn); }
+.dream-a.warn span { background: var(--gold); }
 .dream-sub { margin-top: 0.35rem; color: var(--ink-2); font-size: 0.9rem; }
 /* 一生資產圖下方:撐得住的機率、九成把握的最快退休時間 */
 .odds { margin-top: 0.9rem; display: grid; gap: 0.5rem; }
@@ -219,8 +237,9 @@ h1, h2, h3 { letter-spacing: -0.015em; }
   padding: 0.7rem 0.9rem; border-radius: 0.9rem; background: var(--surface-2); font-size: 0.92rem;
 }
 .odds .dot { margin-top: 0; }
+.scen-fate + .odds { margin-top: 0.5rem; }
 .odds b { font-size: 1.1rem; font-weight: 800; white-space: nowrap; text-align: right; }
-.odds b small { display: block; font-size: 0.72rem; font-weight: 600; color: var(--ink-2); }
+.odds b small, .odds span small { display: block; font-size: 0.72rem; font-weight: 600; color: var(--ink-2); }
 .levers { margin-top: 0.75rem; display: grid; gap: 0.5rem; }
 .levers li { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border-radius: 1rem; background: var(--surface-2); }
 .levers b { color: var(--free); font-weight: 800; white-space: nowrap; }

@@ -328,7 +328,7 @@ const CHECKS = [
 
   <script type="application/json" id="hit-data" set:html={JSON.stringify(E.hit)} />
   <script>
-    import { loadState, pct } from '../scripts/shared.js';
+    import { loadState, pct, pctUp } from '../scripts/shared.js';
     import { breakEvenReturn, historyHitRate } from '../lib/fire.js';
 
     const hit = JSON.parse(document.getElementById('hit-data')?.textContent || '{}');
@@ -338,7 +338,7 @@ const CHECKS = [
     const r = Math.max(0, inp.assumedReturn);
     const rate = { be: be ?? null, r };
     const set = (id: string, v: string) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-    set('need-be', be == null ? '50% 也不夠' : be === 0 ? '0% 就夠' : pct(be));
+    set('need-be', be == null ? '50% 也不夠' : be === 0 ? '0% 就夠' : pctUp(be));
     set('need-r', pct(r));
     if (s.done) set('need-note', '依你在退休測驗的答案;改答案後回來會自動更新。');
     document.querySelectorAll<HTMLElement>('[data-hit]').forEach((td) => {

@@ -23,6 +23,7 @@
  * @property {number} [investDelay] 每年存下的錢晚幾年才開始投資(未設定 = 0,馬上投入)
  * @property {number | null} [dcaMonthly] 每月定期定額金額(萬);null = 每月存下的錢全部投入
  * @property {number} [cashRate]  沒投入的錢放定存的利率(未設定 = CASH_RATE)
+ * @property {number} [costRate]  每年的費用與稅(從報酬率扣掉;未設定 = 0)
  * @property {Loan[]} loans
  * @property {Income[]} incomes
  * @property {Goal[]} goals
@@ -348,21 +349,22 @@ export function lifePath(inp, r = inp.assumedReturn, endAge = endAgeOf(inp)) {
   const fireAge = inp.age + n;
   const flows = cashPlan(inp);
   const loans = loanSchedule(inp.loans, Math.max(n, 0), inp.baseYear);
+  const rn = netReturn(inp, r);
   let bal = flows.investStart;
   const rows = [{ age: inp.age, year: inp.baseYear, balance: bal, phase: 'work' }];
   let depletionAge = null;
   for (let t = 1; inp.age + t <= endAge; t++) {
     const age = inp.age + t;
     if (t <= n) {
-      bal = bal * (1 + r) + flows.invest[t - 1];
+      bal = bal * (1 + rn) + flows.invest[t - 1];
       if (t === n) bal -= loans.balanceAtFire;
       rows.push({ age, year: inp.baseYear + t, balance: bal + flows.cash[t - 1], phase: 'work' });
     } else {
       const expense = 12 * inp.monthlyExpense * (1 + inp.inflation) ** t;
-      const pension = inp.incomes
+      const pension = incomesOf(inp)
         .filter((q) => q.monthly > 0 && age >= (q.startAge == null ? fireAge : q.startAge))
         .reduce((s, q) => s + 12 * q.monthly * (1 + inp.inflation) ** t, 0);
-      bal = bal * (1 + r) - (expense - pension);
+      bal = bal * (1 + rn) - (expense - pension);
       if (bal < 0 && depletionAge == null) depletionAge = age;
       rows.push({ age, year: inp.baseYear + t, balance: Math.max(bal, 0), phase: 'free', withdraw: expense - pension });
       if (bal < 0) bal = 0;
@@ -379,13 +381,13 @@ export function lifePath(inp, r = inp.assumedReturn, endAge = endAgeOf(inp)) {
 export function needBreakdown(inp, r, endAge = endAgeOf(inp)) {
   const n = inp.fireYear - inp.baseYear;
   const fireAge = inp.age + n;
-  const active = inp.incomes.filter((q) => q.monthly > 0);
+  const active = incomesOf(inp).filter((q) => q.monthly > 0);
   const incomes = active.map((q) => ({ name: q.name, pv: 0 }));
   let expenses = 0;
   for (let k = 1; fireAge + k <= endAge; k++) {
     const t = n + k;
     const age = fireAge + k;
-    const disc = (1 + r) ** k;
+    const disc = (1 + netReturn(inp, r)) ** k;
     expenses += (12 * inp.monthlyExpense * (1 + inp.inflation) ** t) / disc;
     active.forEach((q, j) => {
       if (age >= (q.startAge ?? fireAge)) incomes[j].pv += (12 * q.monthly * (1 + inp.inflation) ** t) / disc;
@@ -404,7 +406,7 @@ export function fundNeeded(inp, r, endAge = endAgeOf(inp)) {
 /** 以報酬率 r 累積到退休時(第 n 年底)的資產:扣緊急預備金後的現有資產 + 每年可投入 */
 export function fundAtFire(inp, r) {
   const plan = cashPlan(inp);
-  return futureValue(plan.investStart, plan.invest, r);
+  return futureValue(plan.investStart, plan.invest, netReturn(inp, r));
 }
 
 /**
@@ -473,6 +475,45 @@ export function cashPlan(inp) {
   return { investStart: inp.assets - reserveStart, invest, cash: cashEnd, rows, reserveStart, reserveEnd: reserve };
 }
 
+/**
+ * 扣掉費用與稅之後的報酬率:畫面上選的 r 是市場報酬,實際拿到的要扣基金內扣費用、股利所得稅、二代健保等
+ * (inp.costRate,網站預設 0.5%;沒設定 = 0,計畫書範例不扣)。
+ */
+export const netReturn = (inp, r) => r - (inp.costRate ?? 0);
+
+/**
+ * 勞保老年年金與勞退月退休金的估計(今日幣值,每月萬元;實際以勞保局試算為準)。
+ * - 勞保:平均月投保薪資(月收入,最高 4.58 萬)× 年資 × 1.55%,65 歲起領;年資不滿 15 年只能領一次金,這裡算 0。
+ * - 勞退個人帳戶:雇主每月提繳 6% × 月收入(最高 15 萬),從 25 歲工作到退休(最晚 60 歲),實質報酬 1%;60 歲起分 24 年領完。
+ * 假設 25 歲開始工作、收入隨通膨成長;提早退休少繳的年資會反映在金額上。
+ */
+export const WORK_START = 25;
+export function pensionEstimate(inp) {
+  const fireAge = inp.age + inp.fireYear - inp.baseYear;
+  const monthly = inp.salary / 12;
+  const years = Math.max(0, fireAge - WORK_START);
+  const labor = years >= 15 ? Math.min(monthly, 4.58) * years * 0.0155 : 0;
+  const stop = Math.min(fireAge, 60);
+  let fund = 0;
+  for (let a = WORK_START; a < 60; a++) fund = fund * 1.01 + (a < stop ? 12 * 0.06 * Math.min(monthly, 15) : 0);
+  const r2 = (v) => Math.round(v * 100) / 100;
+  return { '勞退月退休金': { monthly: r2(fund / 288), startAge: 60 }, '勞保老年年金': { monthly: r2(labor), startAge: 65 } };
+}
+/** 年金清單:標記 auto 的勞保 / 勞退照退休年份重新估算(提早退休、年資變少,金額跟著變) */
+export function incomesOf(inp) {
+  if (!inp.incomes.some((q) => q.auto)) return inp.incomes;
+  const est = pensionEstimate(inp);
+  return inp.incomes.map((q) => (q.auto && est[q.name] ? { ...q, ...est[q.name] } : q));
+}
+/** 網站預設的年金:勞退、勞保都用估算(auto),另有一筆其他被動收入 */
+export function autoPensions(inp) {
+  const est = pensionEstimate(inp);
+  return [
+    { name: '勞退月退休金', ...est['勞退月退休金'], auto: true },
+    { name: '勞保老年年金', ...est['勞保老年年金'], auto: true },
+  ];
+}
+
 /** 定存利率:晚點開始投資時,等待期間存款的利率 */
 export const CASH_RATE = 0.015;
 
@@ -511,8 +552,10 @@ export function breakEvenReturn(inp, endAge = endAgeOf(inp)) {
  * 什麼最影響退休年齡:每個參數上下調整,比較「最早可 FIRE 年齡」的變化(以預期報酬率計)。
  * 找不到可 FIRE 的年份時以 null 表示。
  */
-export function fireAgeDrivers(inp) {
-  const ageOf = (x) => { const t = earliestFireTime(x); return t == null ? null : Math.floor(x.age + t); };
+/** confidence 有填時(例如 0.9),用「有這麼多把握撐到最後」的最快時間;沒填用固定報酬率 */
+const fireTimeOf = (x, r, endAge, confidence) => (confidence ? earliestFireTimeAt(x, r, confidence, { endAge }) : earliestFireTime(x, r, 45, endAge));
+export function fireAgeDrivers(inp, confidence = null) {
+  const ageOf = (x) => { const t = fireTimeOf(x, x.assumedReturn, endAgeOf(x), confidence); return t == null ? null : Math.floor(x.age + t); };
   const base = ageOf(inp);
   const spec = [
     { key: 'monthlyExpense', label: '每月生活費 ±1 萬', lo: { monthlyExpense: inp.monthlyExpense - 1 }, hi: { monthlyExpense: inp.monthlyExpense + 1 } },
@@ -541,8 +584,8 @@ export function personaOf(inp) {
  * 想再快一點:每月多存 1 萬、每月少花 5 千、報酬率多 1%,各自讓「最早多久後能退休」提早幾年(含小數)。
  * base 為原本的時間;任一方無解時 gain 為 null。
  */
-export function levers(inp, r = inp.assumedReturn, endAge = endAgeOf(inp)) {
-  const base = earliestFireTime(inp, r, 45, endAge);
+export function levers(inp, r = inp.assumedReturn, endAge = endAgeOf(inp), confidence = null) {
+  const base = fireTimeOf(inp, r, endAge, confidence);
   const cases = [
     ['saveMore', { ...inp, salary: inp.salary + 12 }, r],
     ['spendLess', { ...inp, monthlyExpense: Math.max(0, inp.monthlyExpense - 0.5) }, r],
@@ -552,14 +595,14 @@ export function levers(inp, r = inp.assumedReturn, endAge = endAgeOf(inp)) {
   return {
     base,
     rows: cases.map(([key, x, rr]) => {
-      const t = earliestFireTime(x, rr, 45, endAge);
+      const t = fireTimeOf(x, rr, endAge, confidence);
       return { key, t, gain: base != null && t != null ? base - t : null };
     }),
   };
 }
 
 // ---------- 機率範圍(蒙地卡羅) ----------
-// 每年報酬率隨機:ln(1 + R) ~ 常態,中位數 = 選的報酬率 r,波動依 r 估計;通膨固定。
+// 每年報酬率隨機:ln(1 + R) ~ 常態,中位數 = 扣掉費用與稅的 r − c,波動依 r 估計;通膨固定。
 // 固定種子 → 同樣的輸入每次結果一樣,拉滑桿時數字不會跳動;所有年份共用同一組亂數,比較不同退休年齡才公平。
 export const MC = { paths: 1000, seed: 20261023, years: 100 };
 
@@ -623,12 +666,12 @@ function simulate(inp, r, sigma, endAge, paths, keep = true) {
   for (let t = n + 1; t <= T; t++) {
     const age = inp.age + t;
     const expense = 12 * inp.monthlyExpense * (1 + inp.inflation) ** t;
-    const pension = inp.incomes
+    const pension = incomesOf(inp)
       .filter((q) => q.monthly > 0 && age >= (q.startAge ?? fireAge))
       .reduce((s, q) => s + 12 * q.monthly * (1 + inp.inflation) ** t, 0);
     withdraw[t] = expense - pension;
   }
-  const { g: G, years: stride } = growth(r, sigma, paths, Math.max(T, 80));
+  const { g: G, years: stride } = growth(netReturn(inp, r), sigma, paths, Math.max(T, 80));
   const start = investStart - (n === 0 ? loanAtFire : 0);
   const balances = keep ? Array.from({ length: T + 1 }, () => new Float64Array(paths)) : null;
   const depletedAt = new Int16Array(paths);
@@ -679,20 +722,19 @@ export function monteCarlo(inp, r = inp.assumedReturn, opts = {}) {
   let ok = 0;
   for (let p = 0; p < paths; p++) if (!sim.depletedAt[p]) ok++;
   const firstZero = (key) => rows.find((x) => x.age > sim.fireAge && x[key] <= 0)?.age ?? null;
-  return { rows, fireAge: sim.fireAge, sigma, success: ok / paths, p10Zero: firstZero('p10'), p50Zero: firstZero('p50') };
+  return { rows, fireAge: sim.fireAge, sigma, success: ok / paths, p10Zero: firstZero('p10'), p50Zero: firstZero('p50'), p90Zero: firstZero('p90') };
 }
 
-/**
- * 有 confidence 把握(撐到 endAge 的機率 ≥ confidence)的最快退休時間(年,含小數;找不到回傳 null)。
- * 越晚退休機率越高(同一組亂數),所以用二分法找第一個夠的年份,再用前後兩年的機率線性內插出月份。
- */
-export function earliestFireTimeAt(inp, r = inp.assumedReturn, confidence = 0.9, opts = {}) {
-  const { maxYears = 45, endAge = endAgeOf(inp) } = opts;
+/** 各退休年份撐到 endAge 的機率(算過的年份記起來,幾種把握共用) */
+function rateByYear(inp, r, opts) {
   const memo = new Map();
-  const rate = (y) => {
+  return (y) => {
     if (!memo.has(y)) memo.set(y, successRate({ ...inp, fireYear: y }, r, opts) ?? 0);
     return memo.get(y);
   };
+}
+function firstTimeAt(inp, rate, confidence, opts) {
+  const { maxYears = 45, endAge = endAgeOf(inp) } = opts;
   let lo = inp.baseYear;
   let hi = Math.min(inp.baseYear + maxYears, inp.baseYear + endAge - inp.age - 1);
   if (rate(lo) >= confidence) return 0;
@@ -704,6 +746,29 @@ export function earliestFireTimeAt(inp, r = inp.assumedReturn, confidence = 0.9,
   }
   const p0 = rate(hi - 1), p1 = rate(hi);
   return hi - 1 - inp.baseYear + (p1 > p0 ? (confidence - p0) / (p1 - p0) : 1);
+}
+
+/**
+ * 有 confidence 把握(撐到 endAge 的機率 ≥ confidence)的最快退休時間(年,含小數;找不到回傳 null)。
+ * 越晚退休機率越高(同一組亂數),所以用二分法找第一個夠的年份,再用前後兩年的機率線性內插出月份。
+ */
+export function earliestFireTimeAt(inp, r = inp.assumedReturn, confidence = 0.9, opts = {}) {
+  return firstTimeAt(inp, rateByYear(inp, r, opts), confidence, opts);
+}
+
+/**
+ * 三種情況(跟一生資產圖的三條線同一套定義):
+ * 悲觀 = 最差一成的市場也撐得住(九成把握,P10)、中性 = 一半的市場撐得住(P50)、樂觀 = 只有最好的一成市場撐得住(P90)。
+ */
+export const SCENARIOS = [
+  { key: 'good', name: '樂觀', sub: '市場最好的一成', confidence: 0.1, line: 'p90' },
+  { key: 'mid', name: '中性', sub: '一半的情況', confidence: 0.5, line: 'p50' },
+  { key: 'bad', name: '悲觀', sub: '市場最差的一成', confidence: 0.9, line: 'p10' },
+];
+/** 三種情況的最快退休時間 → { good, mid, bad }(年,含小數;找不到為 null) */
+export function fireTimeScenarios(inp, r = inp.assumedReturn, opts = {}) {
+  const rate = rateByYear(inp, r, opts);
+  return Object.fromEntries(SCENARIOS.map((x) => [x.key, firstTimeAt(inp, rate, x.confidence, opts)]));
 }
 
 /** 敏感度:變動單一參數,回傳各值下的目標資金與所需報酬率 */
@@ -723,7 +788,7 @@ export function saveVsInvest(inp, r = inp.assumedReturn) {
   if (n < 1) return { rows: [], cross: null };
   const path = lifePath(inp, r);
   const rows = annualCashflow(inp).map((f, i) => ({
-    year: f.year, age: inp.age + i + 1, save: f.invest, gain: Math.max(path.rows[i].balance, 0) * r,
+    year: f.year, age: inp.age + i + 1, save: f.invest, gain: Math.max(path.rows[i].balance, 0) * netReturn(inp, r),
   }));
   const hit = rows.find((x) => x.save > 0 && x.gain >= x.save);
   return { rows, cross: hit ? { year: hit.year, age: hit.age } : null };

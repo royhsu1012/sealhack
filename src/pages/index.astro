@@ -141,6 +141,8 @@ const zones = [
       <p class="muted" id="r-kicker"></p>
       <p class="date-big num" id="r-date"></p>
       <p class="result-span" id="r-span"></p>
+      <ul class="scen" id="r-scen" aria-label="三種情況的最快退休年齡"></ul>
+      <p class="scen-note">上面的日期用悲觀情況:就算碰上最差的一成市場,錢也夠用到最後</p>
     </div>
 
     <div class="card result-dream" id="r-dream"></div>
@@ -174,9 +176,10 @@ const zones = [
     </form>
 
     <div class="card">
-      <h2 class="card-title">你的一生資產:機率範圍</h2>
+      <h2 class="card-title">你的一生資產:樂觀、中性、悲觀</h2>
       <p id="life-note" class="text-sm muted mt-1"></p>
       <div id="chart-life" class="chart mt-4"></div>
+      <ul class="scen scen-fate" id="r-fate" aria-label="三種情況各自撐到幾歲"></ul>
       <ul class="odds" id="r-odds"></ul>
     </div>
 

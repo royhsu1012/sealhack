@@ -1,14 +1,13 @@
 // 結果頁的 SVG 圖表(純字串;寬度跟隨容器,由呼叫端傳入 W)
-import { fundNeeded, fundAtFire, endAgeOf } from '../lib/fire.js';
-import { nf, wan, big, pct, niceStep, T, textW, legend } from './shared.js';
+import { fundNeeded, fundAtFire, endAgeOf, SCENARIOS } from '../lib/fire.js';
+import { nf, wan, big, pct, pctUp, niceStep, T, textW, legend } from './shared.js';
 
 // 交叉圖的橫軸預設畫到 12%;選得更高或最低報酬率更高時才往右延伸,避免高報酬把常用的範圍壓扁
 const CHART_R = 0.12;
 
-// 一生資產的機率範圍(monteCarlo 的結果):中位數一條線,中間一半的情況(P25–P75)深色帶、八成的情況(P10–P90)淺色帶
+// 一生資產的三種情況(monteCarlo 的結果):樂觀 P90、中性 P50、悲觀 P10 三條線,八成的情況(P10–P90)一條淺色帶
 // need = 以選的報酬率算出、在理想退休年齡退休需要準備的錢
-export const BAND_DARK = 'color-mix(in srgb, var(--free) 38%, transparent)';
-export const BAND_LIGHT = 'color-mix(in srgb, var(--free) 16%, transparent)';
+export const BAND_LIGHT = 'color-mix(in srgb, var(--free) 10%, transparent)';
 export function fanChart(mc, need, W) {
   const { rows, fireAge } = mc;
   const H = W < 560 ? 300 : 380, L = 48, R = W - 16, top = 34, B = H - 62;
@@ -31,20 +30,33 @@ export function fanChart(mc, need, W) {
   for (let a = Math.ceil(a0 / ageStep) * ageStep; a <= a1; a += ageStep) ageTicks.push(a);
   const tY = y(need);
 
-  // 「用完」的點:最差一成、一半的情況各一個,標籤由下往上疊
-  const zeros = [['p10Zero', '最差一成'], ['p50Zero', '一半的情況']]
-    .filter(([k]) => mc[k] != null)
-    .map(([k, label], i) => {
-      const a = mc[k], dx = x(a);
-      const text = `${label} ${a} 歲用完`, w = textW(text, 12), ly = B - 12 - i * 17;
+  // 「用完」的點:悲觀、中性、樂觀各自用完的年齡(撐到最後的不標),點與標籤用該情況的顏色,標籤由下往上疊
+  const zeros = [...SCENARIOS].reverse()
+    .filter((s) => mc[`${s.line}Zero`] != null)
+    .map((s, i) => {
+      const a = mc[`${s.line}Zero`], dx = x(a);
+      const text = `${s.name} ${a} 歲用完`, w = textW(text, 12), ly = B - 12 - i * 17;
       // 右邊放得下就放右邊,否則放左邊;兩邊都不夠就在點的上方、夾在圖內
       const lx = dx + 10 + w <= R ? dx + 10 : dx - 10 - w >= L ? dx - 10 - w : Math.min(Math.max(dx - w / 2, L + 2), R - w);
-      return { a, dx, text, ly, lx, box: [lx, lx + w, ly - 12, ly + 3] };
+      return { a, dx, text, ly, lx, color: `var(--sc-${s.key})`, box: [lx, lx + w, ly - 12, ly + 3] };
     });
   // 「需要準備 X 萬」標籤:依序試幾個位置,挑第一個不壓到其他標籤的
   const retireEnd = fx > R - 120;
   const retireW = textW(`${fireAge} 歲退休`, 13);
   const boxes = [retireEnd ? [fx - 8 - retireW, fx - 8, top - 14, top + 1] : [fx + 8, fx + 8 + retireW, top - 14, top + 1], ...zeros.map((m) => m.box)];
+  // 線尾直接標名字:撐到最後的標在右端;衝出上緣的(通常是樂觀)標在衝出去的地方;用完的已經有「用完」標籤
+  const hits = (a, b) => a[0] < b[1] && a[1] > b[0] && a[2] < b[3] && a[3] > b[2];
+  const ends = SCENARIOS.filter((s) => mc[`${s.line}Zero`] == null).map((s) => {
+    const out = rows.find((r) => r.age > fireAge && r[s.line] > vmax);
+    const size = 12, w = textW(s.name, size);
+    let lx = Math.min(out ? x(out.age) + 6 : R - w, R - w), ly = out ? top + 16 : y(rows.at(-1)[s.line]) - 7;
+    const box = () => [lx - 2, lx + w + 2, ly - size, ly + 4];
+    // 壓到「X 歲退休」就移到它右邊(放不下就往下),壓到「用完」標籤就往上
+    if (hits(box(), boxes[0])) { if (boxes[0][1] + 6 + w <= R) lx = boxes[0][1] + 6; else ly = boxes[0][3] + size + 4; }
+    while (zeros.some((m) => hits(box(), m.box))) ly -= 16;
+    boxes.push(box());
+    return T(lx, ly, s.name, { fill: `var(--sc-${s.key})`, weight: 800, size, halo: true });
+  });
   const tWide = fx - x(a0) >= 140;
   const tSize = tWide ? 12 : 11;
   const tText = `${tWide ? '需要準備' : '需要'} ${big(need)}`;
@@ -56,28 +68,29 @@ export function fanChart(mc, need, W) {
   const tPos = [[x(a0) + 4, tY - 7], [x(a0) + 4, tY + tSize + 5], [fx + 8, tY - 7], [fx + 8, tY + tSize + 5], [x(a0) + 4, tY - 25], [x(a0) + 4, tY - 43]]
     .find(tFree) ?? [x(a0) + 4, tY - 7];
   const freeLabel = `自由 ${fireAge} 歲之後`;
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="一生資產的機率範圍:${fireAge} 歲退休,撐到 ${a1} 歲的機率 ${Math.round(mc.success * 100)}%">
+  const fate = (s) => (mc[`${s.line}Zero`] != null ? `${mc[`${s.line}Zero`]} 歲用完` : `撐到 ${a1} 歲`);
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="一生資產的三種情況:${fireAge} 歲退休,${SCENARIOS.map((s) => `${s.name}:${fate(s)}`).join('、')};撐到 ${a1} 歲的機率 ${Math.round(mc.success * 100)}%">
     <defs><clipPath id="fan-plot"><rect x="${L}" y="${top - 2}" width="${R - L}" height="${B - top + 2}"/></clipPath></defs>
     ${ticks.map((v) => `<line x1="${L}" x2="${R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/>${T(L - 8, y(v) + 4, v === 0 ? '0' : big(v).replace(' 萬', ''), { anchor: 'end', size: 11 })}`).join('')}
     ${T(L - 8, top - 16, '萬元', { anchor: 'end', size: 11 })}
     <g clip-path="url(#fan-plot)">
       <path d="${band('p10', 'p90')}" fill="${BAND_LIGHT}"/>
-      <path d="${band('p25', 'p75')}" fill="${BAND_DARK}"/>
-      <path d="${line('p50')}" fill="none" stroke="var(--ink)" stroke-width="2.4" stroke-linejoin="round"/>
+      ${SCENARIOS.map((s) => `<path d="${line(s.line)}" fill="none" stroke="var(--sc-${s.key})" stroke-width="${s.key === 'mid' ? 2.6 : 2}" stroke-linejoin="round"${s.key === 'good' ? ' stroke-dasharray="7 4"' : ''}/>`).join('')}
     </g>
     <line x1="${x(a0)}" x2="${fx}" y1="${tY}" y2="${tY}" stroke="var(--ink-2)" stroke-dasharray="3 4"/>
     <line x1="${fx}" x2="${fx}" y1="${top - 10}" y2="${B}" stroke="var(--gold)" stroke-width="2"/>
     <circle cx="${fx}" cy="${y(atFire.p50)}" r="5" fill="var(--gold)"/>
     ${T(tPos[0], tPos[1], tText, { size: tSize, halo: true })}
     ${T(fx + (retireEnd ? -8 : 8), top - 2, `${fireAge} 歲退休`, { anchor: retireEnd ? 'end' : 'start', fill: 'var(--ink)', weight: 800, size: 13 })}
-    ${zeros.map((m) => `<circle cx="${m.dx}" cy="${B}" r="5" fill="var(--warn)"/>${T(m.lx, m.ly, m.text, { fill: 'var(--ink)', weight: 700, size: 12, halo: true })}`).join('')}
+    ${ends.join('')}
+    ${zeros.map((m) => `<circle cx="${m.dx}" cy="${B}" r="5" fill="${m.color}"/>${T(m.lx, m.ly, m.text, { fill: m.color, weight: 800, size: 12, halo: true })}`).join('')}
     <line x1="${L}" x2="${R}" y1="${B}" y2="${B}" stroke="var(--line)"/>
     ${ageTicks.map((a) => T(x(a), B + 16, `${a}`, { anchor: 'middle', size: 11 })).join('')}
     <rect x="${x(a0)}" y="${B + 26}" width="${Math.max(0, fx - x(a0) - 2)}" height="22" rx="5" fill="var(--work)" fill-opacity="0.35"/>
     <rect x="${fx + 2}" y="${B + 26}" width="${Math.max(0, R - fx - 2)}" height="22" rx="5" fill="var(--free)" fill-opacity="0.3"/>
     ${fx - x(a0) > 34 ? T((x(a0) + fx) / 2, B + 41, fx - x(a0) > 90 ? `工作 ${a0}–${fireAge} 歲` : '工作', { anchor: 'middle', size: 12, fill: 'var(--ink)', weight: 600 }) : ''}
     ${R - fx > 34 ? T((fx + R) / 2, B + 41, R - fx > 90 ? freeLabel : '自由', { anchor: 'middle', size: 12, fill: 'var(--ink)', weight: 600 }) : ''}
-    ${rows.map((r) => `<rect x="${x(r.age) - (R - L) / rows.length / 2}" y="${top}" width="${(R - L) / rows.length}" height="${B - top}" fill="transparent"><title>${r.age} 歲(${r.year}):中位數 ${big(r.p50)};一半的情況 ${big(r.p25)}–${big(r.p75)};八成 ${big(r.p10)}–${big(r.p90)}</title></rect>`).join('')}
+    ${rows.map((r) => `<rect x="${x(r.age) - (R - L) / rows.length / 2}" y="${top}" width="${(R - L) / rows.length}" height="${B - top}" fill="transparent"><title>${r.age} 歲(${r.year}):${SCENARIOS.map((s) => `${s.name} ${big(r[s.line])}`).join('・')}</title></rect>`).join('')}
   </svg>`;
 }
 
@@ -264,7 +277,7 @@ export function tradeoffChart(inp, rSel, be, W) {
   for (let k = 0; k * xStep <= xMax + 1e-9; k++) xTicks.push(k * xStep);
   const sx = x(rSel);
   // 交叉點標籤:放在「你選的」虛線另一側;都放不下就放在點的正上方
-  const beLabel = be != null ? `至少 ${pct(be)}` : '';
+  const beLabel = be != null ? `至少 ${pctUp(be)}` : '';
   const beX = be != null ? x(Math.min(be, xMax)) : 0;
   const lw = textW(beLabel, 13);
   const spanOf = ([px, anchor]) => (anchor === 'start' ? [px, px + lw] : [px - lw, px]);
@@ -273,7 +286,7 @@ export function tradeoffChart(inp, rSel, be, W) {
   const bePos = [...away, [sx + 6, 'start'], [sx - 6, 'end']].find((c) => fits(spanOf(c)));
   const selW = textW(`你選的 ${pct(rSel)}`, 12);
   const selX = Math.min(Math.max(sx, L + selW / 2 + 2), R - selW / 2);
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="報酬率 ${pct(rSel)} 時需要 ${big(needSel)}、存得到 ${big(haveSel)}${be != null && be > 0 ? `;報酬率至少 ${pct(be)} 才夠` : ''}">
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="報酬率 ${pct(rSel)} 時需要 ${big(needSel)}、存得到 ${big(haveSel)}${be != null && be > 0 ? `;報酬率至少 ${pctUp(be)} 才夠` : ''}">
     <defs>
       <clipPath id="to-plot"><rect x="${L}" y="${top}" width="${R - L}" height="${B - top}"/></clipPath>
       <clipPath id="to-ok"><rect x="${bx}" y="${top}" width="${Math.max(0, R - bx)}" height="${B - top}"/></clipPath>

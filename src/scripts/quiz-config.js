@@ -61,22 +61,25 @@ export const QUESTIONS = [
     list: 'goals',
   },
   {
-    id: 'pension', title: '勞保、勞退要算進去嗎?', hint: '退休後每月領的錢,可以少準備一些。',
+    id: 'pension', title: '勞保、勞退要算進去嗎?', hint: '依你的月收入與工作年資估算,提早退休、年資短的領得少;金額可以在細項改。',
     choices: [
-      { v: 'yes', label: '要', sub: '先用估計值' },
+      { v: 'yes', label: '要', sub: '依收入與年資估算' },
       { v: 'no', label: '先不算', sub: '保守一點' },
     ],
     list: 'incomes',
   },
   {
-    id: 'style', title: '你的投資風格比較像?', hint: '只是假設的年化報酬率,不是保證;結果頁還能再拉。',
+    id: 'style', title: '你的投資風格比較像?', hint: '只是假設的年化報酬率,不是保證;計算時會先扣掉費用與稅,結果頁還能再拉。',
     key: 'assumedReturn',
     choices: [
       { v: 0.04, label: '保守', sub: '報酬率約 4%,起伏小' },
       { v: 0.06, label: '穩健', sub: '報酬率約 6%' },
       { v: 0.08, label: '積極', sub: '報酬率約 8%,起伏大' },
     ],
-    more: [{ key: 'assumedReturn', label: '自己填', unit: '%', min: 0, max: 20, step: 0.5, pct: true }],
+    more: [
+      { key: 'assumedReturn', label: '自己填', unit: '%', min: 0, max: 20, step: 0.5, pct: true },
+      { key: 'costRate', label: '每年費用與稅', unit: '%', min: 0, max: 2, step: 0.1, pct: true, hint: '基金內扣費用、買賣手續費、股利的稅等,每年從報酬率扣掉。' },
+    ],
   },
   {
     id: 'start', title: '每月存下的錢,什麼時候開始定期定額?', hint: '越早投入,複利跑得越久;開始之前存下的錢先算放定存。金額在細項裡設定。',
@@ -106,7 +109,3 @@ export const GOAL_DEFAULTS = {
   car: { name: '換車', amount: 80, yearOffset: 3 },
   house: { name: '買房頭期款', amount: 300, yearOffset: 5 },
 };
-export const PENSION_DEFAULTS = [
-  { name: '勞退月退休金', monthly: 1, startAge: 60 },
-  { name: '勞保老年年金', monthly: 2, startAge: 65 },
-];

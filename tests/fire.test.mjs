@@ -6,6 +6,7 @@ import {
   lifePath, fireAgeDrivers, presetInputs, PRESETS,
   fundNeeded, fundAtFire, breakEvenReturn, needBreakdown, earliestFireTime, personaOf, levers, monteCarlo, successRate, earliestFireTimeAt, volatilityOf,
   historyHitRate, saveVsInvest, startLater, annualCashflow, loanYears, loanSchedule, cashPlan,
+  netReturn, pensionEstimate, incomesOf, autoPensions, fireTimeScenarios, SCENARIOS,
 } from '../src/lib/fire.js';
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: got ${a}, want ${b} ± ${tol}`);
@@ -309,4 +310,69 @@ test('每年的錢怎麼分:預備金、大額支出準備金、定期定額', (
   assert.ok(poor.rows[0].reserve > 0, '第一年先補預備金');
   const deficit = cashPlan({ ...D, salary: 60 });
   assert.ok(deficit.rows[0].short > 0, '收入不夠生活費:記為短缺,從投資部位拿');
+});
+
+// 網站的保守預設(shared.js 的 SITE_DEFAULTS):加薪 2%、費用與稅 0.5%、勞保勞退依收入與年資估算
+const site = (base = presetInputs('example', 2026)) => {
+  const inp = { ...base, salaryGrowth: 0.02, costRate: 0.005 };
+  inp.incomes = [...autoPensions(inp), ...inp.incomes.filter((q) => !['勞退月退休金', '勞保老年年金'].includes(q.name))];
+  return inp;
+};
+
+test('費用與稅:報酬率先扣 c 再複利', () => {
+  const inp = { ...D, costRate: 0.005 };
+  assert.equal(netReturn(inp, 0.06), 0.055);
+  assert.equal(netReturn(D, 0.06), 0.06, '沒設 costRate 就不扣');
+  near(fundAtFire(inp, 0.06), fundAtFire(D, 0.055), 1e-9, '存得到 = 用 r − c 算');
+  near(fundNeeded(inp, 0.06), fundNeeded(D, 0.055), 1e-9, '需要準備 = 用 r − c 折現');
+  assert.ok(breakEvenReturn(inp) > breakEvenReturn(D), '扣費用後最低報酬率變高');
+});
+
+test('勞保、勞退依收入與年資估算', () => {
+  const inp = site();
+  // 月收 15 萬、50 歲退休:勞保年資 25 年(投保上限 4.58 萬)、勞退提繳 25 年、1% 滾到 60 歲
+  const est = pensionEstimate(inp);
+  near(est['勞保老年年金'].monthly, 1.77, 1e-9, '勞保 = 4.58 × 25 × 1.55%');
+  assert.equal(est['勞保老年年金'].startAge, 65);
+  near(est['勞退月退休金'].monthly, 1.17, 1e-9, '勞退 = 專戶 ÷ 288');
+  assert.equal(est['勞退月退休金'].startAge, 60);
+  // 退休越早,年資越短、領得越少;年資未滿 15 年不能領勞保年金
+  const early = pensionEstimate({ ...inp, fireYear: inp.baseYear + 4 });
+  assert.equal(early['勞保老年年金'].monthly, 0, '39 歲退休:勞保年資 14 年');
+  assert.ok(early['勞退月退休金'].monthly < est['勞退月退休金'].monthly);
+  // auto 的年金跟著退休年份重算,自己填的不動
+  const moved = incomesOf({ ...inp, fireYear: inp.baseYear + 4, incomes: [...inp.incomes, { name: '租金', monthly: 1, startAge: null }] });
+  assert.equal(moved.find((q) => q.name === '勞保老年年金').monthly, 0);
+  assert.equal(moved.find((q) => q.name === '租金').monthly, 1);
+});
+
+test('三種情況:樂觀 ≤ 中性 ≤ 悲觀,悲觀 = 九成把握', () => {
+  const inp = site();
+  const sc = fireTimeScenarios(inp, 0.06);
+  assert.deepEqual(SCENARIOS.map((x) => x.confidence), [0.1, 0.5, 0.9]);
+  assert.ok(sc.good < sc.mid && sc.mid < sc.bad, `${sc.good} < ${sc.mid} < ${sc.bad}`);
+  near(sc.bad, earliestFireTimeAt(inp, 0.06, 0.9), 1e-9, '悲觀 = 九成把握');
+  near(sc.mid, earliestFireTime(inp, 0.06), 0.5, '中性 ≈ 每年報酬剛好 r − c');
+  // 範例情境(保守預設)的數字:樂觀約 47 歲、中性約 49 歲、悲觀約 53 歲
+  near(sc.good, 12.03, 0.01, '樂觀');
+  near(sc.mid, 14.85, 0.01, '中性');
+  near(sc.bad, 18.30, 0.01, '悲觀');
+  near(successRate(inp, 0.06), 0.523, 1e-9, '50 歲退休撐到 95 歲的機率');
+  near(fundNeeded(inp, 0.06), 1818, 1, '需要準備');
+  near(fundAtFire(inp, 0.06), 1811, 1, '存得到');
+  const mc = monteCarlo(inp, 0.06);
+  assert.equal(mc.p10Zero, 64, '悲觀 64 歲用完');
+  assert.equal(mc.p50Zero, null, '中性撐到 95 歲');
+  assert.equal(mc.p90Zero, null, '樂觀撐到 95 歲');
+});
+
+test('想再快一點與影響因素:用九成把握重算', () => {
+  const inp = site();
+  const L = levers(inp, 0.06, 95, 0.9);
+  near(L.base, earliestFireTimeAt(inp, 0.06, 0.9), 1e-9, '基準 = 九成把握');
+  for (const x of L.rows) assert.ok(x.gain > 0, `${x.key} 要能提早`);
+  const save = L.rows.find((x) => x.key === 'saveMore');
+  near(save.t, L.base - save.gain, 1e-9, 'gain = 原本 − 調整後');
+  const d = fireAgeDrivers({ ...inp, assumedReturn: 0.06 }, 0.9);
+  assert.equal(d.base, 53, '目前最快 53 歲');
 });

@@ -1,21 +1,45 @@
 // 共用工具:輸入保存、格式化、滑桿、圖表小工具、底部結果列。
 // 不連網、不送出資料;輸入值存在瀏覽器 localStorage(失敗時照常運作)。
-import { presetInputs } from '../lib/fire.js';
+import { presetInputs, autoPensions } from '../lib/fire.js';
 
 export const BASE_YEAR = new Date().getFullYear();
 export const R_MAX = 0.2;
 const STORAGE_KEY = 'fire-inputs-v2';
 
 // ---------- 狀態:inputs 給引擎;answers 記住測驗選了哪張卡;done = 做完測驗 ----------
-export const freshState = () => ({ inputs: presetInputs('example', BASE_YEAR), answers: {}, done: false });
+/**
+ * 網站的保守預設(2026-10-27,使用者:「不要太樂觀」):加薪 2%(跟通膨一樣)、報酬扣 0.5% 費用與稅、
+ * 勞保勞退依收入與年資估算。計畫書範例(fire.js 的 DEFAULT_INPUTS)本身不動,測試照舊。
+ */
+export const SITE_DEFAULTS = { salaryGrowth: 0.02, costRate: 0.005 };
+export function withSiteDefaults(inputs) {
+  const inp = { ...inputs, ...SITE_DEFAULTS };
+  const others = inp.incomes.filter((q) => !['勞退月退休金', '勞保老年年金'].includes(q.name));
+  inp.incomes = [...autoPensions(inp), ...others];
+  return inp;
+}
+export const freshState = () => ({ inputs: withSiteDefaults(presetInputs('example', BASE_YEAR)), answers: {}, done: false });
+/** 舊版存下的答案:年金還是固定的 1 萬 + 2 萬,就改成估算(使用者改過的金額不動) */
+function migrate(inputs) {
+  const old = (name, monthly, age) => inputs.incomes?.some((q) => q.name === name && q.monthly === monthly && q.startAge === age && !q.auto);
+  if (old('勞退月退休金', 1, 60) && old('勞保老年年金', 2, 65)) {
+    const others = inputs.incomes.filter((q) => !['勞退月退休金', '勞保老年年金'].includes(q.name));
+    inputs.incomes = [...autoPensions(inputs), ...others];
+  }
+  return inputs;
+}
 export function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const saved = JSON.parse(raw);
       const base = freshState();
+      // 這一版之前存的答案(沒有 costRate):舊預設的加薪 3% 改成 2%,固定的年金改成估算
+      const before = saved.inputs && saved.inputs.costRate == null;
+      const inputs = { ...base.inputs, ...saved.inputs, baseYear: BASE_YEAR };
+      if (before) { inputs.costRate = SITE_DEFAULTS.costRate; if (inputs.salaryGrowth === 0.03) inputs.salaryGrowth = SITE_DEFAULTS.salaryGrowth; }
       return {
-        inputs: { ...base.inputs, ...saved.inputs, baseYear: BASE_YEAR },
+        inputs: migrate(inputs),
         answers: saved.answers ?? {},
         done: !!saved.done,
       };
@@ -37,6 +61,8 @@ export const wan = (v, d = 0) => `${nf(d).format(v)} 萬`;
 export const big = (v) => (Math.abs(v) >= 10000 ? `${new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 2 }).format(v / 10000)} 億` : wan(v));
 /** 百分比:最多一位小數、整數不寫 .0(6%、6.4%) */
 export const pct = (r) => (r == null ? '無解' : r <= 0 ? '0%' : `${new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 1 }).format(r * 100)}%`);
+/** 門檻用(「至少 X%」):無條件進位到 0.1%,不然 6.02% 會顯示成 6%,拉到 6% 卻還差一點 */
+export const pctUp = (r) => pct(r == null || r <= 0 ? r : Math.ceil(r * 1000 - 1e-9) / 1000);
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 export const num = (v) => { const x = parseFloat(v); return Number.isFinite(x) ? x : null; };
 export const round = (v, d) => Math.round(v * 10 ** d) / 10 ** d;
