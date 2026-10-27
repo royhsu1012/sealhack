@@ -41,9 +41,9 @@ export function accessoryCells(P, variant) {
   }
   return m;
 }
-/** 一隻完整的海豹(身體 + 眼睛 + 配件),給圖卡用 */
-export function sealCells(P, variant) {
-  const eyes = variant === 'slow' ? eyeLineCells(P, 'happy') : eyeCells(P);
+/** 一隻完整的海豹(身體 + 眼睛 + 配件),給圖卡用;happy = 瞇眼笑(戴墨鏡的悠哉海豹看不到眼睛,不受影響) */
+export function sealCells(P, variant, { happy = false } = {}) {
+  const eyes = variant === 'slow' || happy ? eyeLineCells(P, 'happy') : eyeCells(P);
   return new Map([...bodyCells(P), ...eyes, ...accessoryCells(P, variant)]);
 }
 

@@ -4,7 +4,7 @@ import {
   breakEvenReturn, earliestFireTime, personaOf, levers, monteCarlo, earliestFireTimeAt, pmt, endAgeOf,
 } from '../lib/fire.js';
 import {
-  BASE_YEAR, R_MAX, freshState, loadState, saveState, nf, wan, big, pct, esc, num, round, $,
+  BASE_YEAR, R_MAX, freshState, loadState, saveState, clearState, nf, wan, big, pct, esc, num, round, $,
   spanText, whenParts, knobGet, knobSet, writeKnobs, widthOf, legend, onResize, setMiniBar, watchMiniBar,
 } from './shared.js';
 import { fanChart, BAND_DARK, BAND_LIGHT, targetChart, cashflowChart, driversChart, tradeoffChart } from './charts.js';
@@ -394,7 +394,15 @@ async function share() {
 let card = null;
 async function openCard() {
   if (!last) return;
-  const { persona: P, r, w, t } = last;
+  const { persona: P, r, w, t, n, fireAge } = last;
+  // 圖卡的狀態:已經可以退休 / 比理想早 / 剛好 / 比理想晚 / 45 年內存不夠
+  const diff = t == null || w.now || n < 1 ? 0 : fireAge - w.age;
+  const state = t == null ? { key: 'far', label: '45 年內還存不夠' }
+    : w.now ? { key: 'now', label: '已經可以退休了' }
+    : n < 1 ? { key: 'ahead', label: `最快 ${w.age} 歲退休` }
+    : diff > 0 ? { key: 'ahead', label: `比理想早 ${diff} 年退休` }
+    : diff === 0 ? { key: 'ahead', label: '理想退休年齡來得及' }
+    : { key: 'behind', label: `比理想晚 ${-diff} 年` };
   const btn = $('r-card');
   btn.disabled = true;
   try {
@@ -404,6 +412,7 @@ async function openCard() {
       kicker: `報酬率 ${pct(r)} 時,我最快`,
       when: t == null ? '還要很久' : w.now ? '現在' : `${w.year} 年 ${w.month} 月`,
       sub: t == null ? '45 年內都存不夠退休' : w.now ? '就可以退休' : `就可以退休(${w.span}後,約 ${w.age} 歲)`,
+      state,
     });
     if (card) URL.revokeObjectURL(card.url);
     card = { blob, url: URL.createObjectURL(blob), file: `sealhack-${P.name}.png` };
@@ -484,6 +493,11 @@ export function mount() {
       case 'q-back': back(); break;
       case 'r-edit': step = 0; setPhase('quiz'); renderQuiz(true); break;
       case 'r-share': share(); break;
+      case 'clear-data':
+        clearState(); s = quizStart(); prevDone = null; step = 0;
+        writeKnobs(s.inputs); Object.keys(LISTS).forEach(renderList); showIntro();
+        $('trust-note').firstChild.textContent = '已清除:這台裝置上沒有你的答案了。';
+        break;
       case 'r-card': openCard(); break;
       case 'card-save': saveCard(); break;
       case 'card-close': $('card-dialog').close(); break;

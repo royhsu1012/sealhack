@@ -32,12 +32,18 @@ const zones = [
     <div class="intro-seal" set:html={seal('wave')} />
     <p class="pill">FIRE 退休測驗</p>
     <h1 class="intro-title">你最快什麼時候<br />可以退休?</h1>
-    <p class="intro-sub">回答 {N} 個小問題,看看你是哪一型的退休海豹。<br />約 1 分鐘,資料只存在你的瀏覽器。</p>
+    <p class="intro-sub">回答 {N} 個小問題,看看你是哪一型的退休海豹。約 1 分鐘。</p>
+    <ul class="trust" aria-label="隱私">
+      <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>不記名</li>
+      <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>免註冊</li>
+      <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>答案不上傳</li>
+    </ul>
     <button type="button" class="btn-big" id="start">開始測驗</button>
     <p class="intro-links">
       <button type="button" class="link-btn" id="to-result" hidden>看我上次的結果</button>
       <button type="button" class="link-btn" id="demo">先看範例結果</button>
     </p>
+    <p class="trust-note" id="trust-note">你的答案只存在這台裝置的瀏覽器,我們看不到,也不會收集。<button type="button" class="link-btn" id="clear-data">清除我的答案</button></p>
   </section>
 
   <!-- 題目卡 -->
@@ -117,6 +123,7 @@ const zones = [
         </article>
       ))}
       <button type="button" class="btn-big quiz-next" id="q-next">下一題</button>
+      <p class="q-privacy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>不記名,答案只存在你的瀏覽器</p>
     </form>
   </section>
 

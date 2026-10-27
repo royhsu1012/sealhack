@@ -23,6 +23,10 @@ export function loadState() {
   } catch { /* 讀不到就用範例 */ }
   return freshState();
 }
+/** 清除這台裝置上的答案(開場的「清除我的答案」) */
+export function clearState() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch { /* 隱私模式等:本來就沒存 */ }
+}
 export function saveState(s) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch { /* 隱私模式等:不保存 */ }
 }
