@@ -20,6 +20,9 @@
  * @property {number} emergencyMonths 緊急預備金(月生活費倍數)
  * @property {number} assumedReturn 假設報酬率(用於最早 FIRE 年份)
  * @property {number} [endAge]    預計活到幾歲:退休後的生活費算到這一年(未設定 = 95)
+ * @property {number} [investDelay] 每年存下的錢晚幾年才開始投資(未設定 = 0,馬上投入)
+ * @property {number | null} [dcaMonthly] 每月定期定額金額(萬);null = 每月存下的錢全部投入
+ * @property {number} [cashRate]  沒投入的錢放定存的利率(未設定 = CASH_RATE)
  * @property {Loan[]} loans
  * @property {Income[]} incomes
  * @property {Goal[]} goals
@@ -40,6 +43,9 @@ export const DEFAULT_INPUTS = {
   emergencyMonths: 6,
   assumedReturn: 0.06,
   endAge: 95,
+  investDelay: 0,
+  dcaMonthly: null,
+  cashRate: 0.015,
   loans: [
     { name: '房貸', principal: 800, years: 20, rate: 0.023 },
     { name: '車貸', principal: 50, years: 4, rate: 0.03 },
@@ -303,7 +309,7 @@ export function earliestFireTime(inp, r = inp.assumedReturn, maxYears = 45, endA
 export function lifePath(inp, r = inp.assumedReturn, endAge = endAgeOf(inp)) {
   const n = inp.fireYear - inp.baseYear;
   const fireAge = inp.age + n;
-  const flows = n > 0 ? annualCashflow(inp) : [];
+  const flows = n > 0 ? investedFlows(inp, annualCashflow(inp).map((f) => f.invest)) : { invest: [], cash: [] };
   const loans = loanSchedule(inp.loans, Math.max(n, 0), inp.baseYear);
   let bal = inp.assets - inp.emergencyMonths * inp.monthlyExpense;
   const rows = [{ age: inp.age, year: inp.baseYear, balance: bal, phase: 'work' }];
@@ -311,9 +317,9 @@ export function lifePath(inp, r = inp.assumedReturn, endAge = endAgeOf(inp)) {
   for (let t = 1; inp.age + t <= endAge; t++) {
     const age = inp.age + t;
     if (t <= n) {
-      bal = bal * (1 + r) + flows[t - 1].invest;
+      bal = bal * (1 + r) + flows.invest[t - 1];
       if (t === n) bal -= loans.balanceAtFire;
-      rows.push({ age, year: inp.baseYear + t, balance: bal, phase: 'work' });
+      rows.push({ age, year: inp.baseYear + t, balance: bal + flows.cash[t - 1], phase: 'work' });
     } else {
       const expense = 12 * inp.monthlyExpense * (1 + inp.inflation) ** t;
       const pension = inp.incomes
@@ -361,8 +367,52 @@ export function fundNeeded(inp, r, endAge = endAgeOf(inp)) {
 /** 以報酬率 r 累積到退休時(第 n 年底)的資產:扣緊急預備金後的現有資產 + 每年可投入 */
 export function fundAtFire(inp, r) {
   const n = inp.fireYear - inp.baseYear;
-  const flows = n > 0 ? annualCashflow(inp).map((f) => f.invest) : [];
+  const flows = n > 0 ? investedFlows(inp, annualCashflow(inp).map((f) => f.invest)).invest : [];
   return futureValue(inp.assets - inp.emergencyMonths * inp.monthlyExpense, flows, r);
+}
+
+/**
+ * 每年真正投入投資部位的錢與還放在定存的錢(第 10 題)。
+ * - 晚 d 年才開始(inp.investDelay):前 d 年存下的錢先放定存(inp.cashRate)。
+ * - 每月定期定額金額(inp.dcaMonthly,萬):開始之後每年最多投入 12 × 金額,其餘放定存;留空 = 存下的全部投入
+ *   (開始那年會把之前存在定存的錢一起投入)。
+ * - 某年存款不夠(大額支出)時先用定存,不夠再從投資部位拿;退休那年定存全部併入投資部位。
+ */
+export function investedFlows(inp, flows) {
+  const n = flows.length;
+  const d = Math.min(Math.max(0, Math.round(inp.investDelay ?? 0)), n);
+  const cap = inp.dcaMonthly == null ? Infinity : Math.max(0, 12 * inp.dcaMonthly);
+  if (!d && cap === Infinity) return { invest: flows, cash: flows.map(() => 0) };
+  const c = inp.cashRate ?? CASH_RATE;
+  const invest = [], cash = [];
+  let pot = 0;
+  flows.forEach((a, i) => {
+    const t = i + 1;
+    const avail = pot * (1 + c) + a;
+    let inv = avail < 0 ? avail : t < d ? 0 : Math.min(avail, cap);
+    pot = avail - inv;
+    if (t === n) { inv += pot; pot = 0; }
+    invest.push(inv); cash.push(pot);
+  });
+  return { invest, cash };
+}
+
+/** 定存利率:晚點開始投資時,等待期間存款的利率 */
+export const CASH_RATE = 0.015;
+
+/**
+ * 早點開始定期定額差多少:每年存下的錢晚 d 年才開始投資(之前放定存),最快退休時間會延後多久。
+ * 回傳 { base, rows: [{ delay, t, lag }] },t 與 base 是距今幾年(含小數),lag = t − base。
+ */
+export function startLater(inp, r = inp.assumedReturn, delays = [1, 3, 5], endAge = endAgeOf(inp)) {
+  const base = earliestFireTime(inp, r, 45, endAge);
+  return {
+    base,
+    rows: delays.map((delay) => {
+      const t = earliestFireTime({ ...inp, investDelay: delay }, r, 45, endAge);
+      return { delay, t, lag: base != null && t != null ? t - base : null };
+    }),
+  };
 }
 
 /** 存得到的錢 = 需要的錢 時的報酬率(找 0–50%);0% 就夠回傳 0,50% 都不夠回傳 null */
@@ -421,6 +471,7 @@ export function levers(inp, r = inp.assumedReturn, endAge = endAgeOf(inp)) {
     ['saveMore', { ...inp, salary: inp.salary + 12 }, r],
     ['spendLess', { ...inp, monthlyExpense: Math.max(0, inp.monthlyExpense - 0.5) }, r],
     ['returnUp', inp, r + 0.01],
+    ...((inp.investDelay ?? 0) > 0 || inp.dcaMonthly != null ? [['startNow', { ...inp, investDelay: 0, dcaMonthly: null }, r]] : []),
   ];
   return {
     base,
@@ -489,7 +540,7 @@ function simulate(inp, r, sigma, endAge, paths, keep = true) {
   const n = inp.fireYear - inp.baseYear;
   const T = endAge - inp.age;
   if (n < 0 || T < 1) return null;
-  const flows = n > 0 ? annualCashflow(inp).map((f) => f.invest) : [];
+  const { invest: flows, cash } = investedFlows(inp, n > 0 ? annualCashflow(inp).map((f) => f.invest) : []);
   const loanAtFire = loanSchedule(inp.loans, n, inp.baseYear).balanceAtFire;
   const fireAge = inp.age + n;
   const withdraw = new Float64Array(T + 1);
@@ -520,7 +571,7 @@ function simulate(inp, r, sigma, endAge, paths, keep = true) {
           bal = 0;
         }
       }
-      if (keep) balances[t][p] = bal;
+      if (keep) balances[t][p] = t <= n ? bal + cash[t - 1] : bal;
     }
   }
   return { balances, depletedAt, T, fireAge };

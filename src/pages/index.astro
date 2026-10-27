@@ -15,7 +15,7 @@ const zones = [
   ['var(--warn)', '7% 以上:積極'],
 ];
 ---
-<Base title="SealHack" description="回答 9 個小問題,看看你最快什麼時候可以退休、是哪一型的退休海豹。所有計算都在你的瀏覽器裡完成。">
+<Base title="SealHack" description="回答 10 個小問題,看看你最快什麼時候可以退休、是哪一型的退休海豹。所有計算都在你的瀏覽器裡完成。">
   <script is:inline>
     (function () {
       // 左上角圖案連到 /?home:一律回開場(做過測驗的人在開場可以「看我上次的結果」);網址再改回 /
@@ -77,6 +77,7 @@ const zones = [
               ))}
             </div>
           )}
+          {q.delayFeedback && <p class="q-feedback" id="q-delay" aria-live="polite"></p>}
 
           {(q.more || q.list) && (
             <details class="q-more">
@@ -86,7 +87,7 @@ const zones = [
                   <div class="field">
                     <label for={`f-${m.field}`}>{m.label}</label>
                     <div class="inp-unit">
-                      <input id={`f-${m.field}`} class="inp" type="number" inputmode="decimal" data-key={m.field} data-scale={m.scale} />
+                      <input id={`f-${m.field}`} class="inp" type="number" inputmode="decimal" data-key={m.field} data-scale={m.scale} placeholder={m.placeholder} />
                       <span>{m.unit}</span>
                     </div>
                     {m.hint && <div class="hint">{m.hint}</div>}

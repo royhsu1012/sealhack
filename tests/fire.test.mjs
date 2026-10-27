@@ -5,7 +5,7 @@ import {
   DEFAULT_INPUTS as D, pmt, loanBalance, computePlan, earliestFireYear, solveRate, futureValue,
   lifePath, fireAgeDrivers, presetInputs, PRESETS,
   fundNeeded, fundAtFire, breakEvenReturn, needBreakdown, earliestFireTime, personaOf, levers, monteCarlo, successRate, earliestFireTimeAt, volatilityOf,
-  historyHitRate, saveVsInvest,
+  historyHitRate, saveVsInvest, startLater, annualCashflow,
 } from '../src/lib/fire.js';
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: got ${a}, want ${b} ± ${tol}`);
@@ -235,4 +235,39 @@ test('存錢 vs 投資:投資賺的追上存進去的那一年', () => {
   const later = saveVsInvest(rich, 0.03).cross;
   assert.ok(!later || later.year > sv.cross.year, '報酬率低,追上得比較晚');
   assert.equal(saveVsInvest({ ...D, fireYear: D.baseYear }, 0.06).rows.length, 0, '已經到退休年份');
+});
+
+test('早點開始定期定額:晚幾年才投資會延後多久', () => {
+  near(fundAtFire({ ...D, investDelay: 0 }, 0.06), fundAtFire(D, 0.06), 1e-9, '晚 0 年等於馬上投資');
+  near(fundAtFire({ ...D, investDelay: 3, cashRate: 0.06 }, 0.06), fundAtFire(D, 0.06), 1e-6, '定存利率跟報酬率一樣時,晚投資沒有差');
+  assert.ok(fundAtFire({ ...D, investDelay: 3 }, 0.06) < fundAtFire(D, 0.06), '晚 3 年投資,退休時存得到的比較少');
+  const later = startLater(D, 0.06);
+  near(later.base, earliestFireTime(D, 0.06), 1e-9, '基準是現在就開始');
+  assert.ok(later.rows.every((x, i) => x.lag >= 0 && (i === 0 || x.lag > later.rows[i - 1].lag)), '越晚開始,延後越久');
+  assert.ok(later.rows[0].lag < 1 / 12, '晚 1 年:今年存的錢年底才投入,跟每年年底投入幾乎一樣');
+  const late = { ...D, investDelay: 3 };
+  const lp = lifePath(late, 0.06);
+  near(lp.rows.find((x) => x.age === 38).balance, lifePath(late, 0.06).rows[3].balance, 1e-9, '資產路徑含定存');
+  assert.ok(lp.rows[2].balance < lifePath(D, 0.06).rows[2].balance, '等待期間資產比較少');
+  assert.ok(successRate(late, 0.06) <= successRate(D, 0.06), '晚開始,撐得住的機率不會比較高');
+  const lv = levers(late, 0.06);
+  assert.ok(lv.rows.find((x) => x.key === 'startNow').gain > 0, '想再快一點:現在就開始定期定額');
+  assert.equal(levers(D, 0.06).rows.find((x) => x.key === 'startNow'), undefined, '已經在做就不顯示');
+  const young = { ...D, age: 25, fireYear: D.baseYear + 25, assets: 50 };
+  const l5 = startLater(young, 0.06, [5]).rows[0].lag;
+  assert.ok(l5 > later.rows[2].lag, '離退休越遠、現有資產越少,晚開始的代價越大');
+});
+
+test('每月定期定額金額:只投入固定金額,其餘放定存', () => {
+  const base = fundAtFire(D, 0.06);
+  near(fundAtFire({ ...D, dcaMonthly: 100 }, 0.06), base, 1e-6, '金額比存下的錢多:等於全部投入');
+  const small = fundAtFire({ ...D, dcaMonthly: 1 }, 0.06);
+  assert.ok(small < base, '每月只投 1 萬,其餘放定存,退休時存得到的比較少');
+  near(fundAtFire({ ...D, dcaMonthly: 1, cashRate: 0.06 }, 0.06), base, 1e-6, '定存利率跟報酬率一樣時沒有差');
+  const none = fundAtFire({ ...D, dcaMonthly: 0, cashRate: 0 }, 0.06);
+  const flows = annualCashflow(D).map((f) => f.invest);
+  const start = D.assets - D.emergencyMonths * D.monthlyExpense;
+  near(none, start * 1.06 ** flows.length + flows.reduce((s, a) => s + a, 0), 1e-6, '完全不投入、定存 0%:存款原封不動');
+  assert.ok(earliestFireTime({ ...D, dcaMonthly: 1 }, 0.06) > earliestFireTime(D, 0.06), '投得少,退休得晚');
+  assert.ok(levers({ ...D, dcaMonthly: 1 }, 0.06).rows.find((x) => x.key === 'startNow').gain > 0, '想再快一點:存下的全部投入');
 });

@@ -22,7 +22,7 @@ export const QUESTIONS = [
       { v: 12, label: '享受', sub: '每月 12 萬' },
     ],
     more: [
-      { key: 'monthlyExpense', label: '每月生活費', unit: '萬', min: 2, max: 20, step: 0.5 },
+      { key: 'monthlyExpense', label: '每月生活費', unit: '萬', min: 1, max: 20, step: 0.5 },
       { key: 'inflation', label: '通膨率', unit: '%', min: 0, max: 5, step: 0.1, pct: true },
     ],
   },
@@ -31,7 +31,7 @@ export const QUESTIONS = [
     slider: { key: 'monthlyIncome', min: 2, max: 50, step: 0.5, unit: '萬' }, feedback: true,
     more: [
       { key: 'salaryGrowth', label: '每年加薪', unit: '%', min: 0, max: 10, step: 0.5, pct: true },
-      { field: 'salaryCap', label: '每月收入上限', unit: '萬', scale: 12, hint: '加薪到這裡就停;留空代表不設上限。' },
+      { field: 'salaryCap', label: '每月收入上限', unit: '萬', scale: 12, placeholder: '不設上限', hint: '加薪到這裡就停;留空代表不設上限。' },
     ],
   },
   {
@@ -77,6 +77,21 @@ export const QUESTIONS = [
       { v: 0.08, label: '積極', sub: '報酬率約 8%,起伏大' },
     ],
     more: [{ key: 'assumedReturn', label: '自己填', unit: '%', min: 0, max: 20, step: 0.5, pct: true }],
+  },
+  {
+    id: 'start', title: '每月存下的錢,什麼時候開始定期定額?', hint: '越早投入,複利跑得越久;開始之前存下的錢先算放定存。金額在細項裡設定。',
+    key: 'investDelay', delayFeedback: true, stay: true,
+    choices: [
+      { v: 0, label: '已經在做', sub: '或這個月就開始' },
+      { v: 1, label: '1 年後' },
+      { v: 3, label: '3 年後' },
+      { v: 5, label: '5 年後' },
+      { v: 10, label: '10 年後' },
+    ],
+    more: [
+      { field: 'dcaMonthly', label: '每月定期定額金額', unit: '萬', placeholder: '全部投入', hint: '留空代表每月存下的錢全部投入;填了金額,沒投入的部分放定存。' },
+      { key: 'cashRate', label: '定存利率', unit: '%', min: 0, max: 4, step: 0.1, pct: true, hint: '還沒投入的錢放銀行的年利率。' },
+    ],
   },
 ];
 

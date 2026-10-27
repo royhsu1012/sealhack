@@ -12,7 +12,7 @@
 
 ## 專案是什麼
 一個像 MBTI 的退休測驗(2026-10-23 起取代簡單版 / 完整版,`/full/` 301 回首頁):
-開場 → 9 張題目卡(點選項就跳下一題;「細項」可不填、用預設值)→ 結果。
+開場 → 10 張題目卡(點選項就跳下一題;「細項」可不填、用預設值)→ 結果。
 結果:退休人格(存錢力 × 投資風格 → 6 種海豹)、照報酬率 r 最快幾年幾月退休、理想退休年齡來不來得及(撐到 95 歲需要準備多少 vs 存得到多少)、
 「想再快一點」、報酬率滑桿(標出理想退休年齡的最低報酬率,下方連到投資方法頁)、一生資產的機率範圍(1,000 次蒙地卡羅:中位數、P25–P75、P10–P90、
 撐到 95 歲的機率、九成把握的最快退休時間);
@@ -30,7 +30,8 @@
 ```text
 src/lib/fire.js            計算引擎(純函式,無 DOM;唯一事實來源):needBreakdown / fundNeeded / fundAtFire /
                            breakEvenReturn / earliestFireTime / personaOf / levers /
-                           monteCarlo / successRate / earliestFireTimeAt / volatilityOf(固定種子的蒙地卡羅)
+                           monteCarlo / successRate / earliestFireTimeAt / volatilityOf(固定種子的蒙地卡羅)/
+                           investedFlows / startLater(第 10 題:晚 d 年才開始定期定額,之前存款放定存 cashRate)
 src/scripts/quiz-config.js 題目卡內容與選項預設值(貸款、大額支出、年金)
 src/scripts/quiz-app.js    測驗互動層:開場 / 題目卡 / 結果三階段(<html data-phase>)
 src/scripts/charts.js      結果頁 SVG 圖表(一生資產機率範圍、交叉圖、瀑布圖、每年存款、影響因素)

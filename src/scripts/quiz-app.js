@@ -1,6 +1,6 @@
 // 退休測驗:開場 → 一題一張卡 → 退休人格與結果。所有計算交給 src/lib/fire.js。
 import {
-  computePlan, lifePath, fireAgeDrivers, needBreakdown, fundNeeded, fundAtFire,
+  computePlan, lifePath, annualCashflow, fireAgeDrivers, needBreakdown, fundNeeded, fundAtFire,
   breakEvenReturn, earliestFireTime, personaOf, levers, monteCarlo, earliestFireTimeAt, pmt, endAgeOf,
 } from '../lib/fire.js';
 import {
@@ -154,12 +154,32 @@ function markChoices() {
   });
 }
 function feedback() {
+  delayFeedback();
   const el = $('q-feedback');
   if (!el) return;
   const left = s.inputs.salary / 12 - s.inputs.monthlyExpense;
   el.textContent = left > 0
     ? `扣掉每月生活費,大約還能存 ${nf(1).format(left)} 萬`
     : `收入比生活費少 ${nf(1).format(-left)} 萬,目前存不到錢`;
+}
+/** 定期定額卡:選了晚幾年開始,馬上算出最快退休會延後多久 */
+function delayFeedback() {
+  const el = $('q-delay');
+  if (!el) return;
+  const inp = s.inputs, d = inp.investDelay ?? 0, cap = inp.dcaMonthly;
+  const first = inp.fireYear > inp.baseYear ? annualCashflow(inp)[0].invest / 12 : null;
+  const n1 = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 1 });
+  const saving = first != null && first > 0 ? `你現在每月大約存下 ${n1.format(first)} 萬。` : '';
+  const now = earliestFireTime({ ...inp, investDelay: 0, dcaMonthly: null });
+  if (now == null) { el.textContent = `${saving}照目前的條件,45 年內都存不夠退休;越早開始越重要。`; return; }
+  const w = whenParts(now, inp.age);
+  if (!d && cap == null) { el.textContent = `${saving}${w.now ? '現在就可以退休了。' : `現在開始、存下的全部投入:最快 ${w.year} 年 ${w.month} 月可以退休。`}`; return; }
+  const what = [d ? `晚 ${d} 年才開始` : '', cap != null ? `每月只投 ${n1.format(cap)} 萬` : ''].filter(Boolean).join('、');
+  const t = earliestFireTime(inp);
+  const lag = t == null ? null : t - now;
+  el.textContent = saving + (lag == null ? `${what},45 年內就存不夠退休了。`
+    : lag < 1 / 24 ? `${what},最快退休時間差不到 1 個月。`
+    : `${what},最快退休會延後約 ${spanText(lag)}。`);
 }
 function renderQuiz(focus = false) {
   document.querySelectorAll('.q-card').forEach((c, i) => { c.hidden = i !== step; });
@@ -203,7 +223,10 @@ function showIntro() {
 // ---------- 結果 ----------
 let last = null;
 const STYLE = { safe: '保守', steady: '穩健', bold: '積極' };
-const LEVER = { saveMore: '每月多存 1 萬', spendLess: '每月少花 5 千', returnUp: '報酬率多 1%' };
+const LEVER = { saveMore: '每月多存 1 萬', spendLess: '每月少花 5 千', returnUp: '報酬率多 1%', startNow: '現在就開始定期定額' };
+/** 「想再快一點」第四列:依第 10 題的設定換說法 */
+const startNowLabel = (inp) => ((inp.investDelay ?? 0) > 0 && inp.dcaMonthly != null ? '現在就開始、存下的全部投入'
+  : inp.dcaMonthly != null ? '存下的錢全部定期定額' : '現在就開始定期定額');
 
 
 function placeMark(be) {
@@ -321,7 +344,7 @@ function renderResult() {
     const v = x.gain != null
       ? (x.gain > 1 / 24 ? `提早 ${spanText(x.gain)}` : '差不多')
       : x.t != null ? `${spanText(x.t)}後就可以退休` : '還是存不夠';
-    return `<li><span>${LEVER[x.key]}</span><b>${v}</b></li>`;
+    return `<li><span>${x.key === 'startNow' ? startNowLabel(inp) : LEVER[x.key]}</span><b>${v}</b></li>`;
   }).join('');
 
   placeMark(be);
@@ -433,7 +456,7 @@ export function mount() {
       Object.keys(LISTS).forEach(renderList);
       markChoices();
       feedback();
-      if (!q.multi && !card.querySelector('.q-more')?.open) setTimeout(() => { if (Number(card.dataset.i) === step) next(); }, 280);
+      if (!q.multi && !q.stay && !card.querySelector('.q-more')?.open) setTimeout(() => { if (Number(card.dataset.i) === step) next(); }, 280);
       return;
     }
     if (t.dataset.add) {
