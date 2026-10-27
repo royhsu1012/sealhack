@@ -564,3 +564,6 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 
 @media (max-width: 359.98px) { .trust { gap: 0.35rem; } .trust li { padding: 0.3rem 0.55rem; font-size: 0.78rem; gap: 0.25rem; } }
 /* 矮螢幕(例如 iPhone SE)把開場海豹縮小一點,「開始測驗」才留在第一屏 */
 @media (max-height: 640px) { .intro-seal .px-seal { --p: 2.5px; } }
+.loan-list { display: grid; gap: 0.5rem; margin-top: 0.75rem; font-size: 0.85rem; }
+.loan-list li { display: grid; gap: 0.1rem; }
+.loan-list span { color: var(--ink-2); }

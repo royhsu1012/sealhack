@@ -127,21 +127,60 @@ export function loanBalance(principal, monthlyRate, months, k) {
 }
 
 /** 每筆貸款的月付金、FIRE 時餘額與還清年份 */
+/**
+ * 一筆貸款的逐年還款表:按月本息平均攤還;寬限期(l.grace 年)內只繳利息,之後在剩下的期數攤還。
+ * 回傳 [{ t, months, payment, interest, principal, balance }]:t = 從今年起第幾年,balance = 那年年底的剩餘本金;
+ * 最後一年不滿 12 個月時只算實際繳的月數。
+ */
+const loanCache = new Map();
+export function loanYears(l) {
+  const months = Math.round(l.years * 12);
+  if (!(l.principal > 0) || months <= 0) return [];
+  const key = `${l.principal}|${months}|${l.rate}|${l.grace ?? 0}`;
+  if (loanCache.has(key)) return loanCache.get(key);
+  const rm = l.rate / 12;
+  const gm = Math.min(Math.max(0, Math.round((l.grace ?? 0) * 12)), months - 1);
+  const pay = pmt(l.principal, rm, months - gm);
+  const rows = [];
+  let bal = l.principal, yr = { payment: 0, interest: 0, principal: 0, months: 0 };
+  for (let m = 1; m <= months; m++) {
+    const interest = bal * rm;
+    const payment = m <= gm ? interest : Math.min(pay, bal + interest);
+    bal = Math.max(0, bal - (payment - interest));
+    yr.payment += payment; yr.interest += interest; yr.principal += payment - interest; yr.months += 1;
+    if (m % 12 === 0 || m === months) {
+      rows.push({ t: rows.length + 1, ...yr, balance: m === months ? 0 : bal });
+      yr = { payment: 0, interest: 0, principal: 0, months: 0 };
+    }
+  }
+  if (loanCache.size > 200) loanCache.clear();
+  loanCache.set(key, rows);
+  return rows;
+}
+
 export function loanSchedule(loans, n, baseYear) {
   const rows = loans
     .filter((l) => l.principal > 0 && l.years > 0)
     .map((l) => {
-      const rm = l.rate / 12;
+      const years = loanYears(l);
       const months = Math.round(l.years * 12);
+      const graceMonths = Math.min(Math.round((l.grace ?? 0) * 12), months - 1);
       return {
         name: l.name,
         principal: l.principal,
         years: l.years,
         rate: l.rate,
+        grace: l.grace ?? 0,
         months,
-        payment: pmt(l.principal, rm, months),
-        balanceAtFire: loanBalance(l.principal, rm, months, Math.min(12 * n, months)),
-        payoffYear: baseYear + Math.ceil(months / 12),
+        // 現在的月付(寬限期內只繳利息)與寬限期後的月付
+        payment: years[0].payment / years[0].months,
+        paymentAfterGrace: pmt(l.principal, l.rate / 12, months - graceMonths),
+        totalInterest: years.reduce((sum, y) => sum + y.interest, 0),
+        // 退休那年一次還清時,實際只繳到退休前的利息
+        interestToFire: years.slice(0, Math.max(n, 0)).reduce((sum, y) => sum + y.interest, 0),
+        schedule: years,
+        balanceAtFire: n <= 0 ? l.principal : n >= years.length ? 0 : years[n - 1].balance,
+        payoffYear: baseYear + years.length,
       };
     });
   return {
@@ -177,11 +216,9 @@ export function annualCashflow(inp) {
     const year = inp.baseYear + t;
     const income = Math.min(inp.salary * (1 + inp.salaryGrowth) ** t, cap);
     const expense = 12 * inp.monthlyExpense * (1 + inp.inflation) ** t;
+    // 每筆貸款當年實際繳的錢(寬限期只繳利息;最後一年不滿 12 個月照實際月數)
     let loan = 0;
-    for (const l of inp.loans) {
-      const months = Math.round(l.years * 12);
-      if (l.principal > 0 && months > 0 && 12 * t <= months) loan += 12 * pmt(l.principal, l.rate / 12, months);
-    }
+    for (const l of inp.loans) loan += loanYears(l)[t - 1]?.payment ?? 0;
     const goalToday = inp.goals.filter((g) => g.year === year).reduce((s, g) => s + g.amount, 0);
     const goal = goalToday * (1 + inp.inflation) ** t;
     rows.push({ year, income, expense, loan, goal, invest: income - expense - loan - goal });
@@ -309,9 +346,9 @@ export function earliestFireTime(inp, r = inp.assumedReturn, maxYears = 45, endA
 export function lifePath(inp, r = inp.assumedReturn, endAge = endAgeOf(inp)) {
   const n = inp.fireYear - inp.baseYear;
   const fireAge = inp.age + n;
-  const flows = n > 0 ? investedFlows(inp, annualCashflow(inp).map((f) => f.invest)) : { invest: [], cash: [] };
+  const flows = cashPlan(inp);
   const loans = loanSchedule(inp.loans, Math.max(n, 0), inp.baseYear);
-  let bal = inp.assets - inp.emergencyMonths * inp.monthlyExpense;
+  let bal = flows.investStart;
   const rows = [{ age: inp.age, year: inp.baseYear, balance: bal, phase: 'work' }];
   let depletionAge = null;
   for (let t = 1; inp.age + t <= endAge; t++) {
@@ -366,35 +403,74 @@ export function fundNeeded(inp, r, endAge = endAgeOf(inp)) {
 
 /** 以報酬率 r 累積到退休時(第 n 年底)的資產:扣緊急預備金後的現有資產 + 每年可投入 */
 export function fundAtFire(inp, r) {
-  const n = inp.fireYear - inp.baseYear;
-  const flows = n > 0 ? investedFlows(inp, annualCashflow(inp).map((f) => f.invest)).invest : [];
-  return futureValue(inp.assets - inp.emergencyMonths * inp.monthlyExpense, flows, r);
+  const plan = cashPlan(inp);
+  return futureValue(plan.investStart, plan.invest, r);
 }
 
 /**
- * 每年真正投入投資部位的錢與還放在定存的錢(第 10 題)。
- * - 晚 d 年才開始(inp.investDelay):前 d 年存下的錢先放定存(inp.cashRate)。
- * - 每月定期定額金額(inp.dcaMonthly,萬):開始之後每年最多投入 12 × 金額,其餘放定存;留空 = 存下的全部投入
- *   (開始那年會把之前存在定存的錢一起投入)。
- * - 某年存款不夠(大額支出)時先用定存,不夠再從投資部位拿;退休那年定存全部併入投資部位。
+ * 每年的錢怎麼分(工作期第 1…n 年),所有「存得到多少」的計算都從這裡來。
+ * 收入 − 生活費 − 貸款(逐年還款表)= 可支配,依序:
+ *   1. 緊急預備金補到目標(月生活費 × 月數,隨通膨調高),放定存,不拿去投資;
+ *   2. 大額支出的準備金:每筆在支出前 3 年(不足 3 年就從明年起)平均存進定存,支出那年從準備金付;
+ *   3. 其餘照第 10 題定期定額(晚 d 年才開始、每月上限 dcaMonthly),沒投入的放定存。
+ * 錢不夠(可支配為負,或大額支出超過準備金)時先用定存,再從投資部位拿;預備金不動。
+ * 起點:現有存款先撥給預備金(最多到目標),其餘是投資部位;退休那年定存與準備金併入投資部位,預備金照樣保留。
+ * 回傳 { investStart, invest[], cash[](每年底定存 + 準備金), rows[](每年的分配明細), reserveStart, reserveEnd }。
  */
-export function investedFlows(inp, flows) {
-  const n = flows.length;
-  const d = Math.min(Math.max(0, Math.round(inp.investDelay ?? 0)), n);
-  const cap = inp.dcaMonthly == null ? Infinity : Math.max(0, 12 * inp.dcaMonthly);
-  if (!d && cap === Infinity) return { invest: flows, cash: flows.map(() => 0) };
+export function cashPlan(inp) {
+  const n = Math.max(0, inp.fireYear - inp.baseYear);
   const c = inp.cashRate ?? CASH_RATE;
-  const invest = [], cash = [];
-  let pot = 0;
-  flows.forEach((a, i) => {
-    const t = i + 1;
-    const avail = pot * (1 + c) + a;
-    let inv = avail < 0 ? avail : t < d ? 0 : Math.min(avail, cap);
-    pot = avail - inv;
-    if (t === n) { inv += pot; pot = 0; }
-    invest.push(inv); cash.push(pot);
-  });
-  return { invest, cash };
+  const months = inp.emergencyMonths ?? 0;
+  const d = Math.max(0, Math.round(inp.investDelay ?? 0));
+  const cap = inp.dcaMonthly == null ? Infinity : Math.max(0, 12 * inp.dcaMonthly);
+  const salaryCap = inp.salaryCap == null ? Infinity : inp.salaryCap;
+  const reserveStart = Math.min(Math.max(inp.assets, 0), months * inp.monthlyExpense);
+  // 大額支出:今日幣值換成當年金額,分 3 年先存
+  const deposit = new Array(n + 1).fill(0), due = new Array(n + 1).fill(0);
+  for (const g of inp.goals) {
+    const t = g.year - inp.baseYear;
+    if (t < 1 || t > n || !(g.amount > 0)) continue;
+    const amount = g.amount * (1 + inp.inflation) ** t, k = Math.min(3, t);
+    for (let u = t - k + 1; u <= t; u++) deposit[u] += amount / k;
+    due[t] += amount;
+  }
+  let reserve = reserveStart, cash = 0, sink = 0;
+  const invest = [], cashEnd = [], rows = [];
+  for (let t = 1; t <= n; t++) {
+    const income = Math.min(inp.salary * (1 + inp.salaryGrowth) ** t, salaryCap);
+    const expense = 12 * inp.monthlyExpense * (1 + inp.inflation) ** t;
+    const loan = inp.loans.reduce((sum, l) => sum + (loanYears(l)[t - 1]?.payment ?? 0), 0);
+    reserve *= 1 + c; cash *= 1 + c; sink *= 1 + c;
+    let free = income - expense - loan;
+    // 1. 緊急預備金
+    const toReserve = free > 0 ? Math.min(free, Math.max(0, months * inp.monthlyExpense * (1 + inp.inflation) ** t - reserve)) : 0;
+    reserve += toReserve; free -= toReserve;
+    // 2. 大額支出準備金;支出那年先從準備金付,不夠的從今年的錢付
+    const toSink = free > 0 ? Math.min(free, deposit[t]) : 0;
+    sink += toSink; free -= toSink;
+    const fromSink = Math.min(sink, due[t]);
+    sink -= fromSink; free -= due[t] - fromSink;
+    // 3. 定期定額;錢不夠時先用定存,再從投資部位拿
+    let inv;
+    if (free >= 0) {
+      const avail = cash + free;
+      inv = t < d ? 0 : Math.min(avail, cap);
+      cash = avail - inv;
+    } else {
+      const fromCash = Math.min(cash, -free);
+      cash -= fromCash;
+      inv = free + fromCash;
+    }
+    const toCash = free >= 0 ? free - Math.max(0, Math.min(inv, free)) : 0;
+    rows.push({
+      year: inp.baseYear + t, income, expense, loan, reserve: toReserve, goalSave: toSink, goalPay: due[t],
+      invest: Math.max(0, Math.min(inv, Math.max(free, 0))), toCash, short: free < 0 ? -free : 0,
+      reserveBal: reserve, cashBal: cash + sink,
+    });
+    if (t === n) { inv += cash + sink; cash = 0; sink = 0; }
+    invest.push(inv); cashEnd.push(cash + sink);
+  }
+  return { investStart: inp.assets - reserveStart, invest, cash: cashEnd, rows, reserveStart, reserveEnd: reserve };
 }
 
 /** 定存利率:晚點開始投資時,等待期間存款的利率 */
@@ -540,7 +616,7 @@ function simulate(inp, r, sigma, endAge, paths, keep = true) {
   const n = inp.fireYear - inp.baseYear;
   const T = endAge - inp.age;
   if (n < 0 || T < 1) return null;
-  const { invest: flows, cash } = investedFlows(inp, n > 0 ? annualCashflow(inp).map((f) => f.invest) : []);
+  const { invest: flows, cash, investStart } = cashPlan(inp);
   const loanAtFire = loanSchedule(inp.loans, n, inp.baseYear).balanceAtFire;
   const fireAge = inp.age + n;
   const withdraw = new Float64Array(T + 1);
@@ -553,7 +629,7 @@ function simulate(inp, r, sigma, endAge, paths, keep = true) {
     withdraw[t] = expense - pension;
   }
   const { g: G, years: stride } = growth(r, sigma, paths, Math.max(T, 80));
-  const start = inp.assets - inp.emergencyMonths * inp.monthlyExpense - (n === 0 ? loanAtFire : 0);
+  const start = investStart - (n === 0 ? loanAtFire : 0);
   const balances = keep ? Array.from({ length: T + 1 }, () => new Float64Array(paths)) : null;
   const depletedAt = new Int16Array(paths);
   for (let p = 0; p < paths; p++) {

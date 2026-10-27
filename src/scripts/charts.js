@@ -134,6 +134,80 @@ export function cashflowChart(flows, W) {
   </svg>`;
 }
 
+// 每年的錢怎麼分(cashPlan 的 rows):收入依序分給生活費、貸款、預備金、大額支出準備金、投資、定存;不夠的部分畫在 0 以下
+const ALLOC = [
+  ['expense', '生活費', 'var(--work)'],
+  ['loan', '貸款', 'var(--ink-2)'],
+  ['reserve', '補預備金', 'var(--gold)'],
+  ['goalSave', '存大額支出', 'var(--seal-acorn)'],
+  ['invest', '投資', 'var(--free)'],
+  ['toCash', '放定存', 'color-mix(in srgb, var(--free) 35%, transparent)'],
+];
+export function allocChart(rows, W) {
+  if (!rows.length) return '<p class="text-sm muted">退休年份需晚於今年。</p>';
+  const H = 270, L = 40, R = W - 6, top = 14, B = H - 30;
+  const vmaxRaw = Math.max(...rows.map((r) => r.income), 1), vminRaw = Math.min(0, ...rows.map((r) => -r.short));
+  const step = niceStep(vmaxRaw - vminRaw, 4);
+  const vmax = Math.ceil(vmaxRaw / step) * step, vmin = Math.floor(vminRaw / step) * step || 0;
+  const y = (v) => top + ((vmax - v) / (vmax - vmin)) * (B - top);
+  const band = (R - L) / rows.length, bw = Math.max(2, band * 0.7);
+  const ticks = [];
+  for (let v = vmin; v <= vmax + 1e-9; v += step) ticks.push(v);
+  const every = Math.ceil(rows.length / Math.max(2, Math.floor((R - L) / 52)));
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="每年的錢怎麼分:${rows[0].year} 年收入 ${nf(0).format(rows[0].income)} 萬">
+    ${ticks.map((t) => `<line x1="${L}" x2="${R}" y1="${y(t)}" y2="${y(t)}" stroke="${t === 0 ? 'var(--ink-2)' : 'var(--grid)'}"/>${T(L - 6, y(t) + 4, nf(0).format(t), { anchor: 'end', size: 11 })}`).join('')}
+    ${rows.map((r, i) => {
+      const xx = L + i * band + (band - bw) / 2;
+      const parts = ALLOC.filter(([k]) => r[k] > 0.05).map(([k, label]) => `${label} ${nf(1).format(r[k])}`);
+      if (r.goalPay > 0) parts.push(`大額支出 ${nf(1).format(r.goalPay)}(從準備金付)`);
+      if (r.short > 0) parts.push(`不夠 ${nf(1).format(r.short)}(動用存款)`);
+      const tip = `<title>${r.year}:收入 ${nf(1).format(r.income)} 萬 → ${parts.join('、')} 萬</title>`;
+      let acc = 0;
+      const segs = ALLOC.map(([k, , color]) => {
+        const v = Math.max(0, r[k]);
+        if (v <= 0) return '';
+        const out = `<rect x="${xx}" y="${y(acc + v)}" width="${bw}" height="${Math.max(y(acc) - y(acc + v), 0.5)}" fill="${color}">${tip}</rect>`;
+        acc += v;
+        return out;
+      }).join('');
+      const neg = r.short > 0 ? `<rect x="${xx}" y="${y(0)}" width="${bw}" height="${Math.max(y(-r.short) - y(0), 0.5)}" fill="var(--warn)">${tip}</rect>` : '';
+      return segs + neg + (i % every === 0 || (i === rows.length - 1 && every === 1)
+        ? (i === 0 ? T(xx, B + 18, r.year, { size: 11 }) : T(xx + bw / 2, B + 18, r.year, { anchor: 'middle', size: 11 })) : '');
+    }).join('')}
+  </svg>
+  ${legend(ALLOC.map(([, label, color]) => [color, label]).concat(rows.some((r) => r.short > 0) ? [['var(--warn)', '不夠、動用存款']] : []))}`;
+}
+
+// 貸款每年還多少:每年繳的本金(灰)+ 利息(紅),畫到還清或退休那年(退休那年把剩下的一次還清)
+export function loanChart(sched, n, baseYear, W) {
+  const len = Math.min(n, Math.max(0, ...sched.rows.map((r) => r.schedule.length)));
+  if (!sched.rows.length || len < 1) return '';
+  const years = Array.from({ length: len }, (_, i) => {
+    const t = i + 1;
+    const sum = (k) => sched.rows.reduce((s, r) => s + (r.schedule[t - 1]?.[k] ?? 0), 0);
+    return { year: baseYear + t, principal: sum('principal'), interest: sum('interest'), balance: sched.rows.reduce((s, r) => s + (r.schedule[t - 1]?.balance ?? 0), 0) };
+  });
+  const H = 240, L = 40, R = W - 6, top = 14, B = H - 30;
+  const vmaxRaw = Math.max(...years.map((y) => y.principal + y.interest), 1);
+  const step = niceStep(vmaxRaw, 4), vmax = Math.ceil(vmaxRaw / step) * step;
+  const y = (v) => top + ((vmax - v) / vmax) * (B - top);
+  const band = (R - L) / years.length, bw = Math.max(2, band * 0.68);
+  const ticks = [];
+  for (let v = 0; v <= vmax + 1e-9; v += step) ticks.push(v);
+  const every = Math.ceil(years.length / Math.max(2, Math.floor((R - L) / 52)));
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="貸款每年還款:第一年 ${nf(1).format(years[0].principal + years[0].interest)} 萬">
+    ${ticks.map((t) => `<line x1="${L}" x2="${R}" y1="${y(t)}" y2="${y(t)}" stroke="${t === 0 ? 'var(--ink-2)' : 'var(--grid)'}"/>${T(L - 6, y(t) + 4, nf(0).format(t), { anchor: 'end', size: 11 })}`).join('')}
+    ${years.map((d, i) => {
+      const xx = L + i * band + (band - bw) / 2;
+      const tip = `<title>${d.year}:還本金 ${nf(1).format(d.principal)} 萬・利息 ${nf(1).format(d.interest)} 萬・年底還欠 ${nf(0).format(d.balance)} 萬</title>`;
+      return `<rect x="${xx}" y="${y(d.principal)}" width="${bw}" height="${Math.max(y(0) - y(d.principal), 0.5)}" fill="var(--work)" fill-opacity="0.8">${tip}</rect>
+        <rect x="${xx}" y="${y(d.principal + d.interest)}" width="${bw}" height="${Math.max(y(d.principal) - y(d.principal + d.interest), 0.5)}" fill="var(--warn)" fill-opacity="0.8">${tip}</rect>
+        ${i % every === 0 || (i === years.length - 1 && every === 1) ? (i === 0 ? T(xx, B + 18, d.year, { size: 11 }) : T(xx + bw / 2, B + 18, d.year, { anchor: 'middle', size: 11 })) : ''}`;
+    }).join('')}
+  </svg>
+  ${legend([['var(--work)', '還本金'], ['var(--warn)', '利息']])}`;
+}
+
 // 影響退休年齡的因素:龍捲風圖
 export function driversChart(d, W) {
   if (d.base == null) return '<p class="text-sm muted">以目前條件 45 年內無法退休,先調整生活費或收入。</p>';

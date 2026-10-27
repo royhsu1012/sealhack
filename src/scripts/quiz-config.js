@@ -37,7 +37,7 @@ export const QUESTIONS = [
   {
     id: 'assets', title: '現在有多少存款與投資?', hint: '銀行存款、股票、基金都算;不含自住的房子。',
     slider: { key: 'assets', min: 0, max: 10000, step: 10, unit: '萬' },
-    more: [{ key: 'emergencyMonths', label: '緊急預備金', unit: '個月', hint: '這幾個月的生活費放在銀行,不拿去投資。', min: 0, max: 24, step: 1 }],
+    more: [{ key: 'emergencyMonths', label: '緊急預備金', unit: '個月', hint: '先從存款撥出這幾個月的生活費放定存,不拿去投資;之後每年隨生活費調高。', min: 0, max: 24, step: 1 }],
   },
   {
     id: 'loans', title: '有房貸或其他貸款嗎?', hint: '退休時還沒還完的,會算進需要準備的錢。',
@@ -50,7 +50,7 @@ export const QUESTIONS = [
     list: 'loans',
   },
   {
-    id: 'goals', title: '未來有大額支出嗎?', hint: '可以複選;金額和年份在細項裡改。', multi: true,
+    id: 'goals', title: '未來有大額支出嗎?', hint: '可以複選;支出前 3 年會先平均存好。金額和年份在細項裡改。', multi: true,
     choices: [
       { v: 'wedding', label: '結婚' },
       { v: 'kids', label: '小孩教育' },
@@ -97,7 +97,7 @@ export const QUESTIONS = [
 
 // 選項帶入的預設值(今日幣值;年份以今年為 0 的相對值)
 export const LOAN_DEFAULTS = {
-  home: { name: '房貸', principal: 800, years: 20, rate: 0.023 },
+  home: { name: '房貸', principal: 800, years: 30, rate: 0.023, grace: 0 },
   other: { name: '車貸', principal: 50, years: 4, rate: 0.03 },
 };
 export const GOAL_DEFAULTS = {

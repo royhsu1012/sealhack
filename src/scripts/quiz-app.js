@@ -1,13 +1,13 @@
 // 退休測驗:開場 → 一題一張卡 → 退休人格與結果。所有計算交給 src/lib/fire.js。
 import {
-  computePlan, lifePath, annualCashflow, fireAgeDrivers, needBreakdown, fundNeeded, fundAtFire,
+  computePlan, lifePath, annualCashflow, cashPlan, fireAgeDrivers, needBreakdown, fundNeeded, fundAtFire,
   breakEvenReturn, earliestFireTime, personaOf, levers, monteCarlo, earliestFireTimeAt, pmt, endAgeOf,
 } from '../lib/fire.js';
 import {
   BASE_YEAR, R_MAX, freshState, loadState, saveState, clearState, nf, wan, big, pct, esc, num, round, $,
   spanText, whenParts, knobGet, knobSet, writeKnobs, widthOf, legend, onResize, setMiniBar, watchMiniBar,
 } from './shared.js';
-import { fanChart, BAND_DARK, BAND_LIGHT, targetChart, cashflowChart, driversChart, tradeoffChart } from './charts.js';
+import { fanChart, BAND_DARK, BAND_LIGHT, targetChart, allocChart, loanChart, driversChart, tradeoffChart } from './charts.js';
 import { QUESTIONS, LOAN_DEFAULTS, GOAL_DEFAULTS, PENSION_DEFAULTS } from './quiz-config.js';
 import { seal, PERSONAS } from './seal.js';
 
@@ -24,13 +24,22 @@ function setPhase(p) {
 }
 
 // ---------- 細項裡的清單(貸款、大額支出、年金) ----------
+/** 貸款月付:寬限期內只繳利息,之後本息攤還 */
+function loanText(l) {
+  const months = Math.round((l.years ?? 0) * 12), g = Math.min(Math.round((l.grace ?? 0) * 12), Math.max(months - 1, 0));
+  const after = pmt(l.principal, l.rate / 12, months - g);
+  return g > 0
+    ? `寬限期每月約 ${nf(2).format(l.principal * l.rate / 12)} 萬(只繳利息),之後每月約 ${nf(2).format(after)} 萬`
+    : `每月約 ${nf(2).format(after)} 萬`;
+}
 const LISTS = {
   loans: {
-    blank: () => ({ name: '貸款', principal: 100, years: 5, rate: 0.03 }),
+    blank: () => ({ name: '貸款', principal: 100, years: 5, rate: 0.03, grace: 0 }),
     fields: [
       { key: 'principal', label: '剩餘本金', unit: '萬', step: 10 },
       { key: 'years', label: '剩餘年限', unit: '年', step: 1 },
       { key: 'rate', label: '年利率', unit: '%', step: 0.1, pct: true },
+      { key: 'grace', label: '寬限期', unit: '年', step: 1, placeholder: '0' },
     ],
   },
   incomes: {
@@ -63,10 +72,10 @@ function renderList(kind) {
         ${spec.fields.map((f) => `<div class="field"><span class="label">${f.label}</span><div class="inp-unit">
           <input class="inp" aria-label="${esc(item.name)} ${f.label}" data-list="${kind}" data-idx="${idx}" data-field="${f.key}"
             ${f.pct ? 'data-pct="1"' : ''} ${f.nullable ? 'data-nullable="1"' : ''} type="number" inputmode="decimal" step="${f.step}"
-            value="${item[f.key] == null ? '' : f.pct ? round(item[f.key] * 100, 4) : item[f.key]}" placeholder="${f.nullable ? '退休時' : ''}" />
+            value="${item[f.key] == null ? '' : f.pct ? round(item[f.key] * 100, 4) : item[f.key]}" placeholder="${f.nullable ? '退休時' : f.placeholder ?? ''}" />
           <span>${f.unit}</span></div></div>`).join('')}
       </div>
-      ${kind === 'loans' ? `<p class="text-xs muted num">每月約 ${nf(2).format(pmt(item.principal, item.rate / 12, Math.round(item.years * 12)))} 萬</p>` : ''}
+      ${kind === 'loans' ? `<p class="text-xs muted num">${loanText(item)}</p>` : ''}
     </div>`).join('') || '<p class="text-sm muted">目前沒有項目。</p>';
 }
 function readListInput(el) {
@@ -270,14 +279,30 @@ function drawMore() {
   if (!last || !$('more').open) return;
   const { inp, r, n, be, fireAge } = last;
   if (n < 1) {
-    ['chart-trade', 'chart-target', 'chart-cashflow', 'chart-drivers', 'checks'].forEach((id) => { $(id).innerHTML = ''; });
+    ['chart-trade', 'chart-target', 'chart-cashflow', 'chart-loans', 'loan-list', 'chart-drivers', 'checks'].forEach((id) => { $(id).innerHTML = ''; });
     return;
   }
   const plan = computePlan(inp);
   const life = lifePath(inp, r);
   $('chart-trade').innerHTML = tradeoffChart(inp, r, be, widthOf('chart-trade'));
   $('chart-target').innerHTML = targetChart(needBreakdown(inp, r), r, endAgeOf(inp), widthOf('chart-target'));
-  $('chart-cashflow').innerHTML = cashflowChart(plan.flows, widthOf('chart-cashflow'));
+  const money = cashPlan(inp);
+  $('chart-cashflow').innerHTML = allocChart(money.rows, widthOf('chart-cashflow'));
+  // 貸款每年還多少
+  const sched = plan.loans;
+  $('loan-sec').hidden = !sched.rows.length;
+  if (sched.rows.length) {
+    $('chart-loans').innerHTML = loanChart(sched, n, inp.baseYear, widthOf('chart-loans'));
+    $('loan-list').innerHTML = sched.rows.map((l) => {
+      const now = l.grace > 0 && l.payment < l.paymentAfterGrace - 1e-9
+        ? `寬限期每月 ${nf(2).format(l.payment)} 萬,之後每月 ${nf(2).format(l.paymentAfterGrace)} 萬`
+        : `每月 ${nf(2).format(l.paymentAfterGrace)} 萬`;
+      const early = l.balanceAtFire > 0.5;
+      const end = early ? `${fireAge} 歲退休時還欠 ${wan(l.balanceAtFire)},那年一次還清` : `${l.payoffYear} 年還清`;
+      const interest = early ? `退休前繳的利息約 ${wan(l.interestToFire)}` : `總利息約 ${wan(l.totalInterest)}`;
+      return `<li><b>${esc(l.name)}</b><span>${now};${end};${interest}。</span></li>`;
+    }).join('');
+  }
   $('chart-drivers').innerHTML = driversChart(fireAgeDrivers({ ...inp, assumedReturn: r }), widthOf('chart-drivers'));
   const c = plan.checks;
   const items = [];
@@ -285,10 +310,22 @@ function drawMore() {
     const lvl = c.dti <= 0.33 ? 'ok' : c.dti <= 0.4 ? 'warn' : 'bad';
     items.push(check(lvl, `貸款占收入 ${nf(0).format(c.dti * 100)}%`, lvl === 'ok' ? '在 1/3 以內,負擔合理。' : '超過 1/3,收入中斷時壓力大;優先還清高利率的那筆。'));
   }
-  items.push(check(inp.emergencyMonths >= 6 ? 'ok' : inp.emergencyMonths >= 3 ? 'warn' : 'bad', `緊急預備金 ${nf(0).format(inp.emergencyMonths)} 個月`, inp.emergencyMonths >= 6 ? `保留 ${wan(plan.emergency)},不拿去投資。` : '建議至少 6 個月生活費。'));
-  items.push(c.negativeYears.length
-    ? check('warn', `${c.negativeYears.join('、')} 年存款不夠`, '大額支出那年要動用存款;提前 2–3 年把錢準備好。')
-    : check('ok', '每年都有存到錢', '沒有需要動用存款的年份。'));
+  // 緊急預備金:現有存款先撥;不夠的話看第幾年補足
+  const target = plan.emergency;
+  const filled = money.rows.find((x, i) => x.reserveBal >= inp.emergencyMonths * inp.monthlyExpense * (1 + inp.inflation) ** (i + 1) - 0.01);
+  const reserveNote = money.reserveStart >= target - 0.01
+    ? `先從存款撥出 ${wan(target)} 放定存,不拿去投資;之後每年隨生活費調高。`
+    : `現有存款只夠撥 ${wan(money.reserveStart)},${filled ? `${filled.year} 年前會用每年的存款補足` : '還要好幾年才能補足'};補足前不投資。`;
+  items.push(check(inp.emergencyMonths >= 6 ? (money.reserveStart >= target - 0.01 ? 'ok' : 'warn') : inp.emergencyMonths >= 3 ? 'warn' : 'bad',
+    `緊急預備金 ${nf(0).format(inp.emergencyMonths)} 個月`, inp.emergencyMonths >= 3 ? reserveNote : `建議至少 6 個月生活費。${reserveNote}`));
+  // 每年付不付得出來:大額支出提前 3 年存好後,還有沒有收入不夠的年份
+  const shortYears = money.rows.filter((x) => x.short > 0.05).map((x) => x.year);
+  // 連續的年份縮成「2027–2037」
+  const ranges = shortYears.reduce((acc, yv) => { const last = acc.at(-1); if (last && yv === last[1] + 1) last[1] = yv; else acc.push([yv, yv]); return acc; }, [])
+    .map(([a, b]) => (a === b ? `${a}` : `${a}–${b}`)).join('、');
+  items.push(shortYears.length
+    ? check('warn', `${ranges} 年收入不夠支出`, '那幾年要動用存款或投資;可以把大額支出往後挪、拉長貸款年限或降低生活費。')
+    : check('ok', '每年都付得出來', inp.goals.length ? '大額支出都在前 3 年平均存好,支出那年不用賣投資。' : '沒有需要動用存款的年份。'));
   items.push(life.depletionAge
     ? check('bad', `${life.depletionAge} 歲資金用完`, `照 ${fireAge} 歲退休、報酬率 ${pct(r)} 推算;晚一點退休或降低生活費,才能撐到 ${endAgeOf(inp)} 歲。`)
     : check('ok', `資金撐到 ${endAgeOf(inp)} 歲`, `照 ${fireAge} 歲退休、報酬率 ${pct(r)} 推算,資產沒有用完。`));
@@ -524,7 +561,7 @@ export function mount() {
         const card = el.closest('.rounded-xl');
         const item = s.inputs.loans[Number(el.dataset.idx)];
         const out = card?.querySelector('p.num');
-        if (out && item) out.textContent = `每月約 ${nf(2).format(pmt(item.principal, item.rate / 12, Math.round(item.years * 12)))} 萬`;
+        if (out && item) out.textContent = loanText(item);
       }
     } else return;
     save();

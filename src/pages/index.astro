@@ -199,7 +199,7 @@ const zones = [
     <details class="card more" id="more">
       <summary>
         <span class="card-title">更多分析</span>
-        <span class="text-sm muted">報酬率交叉圖、需要準備多少、每年能存下多少、影響退休年齡的因素、財務體檢</span>
+        <span class="text-sm muted">報酬率交叉圖、需要準備多少、每年的錢怎麼分、貸款每年還多少、影響退休年齡的因素、財務體檢</span>
       </summary>
       <div class="more-body">
         <section>
@@ -213,9 +213,15 @@ const zones = [
           <div id="chart-target" class="chart mt-3"></div>
         </section>
         <section>
-          <h3>每年能存下多少</h3>
-          <p class="text-sm muted">收入(含加薪)扣掉生活費、貸款與大額支出;紅色是要動用存款的年份。</p>
+          <h3>每年的錢怎麼分</h3>
+          <p class="text-sm muted">收入先付生活費和貸款,再補緊急預備金、預存大額支出(支出前 3 年平均存),剩下的照第 10 題定期定額,沒投入的放定存。紅色是收入不夠、要動用存款的部分。</p>
           <div id="chart-cashflow" class="chart mt-3"></div>
+        </section>
+        <section id="loan-sec">
+          <h3>貸款每年還多少</h3>
+          <p class="text-sm muted">每年繳的錢拆成本金和利息,畫到還清或退休那年;退休時還沒還完的,模型假設那年一次還清,已算進需要準備的錢。</p>
+          <div id="chart-loans" class="chart mt-3"></div>
+          <ul id="loan-list" class="loan-list"></ul>
         </section>
         <section>
           <h3>影響退休年齡的因素</h3>

@@ -5,7 +5,7 @@ import {
   DEFAULT_INPUTS as D, pmt, loanBalance, computePlan, earliestFireYear, solveRate, futureValue,
   lifePath, fireAgeDrivers, presetInputs, PRESETS,
   fundNeeded, fundAtFire, breakEvenReturn, needBreakdown, earliestFireTime, personaOf, levers, monteCarlo, successRate, earliestFireTimeAt, volatilityOf,
-  historyHitRate, saveVsInvest, startLater, annualCashflow,
+  historyHitRate, saveVsInvest, startLater, annualCashflow, loanYears, loanSchedule, cashPlan,
 } from '../src/lib/fire.js';
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: got ${a}, want ${b} ± ${tol}`);
@@ -59,7 +59,7 @@ test('最早 FIRE 年份與敏感度', () => {
   assert.equal(earliestFireYear(D, 0.06), 2040);
   assert.equal(earliestFireYear(D, 0.08), 2038);
   assert.equal(lifePath({ ...D, fireYear: 2040 }, 0.06).depletionAge, null, '2040 退休撐得到 95 歲');
-  assert.equal(lifePath({ ...D, fireYear: 2039 }, 0.06).depletionAge, 92, '早一年退休 92 歲用完');
+  assert.equal(lifePath({ ...D, fireYear: 2039 }, 0.06).depletionAge, 89, '早一年退休 89 歲用完');
   near(computePlan({ ...D, fireYear: 2036 }).rCombined, 0.1492, 5e-4, '2036 FIRE');
   near(computePlan({ ...D, salaryCap: 250 }).rCombined, 0.0450, 5e-4, '收入上限 250');
   near(computePlan({ ...D, salaryCap: 200 }).rCombined, 0.0740, 5e-4, '收入上限 200');
@@ -78,21 +78,20 @@ test('邊界情況', () => {
 });
 
 test('一生資產路徑', () => {
+  // 資產路徑與「存得到」同一套金流:退休時資產 = 存得到 − 還清的貸款餘額
   const p = computePlan(D);
-  // 以所需報酬率累積,FIRE 時還清貸款後剩下的正好是生活費本金扣年金
-  const atReq = lifePath(D, p.rCombined);
-  near(atReq.balanceAtFire, p.target - p.loans.balanceAtFire, 0.5, 'FIRE 時資產(還清貸款後)');
+  near(lifePath(D, 0.06).balanceAtFire, fundAtFire(D, 0.06) - p.loans.balanceAtFire, 1e-6, 'FIRE 時資產(還清貸款後)');
   assert.equal(lifePath(D, 0.06).depletionAge, null, '預期 6% 到 95 歲都不會用完');
-  assert.equal(lifePath(D, 0.04).depletionAge, 84, '名目 4% 時 84 歲用完');
+  assert.equal(lifePath(D, 0.04).depletionAge, 83, '名目 4% 時 83 歲用完');
   assert.equal(lifePath(D, 0.0).depletionAge != null, true, '零報酬會用完');
   assert.equal(lifePath(D).rows.at(-1).age, 95);
 });
 
 test('最早多久後可以退休(到月)', () => {
   const t = earliestFireTime(D, 0.06);
-  near(t, 13.11, 0.01, '6% 時約 13 年 1 個月後');
+  near(t, 13.18, 0.01, '6% 時約 13 年 2 個月後');
   assert.ok(t > 13 && t <= 14, '落在最早年份(第 14 年)之前一年內');
-  near(earliestFireTime(D, 0.08), 11.05, 0.01, '8% 時約 11 年');
+  near(earliestFireTime(D, 0.08), 11.14, 0.01, '8% 時約 11 年 2 個月');
   near(earliestFireTime(plain(5), 0.06), 13.36, 0.01, '簡單版');
   assert.equal(earliestFireTime({ ...D, assets: 20000 }, 0.06), 0, '資產已經夠:現在就能退休');
   assert.equal(earliestFireTime(plain(0, { assets: 0 }), 0.06), null, '永遠不夠');
@@ -106,7 +105,7 @@ test('需要準備的拆解', () => {
   near(b.total, b.expenses - b.pensions + b.loans, 1e-9, '合計');
   near(b.incomes.reduce((s, q) => s + q.pv, 0), b.pensions, 1e-9, '各項年金加總');
   near(fundNeeded(D, 0.06), 1715.84, 1e-2, '完整版 6% 時需要');
-  near(fundAtFire(D, 0.06), 2273.06, 1e-2, '完整版 6% 時存得到');
+  near(fundAtFire(D, 0.06), 2251.00, 1e-2, '完整版 6% 時存得到(預備金與大額支出先留好)');
   near(breakEvenReturn(D), 0.046, 5e-4, '完整版最低報酬率');
 });
 
@@ -114,7 +113,7 @@ test('退休年齡驅動因子', () => {
   const d = fireAgeDrivers(D);
   assert.equal(d.base, 48);
   const exp = d.rows.find((r) => r.key === 'monthlyExpense');
-  assert.deepEqual([exp.low, exp.high], [45, 50], '生活費 ±1 萬');
+  assert.deepEqual([exp.low, exp.high], [46, 50], '生活費 ±1 萬');
   assert.ok(!d.rows.some((r) => r.key === 'swr'), '不再用提領率');
 });
 
@@ -157,11 +156,11 @@ test('退休人格與想再快一點', () => {
   assert.equal(personaOf({ ...D, assumedReturn: 0.04 }).style, 'safe');
   assert.equal(personaOf({ ...D, assumedReturn: 0.08 }).style, 'bold');
   const l = levers(D, 0.06);
-  near(l.base, 13.11, 0.01, '原本 13 年 1 個月');
+  near(l.base, 13.18, 0.01, '原本 13 年 2 個月');
   const g = Object.fromEntries(l.rows.map((x) => [x.key, x.gain]));
-  near(g.saveMore, 0.94, 0.01, '每月多存 1 萬');
+  near(g.saveMore, 0.95, 0.01, '每月多存 1 萬');
   near(g.spendLess, 1.08, 0.01, '每月少花 5 千');
-  near(g.returnUp, 1.11, 0.01, '報酬率多 1%');
+  near(g.returnUp, 1.10, 0.01, '報酬率多 1%');
   assert.ok(Object.values(g).every((v) => v > 0), '都會提早');
 });
 
@@ -175,11 +174,11 @@ test('機率範圍(蒙地卡羅)', () => {
   const det50 = lifePath(D, 0.06).rows.find((x) => x.age === 50).balance;
   assert.ok(at50.p10 < at50.p25 && at50.p25 < at50.p50 && at50.p50 < at50.p75 && at50.p75 < at50.p90, '分位數由小到大');
   assert.ok(Math.abs(at50.p50 / det50 - 1) < 0.05, '中位數貼近固定報酬的路徑');
-  near(mc.success, 0.785, 0.001, '50 歲退休撐到 95 歲的機率');
+  near(mc.success, 0.779, 0.001, '50 歲退休撐到 95 歲的機率');
   assert.equal(mc.p50Zero, null, '中位數撐得到 95 歲');
   assert.equal(mc.p10Zero, 78, '最差一成的情況 78 歲用完');
   near(earliestFireTimeAt(D, 0.06, 0.5), earliestFireTime(D, 0.06), 0.2, '五成把握 ≈ 固定報酬的最快時間');
-  near(earliestFireTimeAt(D, 0.06, 0.9), 16.3, 0.01, '九成把握約 16 年 4 個月');
+  near(earliestFireTimeAt(D, 0.06, 0.9), 16.41, 0.01, '九成把握約 16 年 5 個月');
   monteCarlo({ ...D, age: 20, fireYear: 2050, endAge: 110 }, 0.06);
   near(monteCarlo(D, 0.06).success, mc.success, 1e-12, '先算過更長的期間,結果也一樣');
   const later = [2038, 2040, 2042, 2045].map((y) => successRate({ ...D, fireYear: y }, 0.06));
@@ -239,7 +238,7 @@ test('存錢 vs 投資:投資賺的追上存進去的那一年', () => {
 
 test('早點開始定期定額:晚幾年才投資會延後多久', () => {
   near(fundAtFire({ ...D, investDelay: 0 }, 0.06), fundAtFire(D, 0.06), 1e-9, '晚 0 年等於馬上投資');
-  near(fundAtFire({ ...D, investDelay: 3, cashRate: 0.06 }, 0.06), fundAtFire(D, 0.06), 1e-6, '定存利率跟報酬率一樣時,晚投資沒有差');
+  near(fundAtFire({ ...D, investDelay: 3, cashRate: 0.06 }, 0.06), fundAtFire({ ...D, cashRate: 0.06 }, 0.06), 1e-6, '定存利率跟報酬率一樣時,晚投資沒有差');
   assert.ok(fundAtFire({ ...D, investDelay: 3 }, 0.06) < fundAtFire(D, 0.06), '晚 3 年投資,退休時存得到的比較少');
   const later = startLater(D, 0.06);
   near(later.base, earliestFireTime(D, 0.06), 1e-9, '基準是現在就開始');
@@ -263,11 +262,51 @@ test('每月定期定額金額:只投入固定金額,其餘放定存', () => {
   near(fundAtFire({ ...D, dcaMonthly: 100 }, 0.06), base, 1e-6, '金額比存下的錢多:等於全部投入');
   const small = fundAtFire({ ...D, dcaMonthly: 1 }, 0.06);
   assert.ok(small < base, '每月只投 1 萬,其餘放定存,退休時存得到的比較少');
-  near(fundAtFire({ ...D, dcaMonthly: 1, cashRate: 0.06 }, 0.06), base, 1e-6, '定存利率跟報酬率一樣時沒有差');
+  near(fundAtFire({ ...D, dcaMonthly: 1, cashRate: 0.06 }, 0.06), fundAtFire({ ...D, cashRate: 0.06 }, 0.06), 1e-6, '定存利率跟報酬率一樣時沒有差');
   const none = fundAtFire({ ...D, dcaMonthly: 0, cashRate: 0 }, 0.06);
   const flows = annualCashflow(D).map((f) => f.invest);
   const start = D.assets - D.emergencyMonths * D.monthlyExpense;
-  near(none, start * 1.06 ** flows.length + flows.reduce((s, a) => s + a, 0), 1e-6, '完全不投入、定存 0%:存款原封不動');
+  const cp = cashPlan({ ...D, dcaMonthly: 0, cashRate: 0 });
+  near(none, start * 1.06 ** flows.length + flows.reduce((s, a) => s + a, 0) - (cp.reserveEnd - cp.reserveStart), 1e-6, '完全不投入、定存 0%:存款原封不動(扣掉補進預備金的錢)');
   assert.ok(earliestFireTime({ ...D, dcaMonthly: 1 }, 0.06) > earliestFireTime(D, 0.06), '投得少,退休得晚');
   assert.ok(levers({ ...D, dcaMonthly: 1 }, 0.06).rows.find((x) => x.key === 'startNow').gain > 0, '想再快一點:存下的全部投入');
+});
+
+test('貸款逐年還款表:本息攤還、最後不滿一年、寬限期', () => {
+  const home = { principal: 800, years: 20, rate: 0.023 };
+  const ys = loanYears(home);
+  assert.equal(ys.length, 20, '20 年 = 20 列');
+  near(ys[0].payment, 12 * pmt(800, 0.023 / 12, 240), 1e-6, '每年繳 12 期');
+  near(ys[14].balance, loanBalance(800, 0.023 / 12, 240, 180), 1e-6, '第 15 年底餘額與公式一致');
+  near(ys.reduce((s, y) => s + y.principal, 0), 800, 1e-6, '本金全部還清');
+  assert.ok(ys[0].interest > ys[19].interest, '前期利息多、後期少');
+  const odd = loanYears({ principal: 100, years: 7.5, rate: 0.03 });
+  assert.equal(odd.length, 8, '7.5 年 = 8 列');
+  assert.equal(odd[7].months, 6, '最後一年只繳 6 個月');
+  near(annualCashflow({ ...D, loans: [{ name: 'x', principal: 100, years: 7.5, rate: 0.03 }] })[7].loan, odd[7].payment, 1e-9, '現金流照實際月數扣');
+  const grace = loanYears({ principal: 800, years: 30, rate: 0.023, grace: 3 });
+  near(grace[0].payment, grace[0].interest, 1e-9, '寬限期只繳利息');
+  near(grace[2].balance, 800, 1e-9, '寬限期內本金不變');
+  assert.ok(grace[3].payment > loanYears({ principal: 800, years: 30, rate: 0.023 })[3].payment, '寬限期後月付比較高');
+  const sch = loanSchedule([{ name: '房貸', principal: 800, years: 30, rate: 0.023, grace: 3 }], 10, 2026).rows[0];
+  near(sch.payment, 800 * 0.023 / 12, 1e-6, '現在的月付 = 利息');
+  near(sch.balanceAtFire, grace[9].balance, 1e-9, '退休時餘額取逐年表');
+  assert.equal(sch.payoffYear, 2056, '30 年後還清');
+});
+
+test('每年的錢怎麼分:預備金、大額支出準備金、定期定額', () => {
+  const p = cashPlan(D);
+  near(p.reserveStart, D.emergencyMonths * D.monthlyExpense, 1e-9, '現有存款先撥 6 個月預備金');
+  assert.ok(p.reserveEnd > p.reserveStart, '預備金隨生活費(通膨)調高');
+  const car = D.goals.find((g) => g.name === '換車');
+  const t = car.year - D.baseYear;
+  const amount = car.amount * (1 + D.inflation) ** t;
+  near(p.rows.slice(t - 3, t).reduce((s, r) => s + r.goalSave, 0), amount, 1e-6, '換車的錢在前 3 年平均存好');
+  assert.ok(p.rows.every((r) => Math.abs(r.income - r.expense - r.loan - r.reserve - r.goalSave - r.invest - r.toCash) < 1e-6), '收入 = 生活費 + 貸款 + 預備金 + 準備金 + 投資 + 定存(大額支出從準備金付)');
+  const poor = cashPlan({ ...D, assets: 10 });
+  near(poor.reserveStart, 10, 1e-9, '存款不夠預備金:全部先當預備金');
+  near(poor.investStart, 0, 1e-9, '投資部位從 0 開始');
+  assert.ok(poor.rows[0].reserve > 0, '第一年先補預備金');
+  const deficit = cashPlan({ ...D, salary: 60 });
+  assert.ok(deficit.rows[0].short > 0, '收入不夠生活費:記為短缺,從投資部位拿');
 });

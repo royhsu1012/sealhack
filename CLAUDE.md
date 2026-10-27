@@ -31,7 +31,9 @@
 src/lib/fire.js            計算引擎(純函式,無 DOM;唯一事實來源):needBreakdown / fundNeeded / fundAtFire /
                            breakEvenReturn / earliestFireTime / personaOf / levers /
                            monteCarlo / successRate / earliestFireTimeAt / volatilityOf(固定種子的蒙地卡羅)/
-                           investedFlows / startLater(第 10 題:晚 d 年才開始定期定額,之前存款放定存 cashRate)
+                           investedFlows / startLater(第 10 題:晚 d 年才開始定期定額,之前存款放定存 cashRate)/
+                           loanYears / loanSchedule(按月攤還的逐年還款表,含寬限期;現金流與退休時餘額都用它)/
+                           cashPlan(每年的錢怎麼分:生活費、貸款 → 補預備金 → 預存大額支出 → 定期定額 → 定存;存得到多少都從這裡來)
 src/scripts/quiz-config.js 題目卡內容與選項預設值(貸款、大額支出、年金)
 src/scripts/quiz-app.js    測驗互動層:開場 / 題目卡 / 結果三階段(<html data-phase>)
 src/scripts/charts.js      結果頁 SVG 圖表(一生資產機率範圍、交叉圖、瀑布圖、每年存款、影響因素)
@@ -80,8 +82,9 @@ Workers Builds 的 build 指令若仍是舊的(含 pagefind / copy-validation),�
 - `npm run build` 零錯誤零警告;`npm test` 全過。
 - 320 / 375 / 768 / 1280px 無橫向捲動;淺 / 深色都可讀(淺色預設)。
 - 「先看範例結果」(單身有房:35 歲、50 歲退休、月花 6 萬、月收 15 萬、加薪 3%、資產 300 萬、房貸 + 車貸、報酬 6%)顯示:
-  悠哉海豹、最快 13 年 1 個月後(約 48 歲)、50 歲來得及且多出 557 萬(需要 1,716 萬・存得到 2,273 萬)、最低報酬率 4.6%。
-  一生資產:50 歲退休撐到 95 歲的機率 79%、最差一成 78 歲用完;九成把握最快約 16 年 4 個月後(約 51 歲)。
+  悠哉海豹、最快 13 年 2 個月後(約 48 歲)、50 歲來得及且多出 535 萬(需要 1,716 萬・存得到 2,251 萬)、最低報酬率 4.6%。
+  一生資產:50 歲退休撐到 95 歲的機率 78%、最差一成 78 歲用完;九成把握最快約 16 年 5 個月後(約 51 歲)。
+  (2026-10-27 起金流改成先補預備金、預存大額支出再投資,數字比之前略晚一點。)
 - 投資方法頁(範例情境):最低報酬率 4.6%、你選的 6%;台股任 10 年達到 100% / 92%,美股任 20 年 97% / 95%。
   (「幾年幾月」從今天起算,日期會隨時間變。)
 - 一路按「下一題」不改答案(沒有貸款、沒有大額支出)→ 勤勞海豹。
