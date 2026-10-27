@@ -42,7 +42,8 @@ src/styles/seal.css        純 CSS 畫的像素海豹(scripts/seal-css.mjs 產�
 src/data/seal-pixels.json  參考圖 1:1 還原的像素資料(192 × 108;網站只用海豹本體與眼睛)
 src/data/seal-accessories.js 人格配件的像素圖案
 scripts/seal-sprite.py     由 scripts/assets/seal-reference.png(使用者提供)產生 seal-pixels.json 與 --sp-* 調色盤(需要 Pillow)
-scripts/seal-css.mjs       seal-pixels.json + 配件 → seal.css(`npm run seal`)
+scripts/seal-css.mjs       seal-pixels.json + 配件 → seal.css 與 public/favicon.svg(`npm run seal`)
+scripts/seal-icons.py      favicon.svg → favicon.ico、favicon-32/48.png、apple-touch-icon.png(`npm run icons`,需要 Pillow)
 src/scripts/shared.js      localStorage 狀態、格式化、滑桿、圖表小工具、底部結果列
 src/pages/index.astro      測驗頁(開場 → 題目卡 → 結果)
 src/pages/method.astro     計算方法:公式、假設、題目預設值與退休人格

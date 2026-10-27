@@ -44,7 +44,8 @@ npm install
 npm run dev      # http://localhost:4321
 npm test         # 計算引擎測試(node:test)
 npm run evidence # 重抓公開資料、重算投資方法頁的歷史數據(src/data/evidence.json)
-npm run seal     # 重新產生純 CSS 的像素海豹(src/styles/seal.css)
+npm run seal     # 重新產生純 CSS 的像素海豹(src/styles/seal.css)與 favicon.svg
+npm run icons    # 由 favicon.svg 產生 favicon.ico、PNG 圖示與 apple-touch-icon(需要 Pillow)
 npm run build    # 靜態輸出到 dist/
 ```
 

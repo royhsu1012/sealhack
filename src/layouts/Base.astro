@@ -17,7 +17,11 @@ const fullTitle = title === 'SealHack' ? 'SealHack FIRE — 退休測驗' : `${t
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <!-- 網站圖示:小海豹頭(scripts/seal-css.mjs、seal-icons.py 產生);?v= 讓瀏覽器丟掉舊圖示的快取 -->
+    <link rel="icon" href="/favicon.ico?v=2" sizes="48x48" />
+    <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png?v=2" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="SealHack" />
     <meta property="og:title" content={fullTitle} />
