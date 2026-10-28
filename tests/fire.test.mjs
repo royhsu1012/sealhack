@@ -6,7 +6,7 @@ import {
   lifePath, fireAgeDrivers, presetInputs, PRESETS,
   fundNeeded, fundAtFire, breakEvenReturn, needBreakdown, earliestFireTime, personaOf, levers, monteCarlo, successRate, earliestFireTimeAt, volatilityOf,
   historyHitRate, saveVsInvest, startLater, annualCashflow, loanYears, loanSchedule, cashPlan,
-  netReturn, pensionEstimate, incomesOf, autoPensions, fireTimeScenarios, SCENARIOS,
+  netReturn, pensionEstimate, incomesOf, autoPensions, fireTimeScenarios, SCENARIOS, extraSavingFor, toToday, rowToday,
 } from '../src/lib/fire.js';
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: got ${a}, want ${b} ± ${tol}`);
@@ -375,4 +375,26 @@ test('想再快一點與影響因素:用九成把握重算', () => {
   near(save.t, L.base - save.gain, 1e-9, 'gain = 原本 − 調整後');
   const d = fireAgeDrivers({ ...inp, assumedReturn: 0.06 }, 0.9);
   assert.equal(d.base, 53, '目前最快 53 歲');
+});
+
+test('想在理想退休年齡有九成把握:每月要多存多少', () => {
+  const inp = site();
+  const m = extraSavingFor(inp, 0.06);
+  near(m, 3.6, 1e-9, '範例:每月多存 3.6 萬');
+  // 找到的是最小的金額:少 0.1 萬就不到九成
+  const frozen = incomesOf(inp).map(({ auto, ...q }) => q);
+  const rate = (x) => successRate({ ...inp, incomes: frozen, salary: inp.salary + 12 * x }, 0.06);
+  assert.ok(rate(m) >= 0.9 && rate(m - 0.1) < 0.9, `${rate(m)} / ${rate(m - 0.1)}`);
+  assert.equal(extraSavingFor({ ...inp, fireYear: inp.baseYear + 25 }, 0.06), 0, '60 歲退休已經有九成把握');
+  assert.equal(extraSavingFor({ ...inp, fireYear: inp.baseYear + 1 }, 0.06, 0.9, { maxMonthly: 5 }), null, '明年就退休:多存 5 萬也不夠');
+  assert.ok(extraSavingFor(inp, 0.08) < m, '報酬率高,要多存的少');
+});
+
+test('今日幣值:除以通膨', () => {
+  const inp = { ...D, inflation: 0.02, baseYear: 2026 };
+  near(toToday(inp, 102, 2027), 100, 1e-9, '一年後的 102 萬 = 今天的 100 萬');
+  assert.equal(toToday(inp, 100, 2026), 100, '今年不變');
+  const row = rowToday(inp, { year: 2028, age: 37, t: 2, income: 104.04, short: 0 });
+  near(row.income, 100, 1e-9, '金額換算');
+  assert.deepEqual([row.year, row.age, row.t, row.short], [2028, 37, 2, 0], '年份、年齡不動');
 });

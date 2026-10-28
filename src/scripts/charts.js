@@ -1,5 +1,5 @@
 // 結果頁的 SVG 圖表(純字串;寬度跟隨容器,由呼叫端傳入 W)
-import { fundNeeded, fundAtFire, endAgeOf, SCENARIOS } from '../lib/fire.js';
+import { fundNeeded, fundAtFire, endAgeOf, SCENARIOS, toToday } from '../lib/fire.js';
 import { nf, wan, big, pct, pctUp, niceStep, T, textW, legend } from './shared.js';
 
 // 交叉圖的橫軸預設畫到 12%;選得更高或最低報酬率更高時才往右延伸,避免高報酬把常用的範圍壓扁
@@ -258,10 +258,12 @@ export function tradeoffChart(inp, rSel, be, W) {
   const H = W < 560 ? 270 : 320, L = 48, R = W - 14, top = 30, B = H - 32;
   const N = 48;
   const rs = Array.from({ length: N + 1 }, (_, k) => (xMax * k) / N);
-  const need = rs.map((r) => fundNeeded(inp, r));
-  const have = rs.map((r) => fundAtFire(inp, r));
-  const needSel = fundNeeded(inp, rSel), haveSel = fundAtFire(inp, rSel);
-  const needBe = be != null ? fundNeeded(inp, be) : 0;
+  // 金額換成今日幣值(退休那年的錢 ÷ 通膨)
+  const k = toToday(inp, 1, inp.fireYear);
+  const need = rs.map((r) => fundNeeded(inp, r) * k);
+  const have = rs.map((r) => fundAtFire(inp, r) * k);
+  const needSel = fundNeeded(inp, rSel) * k, haveSel = fundAtFire(inp, rSel) * k;
+  const needBe = be != null ? fundNeeded(inp, be) * k : 0;
   const peak = Math.max(have.at(-1), need.at(-1), needSel, haveSel, needBe, 1) * 1.2;
   const step = niceStep(peak, 4);
   const vmax = Math.ceil(peak / step) * step;

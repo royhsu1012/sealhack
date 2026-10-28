@@ -1,8 +1,8 @@
 // 退休測驗:開場 → 一題一張卡 → 退休人格與結果。所有計算交給 src/lib/fire.js。
 import {
-  computePlan, lifePath, annualCashflow, cashPlan, autoPensions, incomesOf, fireAgeDrivers, needBreakdown, fundNeeded, fundAtFire,
+  computePlan, lifePath, annualCashflow, cashPlan, autoPensions, incomesOf, fireAgeDrivers, needBreakdown, fundNeeded,
   breakEvenReturn, personaOf, levers, monteCarlo, earliestFireTimeAt, successRate, pmt, endAgeOf,
-  fireTimeScenarios, SCENARIOS, netReturn,
+  fireTimeScenarios, SCENARIOS, netReturn, extraSavingFor, toToday, rowToday,
 } from '../lib/fire.js';
 import {
   BASE_YEAR, R_MAX, freshState, loadState, saveState, clearState, nf, wan, big, pct, pctUp, esc, num, round, $,
@@ -268,10 +268,12 @@ function drawLife() {
     $('r-fate').innerHTML = '';
     return;
   }
-  const mc = monteCarlo(inp, r);
-  $('chart-life').innerHTML = fanChart(mc, fundNeeded(inp, r), widthOf('chart-life'))
+  // 圖上金額都換成今日幣值(除以通膨),不然 60 年後的錢看起來會大得嚇人
+  const raw = monteCarlo(inp, r);
+  const mc = { ...raw, rows: raw.rows.map((x) => rowToday(inp, x)) };
+  $('chart-life').innerHTML = fanChart(mc, toToday(inp, fundNeeded(inp, r), inp.fireYear), widthOf('chart-life'))
     + legend([...SCENARIOS.map((x) => [`var(--sc-${x.key})`, `${x.name}:${x.sub}`]), [BAND_LIGHT, '八成的情況落在這裡']]);
-  $('life-note').textContent = `${fireAge} 歲退休,模擬 1,000 種市場走勢(扣掉費用與稅,年報酬率中位數 ${pct(netReturn(inp, r))}、上下波動約 ${pct(mc.sigma)}),畫出三種情況。`;
+  $('life-note').textContent = `${fireAge} 歲退休,模擬 1,000 種市場走勢(扣掉費用與稅,年報酬率中位數 ${pct(netReturn(inp, r))}、上下波動約 ${pct(mc.sigma)}),畫出三種情況。金額都是今天的錢(已扣掉通膨)。`;
   const p = Math.round(mc.success * 100);
   const lvl = mc.success >= 0.9 ? 'ok' : mc.success >= 0.7 ? 'warn' : 'bad';
   const end = endAgeOf(inp);
@@ -294,9 +296,9 @@ function drawMore() {
   const plan = computePlan(inp);
   const life = lifePath(inp, r);
   $('chart-trade').innerHTML = tradeoffChart(inp, r, be, widthOf('chart-trade'));
-  $('chart-target').innerHTML = targetChart(needBreakdown(inp, r), r, endAgeOf(inp), widthOf('chart-target'));
+  $('chart-target').innerHTML = targetChart(rowToday(inp, { ...needBreakdown(inp, r), year: inp.fireYear }), r, endAgeOf(inp), widthOf('chart-target'));
   const money = cashPlan(inp);
-  $('chart-cashflow').innerHTML = allocChart(money.rows, widthOf('chart-cashflow'));
+  $('chart-cashflow').innerHTML = allocChart(money.rows.map((x) => rowToday(inp, x)), widthOf('chart-cashflow'));
   // 貸款每年還多少
   const sched = plan.loans;
   $('loan-sec').hidden = !sched.rows.length;
@@ -382,17 +384,26 @@ function renderResult() {
   if (n < 1) {
     $('r-dream').innerHTML = `<p class="dream-q">理想退休年齡 ${fireAge} 歲已經到了</p><p class="dream-sub">點「修改答案」改一個比現在大的年齡。</p>`;
   } else {
-    const need = fundNeeded(inp, r), have = fundAtFire(inp, r);
     const odds = successRate(inp, r);
+    const pc = Math.round(odds * 100);
     be = breakEvenReturn(inp);
-    // 九成把握才算來得及;平均報酬夠、但把握不到九成的,講清楚機率
-    const verdict = odds >= 0.9 ? ['ok', '✓', `來得及,九成把握(${Math.round(odds * 100)}%)`]
-      : have >= need ? ['warn', '!', `平均報酬才夠,只有 ${Math.round(odds * 100)}% 把握`]
-      : ['bad', '!', `還差 ${big(need - have)}(把握 ${Math.round(odds * 100)}%)`];
+    // 九成把握才算來得及;不到九成就直接說怎麼補:每月多存多少,或晚到悲觀情況的年齡再退休
+    let verdict, how;
+    if (odds >= 0.9) {
+      verdict = ['ok', '✓', `來得及,九成把握(${pc}%)`];
+      how = `就算碰上最差的一成市場,也撐得到 ${endAgeOf(inp)} 歲`;
+    } else {
+      verdict = [odds >= 0.5 ? 'warn' : 'bad', '!', `把握 ${pc}%,還不到九成`];
+      const m = extraSavingFor(inp, r, 0.9);
+      const ways = [];
+      if (m != null) ways.push(`每月多存 <b>${round(m, 1)} 萬</b>`);
+      if (t != null) ways.push(w.age > fireAge ? `等到 <b>${w.age} 歲</b>再退休` : `晚 <b>${spanText(t - n)}</b>退休`);
+      how = ways.length ? `想要九成把握:${ways.join(',或')}` : '就算每月多存 30 萬也不到九成,試試降低生活費或晚一點退休';
+    }
     $('r-dream').innerHTML = `
       <p class="dream-q">你理想的 <b>${fireAge} 歲</b>退休</p>
       <p class="dream-a ${verdict[0]}"><span aria-hidden="true">${verdict[1]}</span>${verdict[2]}</p>
-      <p class="dream-sub">每年報酬剛好 ${pct(r)} 時:需要 ${big(need)}・存得到 ${big(have)}</p>`;
+      <p class="dream-sub">${how}</p>`;
   }
 
   // 想再快一點

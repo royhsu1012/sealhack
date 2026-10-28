@@ -9,7 +9,8 @@
     "test": "node --test tests/fire.test.mjs",
     "evidence": "node scripts/evidence.mjs",
     "seal": "node scripts/seal-css.mjs",
-    "icons": "python scripts/seal-icons.py"
+    "icons": "python scripts/seal-icons.py",
+    "og": "python scripts/og-image.py"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",

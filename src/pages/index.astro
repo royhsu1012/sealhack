@@ -205,6 +205,7 @@ const zones = [
         <span class="text-sm muted">報酬率交叉圖、需要準備多少、每年的錢怎麼分、貸款每年還多少、影響退休年齡的因素、財務體檢</span>
       </summary>
       <div class="more-body">
+        <p class="text-sm muted">金額都換成今天的錢(已扣掉通膨);只有貸款照合約的金額。</p>
         <section>
           <h3>報酬率交叉圖</h3>
           <p class="text-sm muted">報酬率越高,需要準備的錢越少、存得到的錢越多;兩條線交叉的地方,就是理想退休年齡的最低報酬率。</p>
@@ -222,7 +223,7 @@ const zones = [
         </section>
         <section id="loan-sec">
           <h3>貸款每年還多少</h3>
-          <p class="text-sm muted">每年繳的錢拆成本金和利息,畫到還清或退休那年;退休時還沒還完的,模型假設那年一次還清,已算進需要準備的錢。</p>
+          <p class="text-sm muted">每年繳的錢拆成本金和利息(照合約的金額,沒扣通膨),畫到還清或退休那年;退休時還沒還完的,模型假設那年一次還清,已算進需要準備的錢。</p>
           <div id="chart-loans" class="chart mt-3"></div>
           <ul id="loan-list" class="loan-list"></ul>
         </section>

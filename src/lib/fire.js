@@ -771,6 +771,36 @@ export function fireTimeScenarios(inp, r = inp.assumedReturn, opts = {}) {
   return Object.fromEntries(SCENARIOS.map((x) => [x.key, firstTimeAt(inp, rate, x.confidence, opts)]));
 }
 
+/**
+ * 想在理想退休年齡有 confidence 把握,每月要多存多少(萬,今天的錢;以 0.1 萬為一格)。
+ * 已經夠回傳 0;每月多存 maxMonthly 也不夠回傳 null。
+ * 多存 = 收入多 12 × m、收入上限跟著提高;勞保勞退照原本的收入估(多存的錢不是薪水,不會讓年金變多)。
+ */
+export function extraSavingFor(inp, r = inp.assumedReturn, confidence = 0.9, { maxMonthly = 30 } = {}) {
+  const incomes = incomesOf(inp).map(({ auto, ...q }) => q);
+  const ok = (m) => (successRate({
+    ...inp, incomes, salary: inp.salary + 12 * m, salaryCap: inp.salaryCap == null ? null : inp.salaryCap + 12 * m,
+  }, r) ?? 0) >= confidence;
+  if (ok(0)) return 0;
+  if (!ok(maxMonthly)) return null;
+  let lo = 0, hi = maxMonthly * 10;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (ok(mid / 10)) hi = mid;
+    else lo = mid;
+  }
+  return hi / 10;
+}
+
+/** 今日幣值:year 那年的名目金額 ÷ (1 + 通膨)^(距今幾年),換成今天的購買力 */
+export const toToday = (inp, v, year) => v / (1 + inp.inflation) ** (year - inp.baseYear);
+const NOT_MONEY = new Set(['t', 'year', 'age']);
+/** 逐年資料的一列(要有 year):金額欄位全換成今日幣值,年份、年齡等不動 */
+export function rowToday(inp, row) {
+  const k = (1 + inp.inflation) ** (row.year - inp.baseYear);
+  return Object.fromEntries(Object.entries(row).map(([key, v]) => [key, typeof v === 'number' && !NOT_MONEY.has(key) ? v / k : v]));
+}
+
 /** 敏感度:變動單一參數,回傳各值下的目標資金與所需報酬率 */
 export function sensitivity(inp, key, values) {
   return values.map((v) => {
