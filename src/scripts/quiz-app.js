@@ -354,7 +354,8 @@ function renderResult() {
   $('r-art').innerHTML = seal(P.variant, P.name);
   $('r-name').textContent = P.name;
   $('r-tag').textContent = P.tag;
-  $('r-save').textContent = p.savingRate > 0 ? `每月存下收入的 ${Math.round(p.savingRate * 100)}%` : '目前存不太到錢';
+  $('r-save').textContent = p.savingRate > 0 ? `每月存下收入的 ${Math.round(p.savingRate * 100)}%`
+    : p.savingRate > -0.05 ? '目前收支差不多打平' : '目前每月要動用存款';
   $('r-style').textContent = `投資風格:${STYLE[p.style]}`;
 
   // 最快何時退休:樂觀 / 中性 / 悲觀三種情況;主答案用悲觀(最差一成的市場也撐得住 = 九成把握)
@@ -363,19 +364,26 @@ function renderResult() {
   const w = t == null ? null : whenParts(t, inp.age);
   // 試到這個年齡都還不夠時寫「X 歲以後」,跟其他格子一樣用年齡
   const late = inp.age + fireYearsLimit(inp);
+  // 做不到九成時不說「不夠」,改說最後那年有幾成把握、每月多存多少就到九成
+  const lateInp = { ...inp, fireYear: inp.baseYear + fireYearsLimit(inp) };
+  const pLate = t == null ? Math.round((successRate(lateInp, r) ?? 0) * 100) : null;
   $('r-scen').innerHTML = SCENARIOS.map((x) => {
     const tt = sc[x.key], ww = tt == null ? null : whenParts(tt, inp.age);
     const v = tt == null ? `${late} 歲後` : ww.now ? '現在' : `${ww.age} 歲`;
-    return `<li class="scen-${x.key}"><span>${x.name}</span><b class="num">${v}</b><small>${tt == null ? '還存不夠' : ww.now ? x.sub : `${ww.year} 年 ${ww.month} 月`}</small></li>`;
+    return `<li class="scen-${x.key}"><span>${x.name}</span><b class="num">${v}</b><small>${tt == null ? (pLate < 10 ? '多存一點就有' : `把握 ${pLate}%`) : ww.now ? x.sub : `${ww.year} 年 ${ww.month} 月`}</small></li>`;
   }).join('');
   $('r-kicker').textContent = `報酬率 ${pct(r)} 時,九成把握最快`;
   $('r-scen-note').hidden = t == null; // 悲觀做不到時,大字下面那行已經說明了
   if (t == null) {
     $('r-date').textContent = `${late} 歲以後`;
     const wm = sc.mid == null ? null : whenParts(sc.mid, inp.age);
-    $('r-span').textContent = wm
-      ? `工作到 ${late} 歲,碰上最差的一成市場還是不夠;一半的情況約 ${wm.age} 歲可以退休`
-      : `工作到 ${late} 歲都還存不夠,看看下面怎麼補`;
+    const mLate = extraSavingFor(lateInp, r, 0.9);
+    // 把握很低(多半是每月花得比賺得多)時,先講補法,不寫「0% 把握」
+    $('r-span').textContent = pLate < 10
+      ? (mLate != null ? `每月多存 ${round(mLate, 1)} 萬,${late} 歲前就能有九成把握` : '先讓每月有結餘,再看看下面怎麼調')
+      : `工作到 ${late} 歲有 ${pLate}% 把握`
+        + (mLate != null ? `,每月多存 ${round(mLate, 1)} 萬就到九成` : '')
+        + (wm ? `;一半的情況約 ${wm.age} 歲` : '');
   } else if (w.now) {
     $('r-date').textContent = '現在';
     $('r-span').textContent = `就可以退休,資產已經撐到 ${endAgeOf(inp)} 歲`;
@@ -418,7 +426,7 @@ function renderResult() {
   $('r-levers').innerHTML = L.rows.map((x) => {
     const v = x.gain != null
       ? (x.gain > 1 / 24 ? `提早 ${spanText(x.gain)}` : '差不多')
-      : x.t != null ? `${spanText(x.t)}後就可以退休` : '還是存不夠';
+      : x.t != null ? `${spanText(x.t)}後就可以退休` : '還不到九成把握';
     return `<li><span>${x.key === 'startNow' ? startNowLabel(inp) : LEVER[x.key]}</span><b>${v}</b></li>`;
   }).join('');
 
@@ -473,7 +481,7 @@ async function openCard() {
   // 圖卡的狀態:已經可以退休 / 比理想早 / 剛好 / 比理想晚 / 試到最後都還不夠
   const diff = t == null || w.now || n < 1 ? 0 : fireAge - w.age;
   const late = last.inp.age + fireYearsLimit(last.inp);
-  const state = t == null ? { key: 'far', label: `${late} 歲前還存不夠` }
+  const state = t == null ? { key: 'far', label: '還在努力中' }
     : w.now ? { key: 'now', label: '已經可以退休了' }
     : n < 1 ? { key: 'ahead', label: `最快 ${w.age} 歲退休` }
     : diff > 0 ? { key: 'ahead', label: `比理想早 ${diff} 年退休` }
@@ -487,7 +495,7 @@ async function openCard() {
       variant: P.variant, name: P.name, tag: P.tag, tint: P.tint,
       kicker: `報酬率 ${pct(r)}・九成把握,我最快`,
       when: t == null ? `${late} 歲以後` : w.now ? '現在' : `${w.year} 年 ${w.month} 月`,
-      sub: t == null ? '工作到那時還不到九成把握' : w.now ? '就可以退休' : `就可以退休(${w.span}後,約 ${w.age} 歲)`,
+      sub: t == null ? '一步一步存,目標九成把握' : w.now ? '就可以退休' : `就可以退休(${w.span}後,約 ${w.age} 歲)`,
       state,
     });
     if (card) URL.revokeObjectURL(card.url);
