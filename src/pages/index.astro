@@ -153,9 +153,30 @@ const zones = [
     <details class="card more tune" id="tune">
       <summary>
         <span class="card-title">調整條件</span>
-        <span class="text-sm muted">年齡、生活費、收入、存款……改了答案馬上跟著變</span>
+        <span class="tune-chips" id="tune-chips" aria-label="目前的假設"></span>
       </summary>
       <div class="tune-body">
+        <!-- 報酬率:軌道分三色,三角形標出理想退休年齡的最低報酬率 -->
+        <div class="knob tune-ret">
+          <div class="knob-head">
+            <label class="knob-label" for="r-return">報酬率</label>
+            <div class="knob-value">
+              <input id="r-return" type="number" inputmode="decimal" step="0.1" data-knob="assumedReturn" data-pct="1" />
+              <span>%</span>
+            </div>
+          </div>
+          <div class="ret" style={`--z1:${(5 / R_MAX) * 100}%;--z2:${(7 / R_MAX) * 100}%`}>
+            <div class="ret-mark" id="ret-mark" hidden><span id="ret-mark-label" class="ret-mark-label"></span></div>
+            <input class="ret-range" type="range" min="0" max={R_MAX} step="0.1" data-knob="assumedReturn" data-pct="1" aria-label="報酬率" />
+            <div class="ret-scale" aria-hidden="true">
+              {ticks.map((v) => <span style={`--f:${v / R_MAX}`}>{v}%</span>)}
+            </div>
+          </div>
+          <p class="legend">
+            {zones.map(([c, s]) => <span><span style={`color:${c}`}>■</span> {s}</span>)}
+          </p>
+          <p class="hint" id="ret-note"></p>
+        </div>
         {tuneDefs.map((m) => (
           <div class="knob">
             <div class="knob-head">
@@ -169,38 +190,16 @@ const zones = [
           </div>
         ))}
       </div>
-      <p class="tune-foot">報酬率在下面「報酬率拉拉看」;貸款、大額支出、勞保勞退要改,按<button type="button" class="link-btn" id="tune-edit">修改答案</button></p>
+      <p class="tune-foot">貸款、大額支出、勞保勞退要改,按<button type="button" class="link-btn" id="tune-edit">修改答案</button></p>
     </details>
 
-    <div class="card result-dream" id="r-dream"></div>
-
-
-    <div class="card">
-      <h2 class="card-title">想再快一點?</h2>
+    <!-- 你的目標:理想退休年齡來不來得及、怎麼補,再來是每項改變能提早多久 -->
+    <div class="card goal">
+      <div id="r-dream"></div>
+      <h2 class="goal-h">想再快一點?</h2>
       <ul class="levers" id="r-levers"></ul>
+      <a class="inv-link" href="/invest/"><span id="r-inv">這個報酬率要怎麼投資?</span><b>看投資方法</b></a>
     </div>
-
-    <form class="card" id="ret-form" autocomplete="off" onsubmit="return false">
-      <div class="knob-head">
-        <label class="card-title" for="r-return">報酬率拉拉看</label>
-        <div class="knob-value">
-          <input id="r-return" type="number" inputmode="decimal" step="0.1" data-knob="assumedReturn" data-pct="1" />
-          <span>%</span>
-        </div>
-      </div>
-      <div class="ret" style={`--z1:${(5 / R_MAX) * 100}%;--z2:${(7 / R_MAX) * 100}%`}>
-        <div class="ret-mark" id="ret-mark" hidden><span id="ret-mark-label" class="ret-mark-label"></span></div>
-        <input class="ret-range" type="range" min="0" max={R_MAX} step="0.1" data-knob="assumedReturn" data-pct="1" aria-label="報酬率" />
-        <div class="ret-scale" aria-hidden="true">
-          {ticks.map((v) => <span style={`--f:${v / R_MAX}`}>{v}%</span>)}
-        </div>
-      </div>
-      <p class="legend">
-        {zones.map(([c, s]) => <span><span style={`color:${c}`}>■</span> {s}</span>)}
-      </p>
-      <p class="text-xs muted mt-2" id="ret-note"></p>
-      <a class="inv-link" href="/invest/"><span>這個報酬率要怎麼投資?</span><b>看投資方法</b></a>
-    </form>
 
     <div class="card">
       <h2 class="card-title">你的一生資產:樂觀、中性、悲觀</h2>

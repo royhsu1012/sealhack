@@ -241,6 +241,7 @@ h1, h2, h3 { letter-spacing: -0.015em; }
 .scen-fate + .odds { margin-top: 0.5rem; }
 .odds b { font-size: 1.1rem; font-weight: 800; white-space: nowrap; text-align: right; }
 .odds b small, .odds span small { display: block; font-size: 0.72rem; font-weight: 600; color: var(--ink-2); }
+.goal-h { margin-top: 1.1rem; padding-top: 1rem; border-top: 1px solid var(--line); font-size: 1rem; font-weight: 800; }
 .levers { margin-top: 0.75rem; display: grid; gap: 0.5rem; }
 .levers li { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border-radius: 1rem; background: var(--surface-2); }
 .levers b { color: var(--free); font-weight: 800; white-space: nowrap; }
@@ -261,6 +262,13 @@ details.more[open] > summary::after { content: "−"; }
 /* 結果頁「調整條件」:手機一欄、寬螢幕兩欄;滑桿跟細項同一個 .knob 元件 */
 .tune-body { display: grid; gap: 0.75rem 1.5rem; margin-top: 1rem; }
 @media (min-width: 640px) { .tune-body { grid-template-columns: 1fr 1fr; } }
+/* 收起來時也看得到目前的假設 */
+.tune-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.tune-chips span {
+  padding: 0.15rem 0.55rem; border-radius: 999px; background: var(--surface-2);
+  font-size: 0.75rem; font-weight: 600; color: var(--ink-2); white-space: nowrap;
+}
+.tune-ret { grid-column: 1 / -1; padding-bottom: 0.9rem; border-bottom: 1px solid var(--line); }
 .tune-foot { margin-top: 0.75rem; font-size: 0.8rem; color: var(--ink-2); }
 .tune-foot .link-btn { min-height: 2.25rem; padding: 0.25rem; font-size: inherit; }
 .more-body { display: grid; gap: 2rem; margin-top: 1.25rem; }

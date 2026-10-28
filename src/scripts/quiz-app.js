@@ -397,7 +397,7 @@ function renderResult() {
   const n = inp.fireYear - inp.baseYear;
   let be = null;
   if (n < 1) {
-    $('r-dream').innerHTML = `<p class="dream-q">理想退休年齡 ${fireAge} 歲已經到了</p><p class="dream-sub">點「修改答案」改一個比現在大的年齡。</p>`;
+    $('r-dream').innerHTML = `<p class="dream-q">理想退休年齡 ${fireAge} 歲已經到了</p><p class="dream-sub">在上面的「調整條件」把理想退休年齡調大一點。</p>`;
   } else {
     const odds = successRate(inp, r);
     const pc = Math.round(odds * 100);
@@ -431,7 +431,11 @@ function renderResult() {
   }).join('');
 
   placeMark(be);
-  $('ret-note').textContent = be == null ? '拉拉看,最快退休的時間會跟著變。' : `三角形是 ${fireAge} 歲退休平均每年至少要有的報酬率(還沒算起伏,九成把握要再高一些);拉拉看,最快退休的時間會跟著變。`;
+  $('ret-note').textContent = be == null ? '拉拉看,最快退休的時間會跟著變。' : `三角形是 ${fireAge} 歲退休平均每年至少要有的報酬率(還沒算起伏,九成把握要再高一些)。`;
+  $('r-inv').textContent = be == null ? '這個報酬率要怎麼投資?' : `${fireAge} 歲退休的最低報酬率:${be === 0 ? '0% 就夠' : pctUp(be)}`;
+  // 調整條件收起來時也看得到目前的假設
+  $('tune-chips').innerHTML = [`報酬率 ${pct(r)}`, `費用與稅 ${pct(inp.costRate)}`, `通膨 ${pct(inp.inflation)}`, `加薪 ${pct(inp.salaryGrowth)}`, `活到 ${endAgeOf(inp)} 歲`]
+    .map((x) => `<span>${x}</span>`).join('');
 
   last = { inp, r, n, fireAge, be, name: P.name, persona: P, w, t };
   drawLife();
