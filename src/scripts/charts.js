@@ -5,7 +5,7 @@ import { nf, wan, big, pct, pctUp, niceStep, T, textW, legend } from './shared.j
 // 交叉圖的橫軸預設畫到 12%;選得更高或最低報酬率更高時才往右延伸,避免高報酬把常用的範圍壓扁
 const CHART_R = 0.12;
 
-// 一生資產的三種情況(monteCarlo 的結果):樂觀 P90、中性 P50、悲觀 P10 三條線,八成的情況(P10–P90)一條淺色帶
+// 一生資產的三種情況(monteCarlo 的結果):樂觀、中性、悲觀三條線(SCENARIOS 的 line),悲觀到樂觀之間一條淺色帶
 // need = 以選的報酬率算出、在理想退休年齡退休需要準備的錢
 export const BAND_LIGHT = 'color-mix(in srgb, var(--free) 10%, transparent)';
 export function fanChart(mc, need, W) {
@@ -15,8 +15,9 @@ export function fanChart(mc, need, W) {
   const x = (a) => L + ((a - a0) / (a1 - a0)) * (R - L);
   // 縱軸聚焦退休前後:以退休時的 P90 與需要準備的錢為準,退休後一路長高的部分從上方裁掉
   const atFire = rows.find((r) => r.age === fireAge) ?? rows.at(-1);
-  const allMax = Math.max(need, ...rows.map((r) => r.p90));
-  const peak = Math.max(1, Math.min(allMax, Math.max(need, atFire.p90) * 1.6));
+  const hiKey = SCENARIOS[0].line, loKey = SCENARIOS.at(-1).line; // 樂觀、悲觀
+  const allMax = Math.max(need, ...rows.map((r) => r[hiKey]));
+  const peak = Math.max(1, Math.min(allMax, Math.max(need, atFire[hiKey]) * 1.6));
   const step = niceStep(peak, 4);
   const vmax = Math.ceil((peak * 1.05) / step) * step;
   const y = (v) => top + ((vmax - Math.max(0, v)) / vmax) * (B - top);
@@ -74,7 +75,7 @@ export function fanChart(mc, need, W) {
     ${ticks.map((v) => `<line x1="${L}" x2="${R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/>${T(L - 8, y(v) + 4, v === 0 ? '0' : big(v).replace(' 萬', ''), { anchor: 'end', size: 11 })}`).join('')}
     ${T(L - 8, top - 16, '萬元', { anchor: 'end', size: 11 })}
     <g clip-path="url(#fan-plot)">
-      <path d="${band('p10', 'p90')}" fill="${BAND_LIGHT}"/>
+      <path d="${band(loKey, hiKey)}" fill="${BAND_LIGHT}"/>
       ${SCENARIOS.map((s) => `<path d="${line(s.line)}" fill="none" stroke="var(--sc-${s.key})" stroke-width="${s.key === 'mid' ? 2.6 : 2}" stroke-linejoin="round"${s.key === 'good' ? ' stroke-dasharray="7 4"' : ''}/>`).join('')}
     </g>
     <line x1="${x(a0)}" x2="${fx}" y1="${tY}" y2="${tY}" stroke="var(--ink-2)" stroke-dasharray="3 4"/>
@@ -223,7 +224,7 @@ export function loanChart(sched, n, baseYear, W) {
 
 // 影響退休年齡的因素:龍捲風圖
 export function driversChart(d, W) {
-  if (d.base == null) return '<p class="text-sm muted">以目前條件 45 年內無法退休,先調整生活費或收入。</p>';
+  if (d.base == null) return '<p class="text-sm muted">以目前條件,工作到最後都還不到九成把握,先調整生活費或收入。</p>';
   const rows = d.rows.map((r) => {
     const cap = d.base + 15;
     const lo = r.low ?? cap, hi = r.high ?? cap;

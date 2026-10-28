@@ -1,5 +1,5 @@
 // 測驗題目:頁面用來產生卡片,quiz-app.js 用來套用答案。
-// slider:主滑桿;choices:點了就選(multi 可複選);more:「細項」裡的欄位(不填就用預設值);list:細項裡的清單編輯器。
+// slider:主滑桿;choices:點了就選起來,按「下一題」才前進(multi 可複選);more:「細項」裡的欄位(不填就用預設值);list:細項裡的清單編輯器。
 
 export const QUESTIONS = [
   {
@@ -83,7 +83,7 @@ export const QUESTIONS = [
   },
   {
     id: 'start', title: '每月存下的錢,什麼時候開始定期定額?', hint: '越早投入,複利跑得越久;開始之前存下的錢先算放定存。金額在細項裡設定。',
-    key: 'investDelay', delayFeedback: true, stay: true,
+    key: 'investDelay', delayFeedback: true,
     choices: [
       { v: 0, label: '已經在做', sub: '或這個月就開始' },
       { v: 1, label: '1 年後' },
@@ -97,6 +97,10 @@ export const QUESTIONS = [
     ],
   },
 ];
+
+// 結果頁「調整條件」:最常調的幾個數字;範圍、單位沿用題目卡的設定(TUNE_LABELS 只補題目卡上沒有的名稱)
+export const TUNE_KEYS = ['age', 'fireAge', 'monthlyExpense', 'monthlyIncome', 'assets', 'salaryGrowth', 'endAge', 'inflation', 'costRate'];
+export const TUNE_LABELS = { age: '現在年齡', fireAge: '理想退休年齡', monthlyIncome: '每月稅後收入', assets: '存款與投資' };
 
 // 選項帶入的預設值(今日幣值;年份以今年為 0 的相對值)
 export const LOAN_DEFAULTS = {

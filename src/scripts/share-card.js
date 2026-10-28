@@ -79,7 +79,7 @@ export async function makeCard(c) {
     const [x, y] = key.split(',').map(Number);
     px(x, y, col[varName(v)]);
   }
-  // 已經可以退休:海豹旁邊的金色星星;45 年內存不夠:頭上的汗滴
+  // 已經可以退休:海豹旁邊的金色星星;試到最後都還不夠:頭上的汗滴
   if (mood.sparkle) for (const [cx, cy] of [[63, 33], [127, 38], [60, 62], [130, 66]]) {
     [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [2, 0], [-2, 0], [0, 2], [0, -2]].forEach(([dx, dy], i) => px(cx + dx, cy + dy, i === 0 ? col['--surface'] : col['--gold']));
   }

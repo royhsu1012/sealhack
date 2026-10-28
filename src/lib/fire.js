@@ -722,7 +722,7 @@ export function monteCarlo(inp, r = inp.assumedReturn, opts = {}) {
   let ok = 0;
   for (let p = 0; p < paths; p++) if (!sim.depletedAt[p]) ok++;
   const firstZero = (key) => rows.find((x) => x.age > sim.fireAge && x[key] <= 0)?.age ?? null;
-  return { rows, fireAge: sim.fireAge, sigma, success: ok / paths, p10Zero: firstZero('p10'), p50Zero: firstZero('p50'), p90Zero: firstZero('p90') };
+  return { rows, fireAge: sim.fireAge, sigma, success: ok / paths, p10Zero: firstZero('p10'), p50Zero: firstZero('p50'), p75Zero: firstZero('p75'), p90Zero: firstZero('p90') };
 }
 
 /** 各退休年份撐到 endAge 的機率(算過的年份記起來,幾種把握共用) */
@@ -733,10 +733,12 @@ function rateByYear(inp, r, opts) {
     return memo.get(y);
   };
 }
+/** 最快退休時間最多往後試幾年:45 年,且至少留 1 年退休生活(「X 歲以後」的 X = 年齡 + 這個數) */
+export const fireYearsLimit = (inp, endAge = endAgeOf(inp), maxYears = 45) => Math.min(maxYears, endAge - inp.age - 1);
 function firstTimeAt(inp, rate, confidence, opts) {
   const { maxYears = 45, endAge = endAgeOf(inp) } = opts;
   let lo = inp.baseYear;
-  let hi = Math.min(inp.baseYear + maxYears, inp.baseYear + endAge - inp.age - 1);
+  let hi = inp.baseYear + fireYearsLimit(inp, endAge, maxYears);
   if (rate(lo) >= confidence) return 0;
   if (hi <= lo || rate(hi) < confidence) return null;
   while (hi - lo > 1) {
@@ -758,10 +760,11 @@ export function earliestFireTimeAt(inp, r = inp.assumedReturn, confidence = 0.9,
 
 /**
  * 三種情況(跟一生資產圖的三條線同一套定義):
- * 悲觀 = 最差一成的市場也撐得住(九成把握,P10)、中性 = 一半的市場撐得住(P50)、樂觀 = 只有最好的一成市場撐得住(P90)。
+ * 悲觀 = 最差一成的市場也撐得住(九成把握,P10)、中性 = 一半的市場撐得住(P50)、樂觀 = 市場在前四分之一才撐得住(P75)。
+ * 樂觀不用最好的一成:年輕人的時間長,最好的一成會好到不切實際(例如明年就退休)。
  */
 export const SCENARIOS = [
-  { key: 'good', name: '樂觀', sub: '市場最好的一成', confidence: 0.1, line: 'p90' },
+  { key: 'good', name: '樂觀', sub: '市場前四分之一', confidence: 0.25, line: 'p75' },
   { key: 'mid', name: '中性', sub: '一半的情況', confidence: 0.5, line: 'p50' },
   { key: 'bad', name: '悲觀', sub: '市場最差的一成', confidence: 0.9, line: 'p10' },
 ];

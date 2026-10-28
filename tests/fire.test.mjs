@@ -6,7 +6,7 @@ import {
   lifePath, fireAgeDrivers, presetInputs, PRESETS,
   fundNeeded, fundAtFire, breakEvenReturn, needBreakdown, earliestFireTime, personaOf, levers, monteCarlo, successRate, earliestFireTimeAt, volatilityOf,
   historyHitRate, saveVsInvest, startLater, annualCashflow, loanYears, loanSchedule, cashPlan,
-  netReturn, pensionEstimate, incomesOf, autoPensions, fireTimeScenarios, SCENARIOS, extraSavingFor, toToday, rowToday,
+  netReturn, pensionEstimate, incomesOf, autoPensions, fireTimeScenarios, SCENARIOS, extraSavingFor, toToday, rowToday, fireYearsLimit,
 } from '../src/lib/fire.js';
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: got ${a}, want ${b} ± ${tol}`);
@@ -349,12 +349,12 @@ test('勞保、勞退依收入與年資估算', () => {
 test('三種情況:樂觀 ≤ 中性 ≤ 悲觀,悲觀 = 九成把握', () => {
   const inp = site();
   const sc = fireTimeScenarios(inp, 0.06);
-  assert.deepEqual(SCENARIOS.map((x) => x.confidence), [0.1, 0.5, 0.9]);
+  assert.deepEqual(SCENARIOS.map((x) => x.confidence), [0.25, 0.5, 0.9]);
   assert.ok(sc.good < sc.mid && sc.mid < sc.bad, `${sc.good} < ${sc.mid} < ${sc.bad}`);
   near(sc.bad, earliestFireTimeAt(inp, 0.06, 0.9), 1e-9, '悲觀 = 九成把握');
   near(sc.mid, earliestFireTime(inp, 0.06), 0.5, '中性 ≈ 每年報酬剛好 r − c');
-  // 範例情境(保守預設)的數字:樂觀約 47 歲、中性約 49 歲、悲觀約 53 歲
-  near(sc.good, 12.03, 0.01, '樂觀');
+  // 範例情境(保守預設)的數字:樂觀約 48 歲、中性約 49 歲、悲觀約 53 歲
+  near(sc.good, 13.28, 0.01, '樂觀');
   near(sc.mid, 14.85, 0.01, '中性');
   near(sc.bad, 18.30, 0.01, '悲觀');
   near(successRate(inp, 0.06), 0.523, 1e-9, '50 歲退休撐到 95 歲的機率');
@@ -363,7 +363,7 @@ test('三種情況:樂觀 ≤ 中性 ≤ 悲觀,悲觀 = 九成把握', () => {
   const mc = monteCarlo(inp, 0.06);
   assert.equal(mc.p10Zero, 64, '悲觀 64 歲用完');
   assert.equal(mc.p50Zero, null, '中性撐到 95 歲');
-  assert.equal(mc.p90Zero, null, '樂觀撐到 95 歲');
+  assert.equal(mc.p75Zero, null, '樂觀撐到 95 歲');
 });
 
 test('想再快一點與影響因素:用九成把握重算', () => {
@@ -397,4 +397,14 @@ test('今日幣值:除以通膨', () => {
   const row = rowToday(inp, { year: 2028, age: 37, t: 2, income: 104.04, short: 0 });
   near(row.income, 100, 1e-9, '金額換算');
   assert.deepEqual([row.year, row.age, row.t, row.short], [2028, 37, 2, 0], '年份、年齡不動');
+});
+
+test('試到最後都不到九成把握:悲觀情況是 null,寫成「X 歲以後」', () => {
+  // 25 歲、每月花得比賺得多:工作到 70 歲,最差一成的市場還是不夠
+  const inp = site({ ...presetInputs('example', 2026), age: 25, fireYear: 2051, loans: [], goals: [], assets: 300, salary: 36, monthlyExpense: 3.5 });
+  const sc = fireTimeScenarios(inp, 0.06);
+  assert.equal(sc.bad, null, '悲觀做不到');
+  assert.ok(sc.mid != null && sc.good != null && sc.good < sc.mid, '中性、樂觀還是有答案');
+  assert.equal(inp.age + fireYearsLimit(inp), 70, '最多試到 70 歲(45 年)');
+  assert.equal(fireYearsLimit({ ...inp, age: 60 }), 34, '60 歲:最多試到 94 歲,留 1 年退休');
 });

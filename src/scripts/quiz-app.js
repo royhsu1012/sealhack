@@ -2,7 +2,7 @@
 import {
   computePlan, lifePath, annualCashflow, cashPlan, autoPensions, incomesOf, fireAgeDrivers, needBreakdown, fundNeeded,
   breakEvenReturn, personaOf, levers, monteCarlo, earliestFireTimeAt, successRate, pmt, endAgeOf,
-  fireTimeScenarios, SCENARIOS, netReturn, extraSavingFor, toToday, rowToday,
+  fireTimeScenarios, SCENARIOS, netReturn, extraSavingFor, toToday, rowToday, fireYearsLimit,
 } from '../lib/fire.js';
 import {
   BASE_YEAR, R_MAX, freshState, loadState, saveState, clearState, nf, wan, big, pct, pctUp, esc, num, round, $,
@@ -183,13 +183,14 @@ function delayFeedback() {
   const n1 = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 1 });
   const saving = first != null && first > 0 ? `你現在每月大約存下 ${n1.format(first)} 萬。` : '';
   const now = earliestFireTimeAt({ ...inp, investDelay: 0, dcaMonthly: null }, inp.assumedReturn, 0.9);
-  if (now == null) { el.textContent = `${saving}照目前的條件,45 年內都存不夠退休;越早開始越重要。`; return; }
+  const late = inp.age + fireYearsLimit(inp);
+  if (now == null) { el.textContent = `${saving}照目前的條件,工作到 ${late} 歲都還不到九成把握;越早開始越重要。`; return; }
   const w = whenParts(now, inp.age);
   if (!d && cap == null) { el.textContent = `${saving}${w.now ? '現在就可以退休了。' : `現在開始、存下的全部投入:九成把握最快 ${w.year} 年 ${w.month} 月可以退休。`}`; return; }
   const what = [d ? `晚 ${d} 年才開始` : '', cap != null ? `每月只投 ${n1.format(cap)} 萬` : ''].filter(Boolean).join('、');
   const t = earliestFireTimeAt(inp, inp.assumedReturn, 0.9);
   const lag = t == null ? null : t - now;
-  el.textContent = saving + (lag == null ? `${what},45 年內就存不夠退休了。`
+  el.textContent = saving + (lag == null ? `${what},工作到 ${late} 歲都還不到九成把握。`
     : lag < 1 / 24 ? `${what},最快退休時間差不到 1 個月。`
     : `${what},最快退休會延後約 ${spanText(lag)}。`);
 }
@@ -272,7 +273,7 @@ function drawLife() {
   const raw = monteCarlo(inp, r);
   const mc = { ...raw, rows: raw.rows.map((x) => rowToday(inp, x)) };
   $('chart-life').innerHTML = fanChart(mc, toToday(inp, fundNeeded(inp, r), inp.fireYear), widthOf('chart-life'))
-    + legend([...SCENARIOS.map((x) => [`var(--sc-${x.key})`, `${x.name}:${x.sub}`]), [BAND_LIGHT, '八成的情況落在這裡']]);
+    + legend([...SCENARIOS.map((x) => [`var(--sc-${x.key})`, `${x.name}:${x.sub}`]), [BAND_LIGHT, '悲觀到樂觀之間']]);
   $('life-note').textContent = `${fireAge} 歲退休,模擬 1,000 種市場走勢(扣掉費用與稅,年報酬率中位數 ${pct(netReturn(inp, r))}、上下波動約 ${pct(mc.sigma)}),畫出三種情況。金額都是今天的錢(已扣掉通膨)。`;
   const p = Math.round(mc.success * 100);
   const lvl = mc.success >= 0.9 ? 'ok' : mc.success >= 0.7 ? 'warn' : 'bad';
@@ -360,15 +361,21 @@ function renderResult() {
   const sc = fireTimeScenarios(inp, r);
   const t = sc.bad;
   const w = t == null ? null : whenParts(t, inp.age);
+  // 試到這個年齡都還不夠時寫「X 歲以後」,跟其他格子一樣用年齡
+  const late = inp.age + fireYearsLimit(inp);
   $('r-scen').innerHTML = SCENARIOS.map((x) => {
     const tt = sc[x.key], ww = tt == null ? null : whenParts(tt, inp.age);
-    const v = tt == null ? '45 年以上' : ww.now ? '現在' : `${ww.age} 歲`;
-    return `<li class="scen-${x.key}"><span>${x.name}</span><b class="num">${v}</b><small>${tt == null || ww.now ? x.sub : `${ww.year} 年 ${ww.month} 月`}</small></li>`;
+    const v = tt == null ? `${late} 歲後` : ww.now ? '現在' : `${ww.age} 歲`;
+    return `<li class="scen-${x.key}"><span>${x.name}</span><b class="num">${v}</b><small>${tt == null ? '還存不夠' : ww.now ? x.sub : `${ww.year} 年 ${ww.month} 月`}</small></li>`;
   }).join('');
   $('r-kicker').textContent = `報酬率 ${pct(r)} 時,九成把握最快`;
+  $('r-scen-note').hidden = t == null; // 悲觀做不到時,大字下面那行已經說明了
   if (t == null) {
-    $('r-date').textContent = '還要很久';
-    $('r-span').textContent = '45 年內都存不夠退休,看看下面怎麼再快一點';
+    $('r-date').textContent = `${late} 歲以後`;
+    const wm = sc.mid == null ? null : whenParts(sc.mid, inp.age);
+    $('r-span').textContent = wm
+      ? `工作到 ${late} 歲,碰上最差的一成市場還是不夠;一半的情況約 ${wm.age} 歲可以退休`
+      : `工作到 ${late} 歲都還存不夠,看看下面怎麼補`;
   } else if (w.now) {
     $('r-date').textContent = '現在';
     $('r-span').textContent = `就可以退休,資產已經撐到 ${endAgeOf(inp)} 歲`;
@@ -422,7 +429,7 @@ function renderResult() {
   drawLife();
   drawMore();
   setMiniBar(
-    t == null ? '45 年內存不夠退休' : w.now ? '現在就可以退休' : `九成把握 ${w.year} 年 ${w.month} 月退休`,
+    t == null ? `九成把握要 ${late} 歲以後` : w.now ? '現在就可以退休' : `九成把握 ${w.year} 年 ${w.month} 月退休`,
     `${P.name}・報酬率 ${pct(r)}`,
   );
 }
@@ -463,9 +470,10 @@ let card = null;
 async function openCard() {
   if (!last) return;
   const { persona: P, r, w, t, n, fireAge } = last;
-  // 圖卡的狀態:已經可以退休 / 比理想早 / 剛好 / 比理想晚 / 45 年內存不夠
+  // 圖卡的狀態:已經可以退休 / 比理想早 / 剛好 / 比理想晚 / 試到最後都還不夠
   const diff = t == null || w.now || n < 1 ? 0 : fireAge - w.age;
-  const state = t == null ? { key: 'far', label: '45 年內還存不夠' }
+  const late = last.inp.age + fireYearsLimit(last.inp);
+  const state = t == null ? { key: 'far', label: `${late} 歲前還存不夠` }
     : w.now ? { key: 'now', label: '已經可以退休了' }
     : n < 1 ? { key: 'ahead', label: `最快 ${w.age} 歲退休` }
     : diff > 0 ? { key: 'ahead', label: `比理想早 ${diff} 年退休` }
@@ -478,8 +486,8 @@ async function openCard() {
     const blob = await makeCard({
       variant: P.variant, name: P.name, tag: P.tag, tint: P.tint,
       kicker: `報酬率 ${pct(r)}・九成把握,我最快`,
-      when: t == null ? '還要很久' : w.now ? '現在' : `${w.year} 年 ${w.month} 月`,
-      sub: t == null ? '45 年內都存不夠退休' : w.now ? '就可以退休' : `就可以退休(${w.span}後,約 ${w.age} 歲)`,
+      when: t == null ? `${late} 歲以後` : w.now ? '現在' : `${w.year} 年 ${w.month} 月`,
+      sub: t == null ? '工作到那時還不到九成把握' : w.now ? '就可以退休' : `就可以退休(${w.span}後,約 ${w.age} 歲)`,
       state,
     });
     if (card) URL.revokeObjectURL(card.url);
@@ -533,7 +541,7 @@ export function mount() {
       Object.keys(LISTS).forEach(renderList);
       markChoices();
       feedback();
-      if (!q.multi && !q.stay && !card.querySelector('.q-more')?.open) setTimeout(() => { if (Number(card.dataset.i) === step) next(); }, 280);
+      // 點選項只會選起來,不會自動跳下一題(避免手滑、滑動時誤觸就跳走);按「下一題」才前進
       return;
     }
     if (t.dataset.add) {
@@ -559,7 +567,7 @@ export function mount() {
       case 'demo': s = freshState(); s.answers = deriveAnswers(s.inputs); s.done = true; save(); showResult(); break;
       case 'q-next': next(); break;
       case 'q-back': back(); break;
-      case 'r-edit': step = 0; setPhase('quiz'); renderQuiz(true); break;
+      case 'r-edit': case 'tune-edit': step = 0; setPhase('quiz'); renderQuiz(true); break;
       case 'r-share': share(); break;
       case 'clear-data':
         clearState(); s = quizStart(); prevDone = null; step = 0;

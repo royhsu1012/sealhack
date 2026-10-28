@@ -138,7 +138,8 @@ h1, h2, h3 { letter-spacing: -0.015em; }
 }
 .q-title { margin-top: 0.75rem; font-size: 1.55rem; font-weight: 800; line-height: 1.3; outline: none; }
 .q-hint { margin-top: 0.4rem; color: var(--ink-2); font-size: 0.95rem; }
-.quiz-next { margin-top: 1rem; width: 100%; }
+/* 下一題:點選項不會自動跳題,所以按鈕要一直按得到 → 卡片太長時黏在畫面底部 */
+.quiz-next { margin-top: 1rem; width: 100%; position: sticky; bottom: max(0.75rem, env(safe-area-inset-bottom)); z-index: 5; }
 
 .q-slider { margin-top: 1.5rem; }
 .q-value { text-align: center; font-weight: 800; line-height: 1; font-size: clamp(3rem, 15vw, 4.5rem); }
@@ -257,6 +258,11 @@ details.more > summary::after {
   width: 2rem; height: 2rem; border-radius: 50%; background: var(--surface-2); font-weight: 800;
 }
 details.more[open] > summary::after { content: "−"; }
+/* 結果頁「調整條件」:手機一欄、寬螢幕兩欄;滑桿跟細項同一個 .knob 元件 */
+.tune-body { display: grid; gap: 0.75rem 1.5rem; margin-top: 1rem; }
+@media (min-width: 640px) { .tune-body { grid-template-columns: 1fr 1fr; } }
+.tune-foot { margin-top: 0.75rem; font-size: 0.8rem; color: var(--ink-2); }
+.tune-foot .link-btn { min-height: 2.25rem; padding: 0.25rem; font-size: inherit; }
 .more-body { display: grid; gap: 2rem; margin-top: 1.25rem; }
 .more-body h3 { font-size: 1.05rem; font-weight: 800; }
 

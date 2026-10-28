@@ -1,13 +1,18 @@
 ---
 import Base from '../layouts/Base.astro';
 import MiniBar from '../components/MiniBar.astro';
-import { QUESTIONS } from '../scripts/quiz-config.js';
+import { QUESTIONS, TUNE_KEYS, TUNE_LABELS } from '../scripts/quiz-config.js';
 import { seal } from '../scripts/seal.js';
 
 const N = QUESTIONS.length;
 // 滑桿兩端的刻度:一億以上寫「1 億」,其餘加千分位
 const endLabel = (v: number, unit: string) => (unit === '萬' && v >= 10000 ? `${v / 10000} 億` : new Intl.NumberFormat('zh-TW').format(v));
 const R_MAX = 20;
+// 結果頁「調整條件」的滑桿:從題目卡的主滑桿與細項找同一個 key 的範圍
+const tuneDefs = TUNE_KEYS.map((key) => {
+  const d = QUESTIONS.flatMap((q) => [q.slider, ...(q.more ?? [])]).find((m) => m?.key === key);
+  return { ...d, key, label: TUNE_LABELS[key] ?? d.label };
+});
 const ticks = [0, 4, 8, 12, 16, 20];
 const zones = [
   ['var(--free)', '低於 5%:保守'],
@@ -142,8 +147,30 @@ const zones = [
       <p class="date-big num" id="r-date"></p>
       <p class="result-span" id="r-span"></p>
       <ul class="scen" id="r-scen" aria-label="三種情況的最快退休年齡"></ul>
-      <p class="scen-note">上面的日期用悲觀情況:就算碰上最差的一成市場,錢也夠用到最後</p>
+      <p class="scen-note" id="r-scen-note">大字用悲觀情況:就算碰上最差的一成市場,錢也夠用到最後</p>
     </div>
+
+    <details class="card more tune" id="tune">
+      <summary>
+        <span class="card-title">調整條件</span>
+        <span class="text-sm muted">年齡、生活費、收入、存款……改了答案馬上跟著變</span>
+      </summary>
+      <div class="tune-body">
+        {tuneDefs.map((m) => (
+          <div class="knob">
+            <div class="knob-head">
+              <label class="knob-label" for={`t-${m.key}`}>{m.label}</label>
+              <div class="knob-value">
+                <input id={`t-${m.key}`} type="number" inputmode="decimal" step={m.step} data-knob={m.key} data-pct={m.pct ? '1' : undefined} />
+                <span>{m.unit}</span>
+              </div>
+            </div>
+            <input type="range" min={m.min} max={m.max} step={m.step} data-knob={m.key} data-pct={m.pct ? '1' : undefined} aria-label={m.label} />
+          </div>
+        ))}
+      </div>
+      <p class="tune-foot">報酬率在下面「報酬率拉拉看」;貸款、大額支出、勞保勞退要改,按<button type="button" class="link-btn" id="tune-edit">修改答案</button></p>
+    </details>
 
     <div class="card result-dream" id="r-dream"></div>
 
