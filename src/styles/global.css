@@ -243,8 +243,9 @@ h1, h2, h3 { letter-spacing: -0.015em; }
 .odds b small, .odds span small { display: block; font-size: 0.72rem; font-weight: 600; color: var(--ink-2); }
 .goal-h { margin-top: 1.1rem; padding-top: 1rem; border-top: 1px solid var(--line); font-size: 1rem; font-weight: 800; }
 .levers { margin-top: 0.75rem; display: grid; gap: 0.5rem; }
-.levers li { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border-radius: 1rem; background: var(--surface-2); }
-.levers b { color: var(--free); font-weight: 800; white-space: nowrap; }
+.levers li { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.75rem 0.9rem; border-radius: 1rem; background: var(--surface-2); }
+.levers b { color: var(--free); font-weight: 800; white-space: nowrap; text-align: right; }
+.levers b small, .levers span small { display: block; font-size: 0.75rem; font-weight: 600; color: var(--ink-2); }
 .result-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 .toast {
   position: fixed; left: 50%; bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)); z-index: 40; max-width: calc(100% - 2rem);
@@ -398,6 +399,8 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 
 .eq-cont { padding-left: 3.2em; }
 .eq-t { white-space: nowrap; }
 .eq sub, .eq sup { font-size: 0.68em; line-height: 0; }
+/* 上標裡的下標(如 (1 + m_j)^{−N_j}):不再縮成 0.68 × 0.68,免得小到看不清 */
+.eq sub sub, .eq sup sub, .eq sub sup, .eq sup sup { font-size: 0.85em; }
 .eq-where { margin: 0.5rem 0 0; padding-top: 0.6rem; border-top: 1px dashed var(--line); display: grid; gap: 0.3rem; font-size: 0.85rem; line-height: 1.6; color: var(--ink-2); }
 .eq-where div { display: grid; grid-template-columns: 3.4rem 1fr; gap: 0.5rem; }
 .eq-where dt { font-weight: 700; color: var(--ink); }

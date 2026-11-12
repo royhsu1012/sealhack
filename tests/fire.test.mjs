@@ -7,6 +7,7 @@ import {
   fundNeeded, fundAtFire, breakEvenReturn, needBreakdown, earliestFireTime, personaOf, levers, monteCarlo, successRate, earliestFireTimeAt, volatilityOf,
   historyHitRate, saveVsInvest, startLater, annualCashflow, loanYears, loanSchedule, cashPlan,
   netReturn, pensionEstimate, incomesOf, autoPensions, fireTimeScenarios, SCENARIOS, extraSavingFor, toToday, rowToday, fireYearsLimit,
+  BORROW_RATE,
 } from '../src/lib/fire.js';
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: got ${a}, want ${b} ± ${tol}`);
@@ -159,7 +160,7 @@ test('退休人格與想再快一點', () => {
   const l = levers(D, 0.06);
   near(l.base, 13.18, 0.01, '原本 13 年 2 個月');
   const g = Object.fromEntries(l.rows.map((x) => [x.key, x.gain]));
-  near(g.saveMore, 0.95, 0.01, '每月多存 1 萬');
+  near(g.saveMore, 0.89, 0.01, '每月多存 1 萬(今日幣值,隨通膨 2% 調高;以前跟著加薪 3% 是 0.95)');
   near(g.spendLess, 1.08, 0.01, '每月少花 5 千');
   near(g.returnUp, 1.10, 0.01, '報酬率多 1%');
   assert.ok(Object.values(g).every((v) => v > 0), '都會提早');
@@ -377,14 +378,79 @@ test('想再快一點與影響因素:用九成把握重算', () => {
   assert.equal(d.base, 53, '目前最快 53 歲');
 });
 
+test('每月多存:今日幣值的存款,不是加薪', () => {
+  // 每年多 12 萬 × (1 + 通膨)^t,先補預備金,其餘照定期定額
+  const inp = plain(2, { inflation: 0.02, salaryGrowth: 0.05 });
+  const a = cashPlan({ ...inp, fireYear: inp.baseYear + 3 });
+  const b = cashPlan({ ...inp, fireYear: inp.baseYear + 3, extraSaving: 1 });
+  b.invest.forEach((v, k) => near(v - a.invest[k], 12 * 1.02 ** (k + 1), 1e-9, `第 ${k + 1} 年多投入`));
+  const ex = site();
+  // 收入上限剛好是現在的收入:多存照樣提早(以前加在收入上,被上限吃掉,顯示「差不多」)
+  const capped = { ...ex, salaryCap: ex.salary };
+  const g = levers(capped, 0.06, 95, 0.9).rows.find((x) => x.key === 'saveMore').gain;
+  assert.ok(g > 0.5, `收入上限不影響多存:${g}`);
+  // 多存的錢不是薪水:勞保勞退照原本的收入估
+  const low = site({ ...presetInputs('renter', 2026) });
+  assert.deepEqual(incomesOf({ ...low, extraSaving: 1 }), incomesOf(low), '年金不變');
+  // 加薪率不影響多存的金額(以前多存的 1 萬會跟著加薪變大)
+  const fast = { ...ex, salaryGrowth: 0.05 };
+  const gFast = levers(fast, 0.06).rows.find((x) => x.key === 'saveMore').gain;
+  const gSlow = levers(ex, 0.06).rows.find((x) => x.key === 'saveMore').gain;
+  assert.ok(gFast < gSlow, `加薪快、本來就存得多,多存 1 萬的效果較小:${gFast} / ${gSlow}`);
+});
+
+test('存款與投資用完還不夠:當作借款,用固定利率', () => {
+  assert.equal(BORROW_RATE, 0.04);
+  // 每月花得比賺得多 1 萬、沒有存款:投資部位一路是負的(借款)
+  const inp = plain(-1, { assets: 0, fireYear: D.baseYear + 5, costRate: 0.005 });
+  let debt = 0;
+  for (const a of cashPlan(inp).invest) debt = debt * 1.04 + a;
+  assert.ok(debt < 0);
+  near(fundAtFire(inp, 0.06), debt, 1e-9, '借款以 4% 計息,不扣費用與稅');
+  near(fundAtFire(inp, 0.1), debt, 1e-9, '跟報酬率無關');
+  near(lifePath(inp, 0.06).rows[5].balance, debt, 1e-9, '一生資產路徑同一套');
+  const at = monteCarlo(inp, 0.06).rows[5];
+  near(at.p10, debt, 1e-9, '蒙地卡羅:借款不跟市場起伏(悲觀)');
+  near(at.p90, debt, 1e-9, '蒙地卡羅:借款不跟市場起伏(樂觀)');
+  // 有正有負:正的時候照報酬率複利,負的時候照借款利率
+  const mixed = plain(-1, { assets: 30, fireYear: D.baseYear + 4 });
+  let bal = 30;
+  for (const a of cashPlan(mixed).invest) bal = bal * (bal < 0 ? 1.04 : 1.06) + a;
+  near(fundAtFire(mixed, 0.06), bal, 1e-9, '先用投資部位,用完才借');
+  // 收入付不出貸款的人:報酬率多 1% 不會反而更慢(以前借款跟著市場複利,九成把握下晚 3.6 年)
+  const poor = site({ ...presetInputs('example', 2026), salary: 60, monthlyExpense: 2, assets: 0, assumedReturn: 0.04 });
+  const g = levers(poor, 0.04, 95, 0.9).rows.find((x) => x.key === 'returnUp').gain;
+  assert.ok(g > -1 / 24, `九成把握:報酬率多 1% 的變化 ${g} 年`);
+});
+
+test('需要準備:退休後每一年都不能用完(年金比生活費多,也不能先借來用)', () => {
+  // 月花 2 萬、60 歲退休:60–64 歲只有勞退,65 歲起勞保 + 勞退比生活費多
+  const inp = site({ ...presetInputs('example', 2026), salary: 60, monthlyExpense: 2, loans: [], goals: [], fireYear: 2026 + 25 });
+  const b = needBreakdown(inp, 0.06);
+  assert.ok(b.pensionsAll > b.expenses, '年金全部折現比生活費多(以前需要準備算成負的)');
+  assert.ok(b.total > 0, `65 歲前的生活費還是需要準備:${b.total}`);
+  near(b.expenses - b.pensions + b.loans, b.total, 1e-9, '瀑布圖三段加起來 = 需要準備');
+  assert.ok(b.pensions <= b.pensionsAll, '只算得上用得到的年金');
+  // 退休時剛好有 N:照 r 走到 95 歲都不會用完;少 1 萬就會用完
+  const w = lifePath(inp, 0.06).rows.filter((x) => x.phase === 'free').map((x) => x.withdraw);
+  const lowest = (start) => w.reduce(([bal, low], x) => { const v = bal * 1.055 - x; return [v, Math.min(low, v)]; }, [start, start])[1];
+  assert.ok(lowest(b.total) > -1e-6, '剛好夠');
+  assert.ok(lowest(b.total - 1) < 0, '少 1 萬就不夠');
+  // 年金都比生活費少時跟以前一樣:生活費 − 全部年金 + 貸款
+  const ex = needBreakdown(site(), 0.06);
+  near(ex.pensions, ex.pensionsAll, 1e-9, '範例:年金全部用得到');
+});
+
 test('想在理想退休年齡有九成把握:每月要多存多少', () => {
   const inp = site();
   const m = extraSavingFor(inp, 0.06);
   near(m, 3.6, 1e-9, '範例:每月多存 3.6 萬');
   // 找到的是最小的金額:少 0.1 萬就不到九成
-  const frozen = incomesOf(inp).map(({ auto, ...q }) => q);
-  const rate = (x) => successRate({ ...inp, incomes: frozen, salary: inp.salary + 12 * x }, 0.06);
+  const rate = (x) => successRate({ ...inp, extraSaving: x }, 0.06);
   assert.ok(rate(m) >= 0.9 && rate(m - 0.1) < 0.9, `${rate(m)} / ${rate(m - 0.1)}`);
+  // 跟「想再快一點」的每月多存同一個定義:多存 m 萬,九成把握的最快時間剛好在理想退休年齡以內
+  const t = earliestFireTimeAt({ ...inp, extraSaving: m }, 0.06, 0.9);
+  assert.ok(t <= inp.fireYear - inp.baseYear, `多存 ${m} 萬後最快 ${t} 年`);
   assert.equal(extraSavingFor({ ...inp, fireYear: inp.baseYear + 25 }, 0.06), 0, '60 歲退休已經有九成把握');
   assert.equal(extraSavingFor({ ...inp, fireYear: inp.baseYear + 1 }, 0.06, 0.9, { maxMonthly: 5 }), null, '明年就退休:多存 5 萬也不夠');
   assert.ok(extraSavingFor(inp, 0.08) < m, '報酬率高,要多存的少');

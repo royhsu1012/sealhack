@@ -34,13 +34,14 @@
 
 ## 結構
 ```text
-src/lib/fire.js            計算引擎(純函式,無 DOM;唯一事實來源):needBreakdown / fundNeeded / fundAtFire /
+src/lib/fire.js            計算引擎(純函式,無 DOM;唯一事實來源):needBreakdown(每一年都不能用完:取累計最大值,年金多出來的不能提前用)/ fundNeeded / fundAtFire /
                            breakEvenReturn / earliestFireTime / personaOf / levers / netReturn /
                            pensionEstimate / incomesOf / autoPensions(勞保勞退依收入與年資估算)/
                            monteCarlo / successRate / earliestFireTimeAt / fireTimeScenarios / SCENARIOS / volatilityOf(固定種子的蒙地卡羅)/
                            investedFlows / startLater(第 10 題:晚 d 年才開始定期定額,之前存款放定存 cashRate)/
                            loanYears / loanSchedule(按月攤還的逐年還款表,含寬限期;現金流與退休時餘額都用它)/
-                           cashPlan(每年的錢怎麼分:生活費、貸款 → 補預備金 → 預存大額支出 → 定期定額 → 定存;存得到多少都從這裡來)
+                           cashPlan(每年的錢怎麼分:生活費、貸款 → 補預備金 → 預存大額支出 → 定期定額 → 定存;存得到多少都從這裡來)/
+                           BORROW_RATE(存款與投資用完還不夠付 = 借款,固定 4%,不跟市場起伏)
 src/scripts/quiz-config.js 題目卡內容與選項預設值(貸款、大額支出、年金)
 src/scripts/quiz-app.js    測驗互動層:開場 / 題目卡 / 結果三階段(<html data-phase>)
 src/scripts/charts.js      結果頁 SVG 圖表(一生資產三種情況、交叉圖、瀑布圖、每年存款、影響因素)
@@ -92,6 +93,8 @@ Workers Builds 的 build 指令若仍是舊的(含 pagefind / copy-validation),�
 - 「先看範例結果」(單身有房:35 歲、50 歲退休、月花 6 萬、月收 15 萬、加薪 2%、資產 300 萬、房貸 + 車貸、報酬 6%、費用與稅 0.5%)顯示:
   悠哉海豹、九成把握最快 18 年 4 個月後(約 53 歲);三種情況 樂觀 48 歲・中性 49 歲・悲觀 53 歲。
   50 歲:把握 52%,還不到九成;想要九成把握:每月多存 3.6 萬,或等到 53 歲再退休。最低報酬率至少 6.1%。
+  想再快一點:多存 1 萬 提早 1 年 1 個月(約 52 歲)、少花 5 千 提早 1 年 6 個月(約 51 歲)、報酬率多 1% 提早 8 個月(約 52 歲);
+  要跟「調整條件」把生活費拉到 5.5 萬、報酬率拉到 7% 時大字日期的變化一致(多存 = 今日幣值的 `extraSaving`,不是加薪)。
   更多分析(今日幣值):需要準備 1,351 萬、存得到 1,346 萬。
   一生資產(今日幣值):撐到 95 歲的機率 52%;悲觀 64 歲用完、中性撐到 95 歲還剩 112 萬、樂觀還剩 2,332 萬。
   (2026-10-27 改保守預設前是最快約 48 歲、50 歲多出 535 萬。)

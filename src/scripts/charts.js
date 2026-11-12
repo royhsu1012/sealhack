@@ -100,7 +100,8 @@ export function targetChart(b, r, endAge, W) {
   const H = 260, L = 10, R = W - 10, top = 30, B = H - 44;
   const steps = [
     { label: '生活費', sub: `到 ${endAge} 歲,以 ${pct(r)} 折算`, from: 0, to: b.expenses, color: 'var(--ink)' },
-    { label: '年金折抵', sub: '勞保、勞退等', from: b.expenses, to: b.expenses - b.pensions, color: 'var(--free)' },
+    // 年金比生活費多的年份,多出來的不能提前用,只算用得到的部分
+    { label: '年金折抵', sub: b.pensionsAll - b.pensions > 0.5 ? '只算用得到的' : '勞保、勞退等', from: b.expenses, to: b.expenses - b.pensions, color: 'var(--free)' },
     { label: '貸款餘額', sub: '退休時還清', from: b.expenses - b.pensions, to: b.total, color: 'var(--work)' },
     { label: '需要準備', sub: '', from: 0, to: b.total, color: 'var(--ink)', total: true },
   ];

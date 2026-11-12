@@ -24,6 +24,8 @@
  * @property {number | null} [dcaMonthly] 每月定期定額金額(萬);null = 每月存下的錢全部投入
  * @property {number} [cashRate]  沒投入的錢放定存的利率(未設定 = CASH_RATE)
  * @property {number} [costRate]  每年的費用與稅(從報酬率扣掉;未設定 = 0)
+ * @property {number} [borrowRate] 存款與投資用完還不夠付時,借款的年利率(未設定 = BORROW_RATE)
+ * @property {number} [extraSaving] 每月多存(萬,今日幣值,隨通膨調高);不是薪水:不受收入上限影響、年金不變(未設定 = 0)
  * @property {Loan[]} loans
  * @property {Income[]} incomes
  * @property {Goal[]} goals
@@ -349,14 +351,16 @@ export function lifePath(inp, r = inp.assumedReturn, endAge = endAgeOf(inp)) {
   const fireAge = inp.age + n;
   const flows = cashPlan(inp);
   const loans = loanSchedule(inp.loans, Math.max(n, 0), inp.baseYear);
-  const rn = netReturn(inp, r);
+  const rn = netReturn(inp, r), b = borrowRateOf(inp);
   let bal = flows.investStart;
   const rows = [{ age: inp.age, year: inp.baseYear, balance: bal, phase: 'work' }];
   let depletionAge = null;
+  let borrowYear = null;
   for (let t = 1; inp.age + t <= endAge; t++) {
     const age = inp.age + t;
     if (t <= n) {
-      bal = bal * (1 + rn) + flows.invest[t - 1];
+      bal = growInvest(bal, rn, b) + flows.invest[t - 1];
+      if (bal < 0 && borrowYear == null) borrowYear = inp.baseYear + t;
       if (t === n) bal -= loans.balanceAtFire;
       rows.push({ age, year: inp.baseYear + t, balance: bal + flows.cash[t - 1], phase: 'work' });
     } else {
@@ -370,32 +374,44 @@ export function lifePath(inp, r = inp.assumedReturn, endAge = endAgeOf(inp)) {
       if (bal < 0) bal = 0;
     }
   }
-  return { rows, fireAge, depletionAge, balanceAtFire: rows.find((x) => x.age === fireAge)?.balance ?? null };
+  return { rows, fireAge, depletionAge, borrowYear, balanceAtFire: rows.find((x) => x.age === fireAge)?.balance ?? null };
 }
 
 /**
  * 退休時(第 n 年底)要準備的錢,拆成三塊:以報酬率 r 折回退休那年的「到 endAge 的生活費」,
  * 減去同樣折回的年金與被動收入(incomes 為各項明細),再加上退休時一次還清的貸款餘額。
  * 每年年底提領「生活費 − 已開始領的年金」,與 lifePath 的退休期算法一致。
+ * 每一年都不能用完:年金比生活費多的年份,多出來的錢不能拿來付更早的生活費(不能先借),
+ * 所以生活費部分 = 每年(生活費 − 年金)折現後累加的最大值,不是全部加總。
+ * pensions = 真的拿來折抵的年金(= expenses − 生活費部分),pensionsAll = 年金全部折現;年金都比生活費少時兩者相同。
  */
 export function needBreakdown(inp, r, endAge = endAgeOf(inp)) {
   const n = inp.fireYear - inp.baseYear;
   const fireAge = inp.age + n;
   const active = incomesOf(inp).filter((q) => q.monthly > 0);
   const incomes = active.map((q) => ({ name: q.name, pv: 0 }));
-  let expenses = 0;
+  let expenses = 0, sum = 0, peak = 0;
   for (let k = 1; fireAge + k <= endAge; k++) {
     const t = n + k;
     const age = fireAge + k;
     const disc = (1 + netReturn(inp, r)) ** k;
-    expenses += (12 * inp.monthlyExpense * (1 + inp.inflation) ** t) / disc;
-    active.forEach((q, j) => {
-      if (age >= (q.startAge ?? fireAge)) incomes[j].pv += (12 * q.monthly * (1 + inp.inflation) ** t) / disc;
+    const e = (12 * inp.monthlyExpense * (1 + inp.inflation) ** t) / disc;
+    let q = 0;
+    active.forEach((x, j) => {
+      if (age < (x.startAge ?? fireAge)) return;
+      const v = (12 * x.monthly * (1 + inp.inflation) ** t) / disc;
+      incomes[j].pv += v;
+      q += v;
     });
+    expenses += e;
+    sum += e - q;
+    peak = Math.max(peak, sum);
   }
-  const pensions = incomes.reduce((s, q) => s + q.pv, 0);
+  const pensionsAll = incomes.reduce((s, q) => s + q.pv, 0);
   const loans = loanSchedule(inp.loans, Math.max(n, 0), inp.baseYear).balanceAtFire;
-  return { expenses, pensions, loans, incomes, total: expenses - pensions + loans };
+  // 年金一直比生活費少時 peak 就是全部加總,直接用 pensionsAll(避免浮點誤差)
+  const pensions = peak === sum ? pensionsAll : expenses - peak;
+  return { expenses, pensions, pensionsAll, loans, incomes, total: expenses - pensions + loans };
 }
 
 /** 退休時要有多少錢,才能以報酬率 r 撐到 endAge(含退休時還清的貸款) */
@@ -403,19 +419,33 @@ export function fundNeeded(inp, r, endAge = endAgeOf(inp)) {
   return needBreakdown(inp, r, endAge).total;
 }
 
-/** 以報酬率 r 累積到退休時(第 n 年底)的資產:扣緊急預備金後的現有資產 + 每年可投入 */
+/**
+ * 以報酬率 r 累積到退休時(第 n 年底)的資產:扣緊急預備金後的現有資產 + 每年可投入。
+ * 投資部位用完還不夠付時是借款(負的),以固定的 BORROW_RATE 計息,不照 r 複利。
+ */
 export function fundAtFire(inp, r) {
   const plan = cashPlan(inp);
-  return futureValue(plan.investStart, plan.invest, netReturn(inp, r));
+  const rn = netReturn(inp, r), b = borrowRateOf(inp);
+  return plan.invest.reduce((bal, a) => growInvest(bal, rn, b) + a, plan.investStart);
 }
 
 /**
+ * 借款利率:存款與投資都用完、每年的錢還是不夠付(收入付不出生活費與貸款)時,不夠的部分當作借款,
+ * 以固定年利率計息;不跟市場起伏、不扣費用與稅(以前跟著報酬率複利,報酬率越高反而欠得越快)。
+ */
+export const BORROW_RATE = 0.04;
+const borrowRateOf = (inp) => inp.borrowRate ?? BORROW_RATE;
+/** 投資部位過一年:正的照報酬率 rn 複利,負的(借款)照借款利率 b */
+const growInvest = (bal, rn, b) => bal * (1 + (bal < 0 ? b : rn));
+
+/**
  * 每年的錢怎麼分(工作期第 1…n 年),所有「存得到多少」的計算都從這裡來。
- * 收入 − 生活費 − 貸款(逐年還款表)= 可支配,依序:
+ * 收入 − 生活費 − 貸款(逐年還款表)+ 每月多存(extraSaving,「想再快一點」與補法用)= 可支配,依序:
  *   1. 緊急預備金補到目標(月生活費 × 月數,隨通膨調高),放定存,不拿去投資;
  *   2. 大額支出的準備金:每筆在支出前 3 年(不足 3 年就從明年起)平均存進定存,支出那年從準備金付;
  *   3. 其餘照第 10 題定期定額(晚 d 年才開始、每月上限 dcaMonthly),沒投入的放定存。
  * 錢不夠(可支配為負,或大額支出超過準備金)時先用定存,再從投資部位拿;預備金不動。
+ * 投資部位拿到變負就是借款,複利時改用 BORROW_RATE(fundAtFire / lifePath / 蒙地卡羅都一樣)。
  * 起點:現有存款先撥給預備金(最多到目標),其餘是投資部位;退休那年定存與準備金併入投資部位,預備金照樣保留。
  * 回傳 { investStart, invest[], cash[](每年底定存 + 準備金), rows[](每年的分配明細), reserveStart, reserveEnd }。
  */
@@ -443,7 +473,7 @@ export function cashPlan(inp) {
     const expense = 12 * inp.monthlyExpense * (1 + inp.inflation) ** t;
     const loan = inp.loans.reduce((sum, l) => sum + (loanYears(l)[t - 1]?.payment ?? 0), 0);
     reserve *= 1 + c; cash *= 1 + c; sink *= 1 + c;
-    let free = income - expense - loan;
+    let free = income - expense - loan + 12 * (inp.extraSaving ?? 0) * (1 + inp.inflation) ** t;
     // 1. 緊急預備金
     const toReserve = free > 0 ? Math.min(free, Math.max(0, months * inp.monthlyExpense * (1 + inp.inflation) ** t - reserve)) : 0;
     reserve += toReserve; free -= toReserve;
@@ -581,13 +611,14 @@ export function personaOf(inp) {
 }
 
 /**
- * 想再快一點:每月多存 1 萬、每月少花 5 千、報酬率多 1%,各自讓「最早多久後能退休」提早幾年(含小數)。
- * base 為原本的時間;任一方無解時 gain 為 null。
+ * 想再快一點:每月多存 1 萬、每月少花 5 千、報酬率多 1%,各自讓「最快多久後可以退休」提早幾年(含小數)。
+ * 多存 = 收入與生活費不變,每月多存 1 萬(今日幣值,同 extraSavingFor);少花 = 工作時存得多、退休後也花得少。
+ * base 為原本的時間;任一方無解時 gain 為 null;gain 為負代表反而變慢。
  */
 export function levers(inp, r = inp.assumedReturn, endAge = endAgeOf(inp), confidence = null) {
   const base = fireTimeOf(inp, r, endAge, confidence);
   const cases = [
-    ['saveMore', { ...inp, salary: inp.salary + 12 }, r],
+    ['saveMore', { ...inp, extraSaving: (inp.extraSaving ?? 0) + 1 }, r],
     ['spendLess', { ...inp, monthlyExpense: Math.max(0, inp.monthlyExpense - 0.5) }, r],
     ['returnUp', inp, r + 0.01],
     ...((inp.investDelay ?? 0) > 0 || inp.dcaMonthly != null ? [['startNow', { ...inp, investDelay: 0, dcaMonthly: null }, r]] : []),
@@ -672,6 +703,7 @@ function simulate(inp, r, sigma, endAge, paths, keep = true) {
     withdraw[t] = expense - pension;
   }
   const { g: G, years: stride } = growth(netReturn(inp, r), sigma, paths, Math.max(T, 80));
+  const borrow = 1 + borrowRateOf(inp); // 工作期投資部位是負的(借款)時,固定利率,不跟市場起伏
   const start = investStart - (n === 0 ? loanAtFire : 0);
   const balances = keep ? Array.from({ length: T + 1 }, () => new Float64Array(paths)) : null;
   const depletedAt = new Int16Array(paths);
@@ -681,7 +713,7 @@ function simulate(inp, r, sigma, endAge, paths, keep = true) {
     for (let t = 1; t <= T; t++) {
       const g = G[p * stride + t - 1];
       if (t <= n) {
-        bal = bal * g + flows[t - 1];
+        bal = bal * (bal < 0 ? borrow : g) + flows[t - 1];
         if (t === n) bal -= loanAtFire;
       } else {
         bal = bal * g - withdraw[t];
@@ -777,13 +809,10 @@ export function fireTimeScenarios(inp, r = inp.assumedReturn, opts = {}) {
 /**
  * 想在理想退休年齡有 confidence 把握,每月要多存多少(萬,今天的錢;以 0.1 萬為一格)。
  * 已經夠回傳 0;每月多存 maxMonthly 也不夠回傳 null。
- * 多存 = 收入多 12 × m、收入上限跟著提高;勞保勞退照原本的收入估(多存的錢不是薪水,不會讓年金變多)。
+ * 多存 = extraSaving:今日幣值、隨通膨調高;不是薪水,所以不受收入上限影響,勞保勞退照原本的收入估。
  */
 export function extraSavingFor(inp, r = inp.assumedReturn, confidence = 0.9, { maxMonthly = 30 } = {}) {
-  const incomes = incomesOf(inp).map(({ auto, ...q }) => q);
-  const ok = (m) => (successRate({
-    ...inp, incomes, salary: inp.salary + 12 * m, salaryCap: inp.salaryCap == null ? null : inp.salaryCap + 12 * m,
-  }, r) ?? 0) >= confidence;
+  const ok = (m) => (successRate({ ...inp, extraSaving: (inp.extraSaving ?? 0) + m }, r) ?? 0) >= confidence;
   if (ok(0)) return 0;
   if (!ok(maxMonthly)) return null;
   let lo = 0, hi = maxMonthly * 10;

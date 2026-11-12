@@ -2,7 +2,7 @@
 import {
   computePlan, lifePath, annualCashflow, cashPlan, autoPensions, incomesOf, fireAgeDrivers, needBreakdown, fundNeeded,
   breakEvenReturn, personaOf, levers, monteCarlo, earliestFireTimeAt, successRate, pmt, endAgeOf,
-  fireTimeScenarios, SCENARIOS, netReturn, extraSavingFor, toToday, rowToday, fireYearsLimit,
+  fireTimeScenarios, SCENARIOS, netReturn, extraSavingFor, toToday, rowToday, fireYearsLimit, volatilityOf, BORROW_RATE,
 } from '../lib/fire.js';
 import {
   BASE_YEAR, R_MAX, freshState, loadState, saveState, clearState, nf, wan, big, pct, pctUp, esc, num, round, $,
@@ -239,7 +239,13 @@ function showIntro() {
 // ---------- 結果 ----------
 let last = null;
 const STYLE = { safe: '保守', steady: '穩健', bold: '積極' };
-const LEVER = { saveMore: '每月多存 1 萬', spendLess: '每月少花 5 千', returnUp: '報酬率多 1%', startNow: '現在就開始定期定額' };
+// 「想再快一點」每一列:名稱與一句說明(少花比多存有效,是因為退休後也花得少;報酬率高,起伏也大)
+// 數字和單位之間用不斷行空格,手機上才不會把「萬」「千」單獨折到下一行
+const LEVER = {
+  saveMore: ['每月多存 1 萬', '生活費不變'],
+  spendLess: ['每月少花 5 千', '退休後也少花,需要準備的錢變少'],
+  returnUp: ['報酬率多 1%', '起伏也會變大'],
+};
 /** 「想再快一點」第四列:依第 10 題的設定換說法 */
 const startNowLabel = (inp) => ((inp.investDelay ?? 0) > 0 && inp.dcaMonthly != null ? '現在就開始、存下的全部投入'
   : inp.dcaMonthly != null ? '存下的錢全部定期定額' : '現在就開始定期定額');
@@ -336,7 +342,9 @@ function drawMore() {
   const ranges = shortYears.reduce((acc, yv) => { const last = acc.at(-1); if (last && yv === last[1] + 1) last[1] = yv; else acc.push([yv, yv]); return acc; }, [])
     .map(([a, b]) => (a === b ? `${a}` : `${a}–${b}`)).join('、');
   items.push(shortYears.length
-    ? check('warn', `${ranges} 年收入不夠支出`, '那幾年要動用存款或投資;可以把大額支出往後挪、拉長貸款年限或降低生活費。')
+    ? check('warn', `${ranges} 年收入不夠支出`, (life.borrowYear
+      ? `存款與投資 ${life.borrowYear} 年用完(預備金不動),之後不夠的錢當作借款,以年利率 ${pct(BORROW_RATE)} 計息;`
+      : '那幾年要動用存款或投資;') + '可以把大額支出往後挪、拉長貸款年限或降低生活費。')
     : check('ok', '每年都付得出來', inp.goals.length ? '大額支出都在前 3 年平均存好,支出那年不用賣投資。' : '沒有需要動用存款的年份。'));
   items.push(life.depletionAge
     ? check('bad', `${life.depletionAge} 歲資金用完`, `照 ${fireAge} 歲退休、報酬率 ${pct(r)} 推算;晚一點退休或降低生活費,才能撐到 ${endAgeOf(inp)} 歲。`)
@@ -421,13 +429,23 @@ function renderResult() {
       <p class="dream-sub">${how}</p>`;
   }
 
-  // 想再快一點
+  // 想再快一點:跟大字一樣換成「距今幾個月」再相減,提早幾個月 = 兩個日期差幾個月;已經可以退休就不顯示
   const L = levers(inp, r, endAgeOf(inp), 0.9);
+  const baseM = L.base == null ? null : Math.round(L.base * 12);
+  $('r-levers-h').hidden = $('r-levers').hidden = baseM === 0;
   $('r-levers').innerHTML = L.rows.map((x) => {
-    const v = x.gain != null
-      ? (x.gain > 1 / 24 ? `提早 ${spanText(x.gain)}` : '差不多')
-      : x.t != null ? `${spanText(x.t)}後就可以退休` : '還不到九成把握';
-    return `<li><span>${x.key === 'startNow' ? startNowLabel(inp) : LEVER[x.key]}</span><b>${v}</b></li>`;
+    const [label, hint] = x.key === 'startNow' ? [startNowLabel(inp), '']
+      : x.key === 'returnUp' && volatilityOf(r + 0.01) <= volatilityOf(r) ? [LEVER.returnUp[0], ''] : LEVER[x.key];
+    // 調整後反而做不到(原本做得到)也寫「不會更快」,不寫「還不到九成把握」
+    let v = baseM == null ? '還不到九成把握' : '不會更快', sub = '';
+    if (x.t != null) {
+      const age = whenParts(x.t, inp.age).age;
+      const d = baseM == null ? null : baseM - Math.round(x.t * 12);
+      if (d == null) [v, sub] = [`約 ${age} 歲`, '就可以退休'];
+      else if (d > 0) [v, sub] = [`提早 ${spanText(d / 12)}`, `約 ${age} 歲`];
+      else v = d === 0 ? '差不多' : '不會更快';
+    }
+    return `<li><span>${label}${hint ? `<small>${hint}</small>` : ''}</span><b>${v}${sub ? `<small>${sub}</small>` : ''}</b></li>`;
   }).join('');
 
   placeMark(be);
